@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"lib": ["es2022", "DOM"],
+		"target": "es2022",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"noImplicitReturns": true,
+		"noImplicitAny": true,
+		"noUnusedLocals": false,
+		"outDir": "lib",
+		"rootDir": "src",
+		"baseUrl": ".",
+		"paths": {},
+		"sourceMap": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true
+	},
+	"compileOnSave": true,
+	"include": ["src"],
+	"allowJs": true
+}
