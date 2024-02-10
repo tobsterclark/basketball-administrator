@@ -1,7 +1,8 @@
 /* eslint-disable no-extend-native */
 import firebaseAdmin from "firebase-admin";
+import { exportFunctions } from "better-firebase-functions";
 import { sep } from "path";
-import * as _ from "./utils.js";
+import * as _ from "./util";
 
 // TODO: put this in utils.ts after util functions have been written
 if (!String.prototype.toCamelCase) {
