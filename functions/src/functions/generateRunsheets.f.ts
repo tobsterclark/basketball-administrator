@@ -1,10 +1,9 @@
 import { onCall, onRequest } from "firebase-functions/v2/https";
 import { WixApi } from "../WixApi";
-import type { Template } from "@pdfme/common";
-import { generate } from "@pdfme/generator";
 import * as data from "../resources/template.json";
-import { writeFileSync } from "fs";
+import { promises as fs } from "fs";
 import { join } from "path";
+import { PDFDocument } from "pdf-lib";
 
 export default onRequest({ region: "australia-southeast1", labels: { test: "test" } }, async (req, res) => {
 	console.log("function running");
@@ -18,21 +17,31 @@ export default onRequest({ region: "australia-southeast1", labels: { test: "test
 			continue;
 		}
 
-		const input: Record<string, string>[] = [
-			{
-				black_team_title: val.data["whiteTeam"]["title"],
-				white_team_title: val.data["whiteTeam"]["title"],
-				black_team_a: val.data["whiteTeam"]["title"],
-				white_team_a: val.data["whiteTeam"]["title"],
-				court: val.data["court"] + " ",
-				location: val.data["location"],
-			},
-		];
+		const gameData = {
+			black_team: val.data["whiteTeam"]["title"],
+			white_team: val.data["whiteTeam"]["title"],
+			court: val.data["court"] + " ",
+			location: val.data["location"],
+		};
 
-		console.log(input);
-		const pdf = await generate({ template: data, inputs: input });
-		writeFileSync(join(__dirname, val.data["tmpName"] + ".pdf"), pdf);
-		console.log(join(__dirname, val.data["tmpName"] + ".pdf"));
+		// const pdf = await generate({ template: data, inputs: input });
+		// writeFileSync(join(__dirname, val.data["tmpName"] + ".pdf"), pdf);
+		// console.log(join(__dirname, val.data["tmpName"] + ".pdf"));
+
+		// Load PDF
+		const pdfTemplate = await fs.readFile("../resources/scoresheet_template.pdf");
+
+		const pdfDoc = await PDFDocument.load(pdfTemplate);
+
+		const form = pdfDoc.getForm();
+
+		form.getTextField("Team A#0").setText(gameData.white_team);
+		form.getTextField("Team B#0").setText(gameData.black_team);
+
+		form.flatten();
+
+		const bytes = await pdfDoc.save();
+		await fs.writeFile("../resources/out/test.pdf", bytes);
 	}
 
 	res.status(200).send();
