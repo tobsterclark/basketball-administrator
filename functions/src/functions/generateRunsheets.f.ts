@@ -28,7 +28,7 @@ export default onRequest({ region: "australia-southeast1", labels: { test: "test
 	// 	if (!val.data) {
 	// 		console.warn("no data");
 	// 		continue;
-	// 	}
+	// 	}o
 
 	// 	const gameData = {
 	// 		black_team: val.data["whiteTeam"]["title"],
