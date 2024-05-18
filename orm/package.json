@@ -1,6 +1,6 @@
 {
-  "name": "@tobsterclark/basketball-administrator",
-  "version": "1.0.2",
+  "name": "@tobsterclark/prisma-orm",
+  "version": "1.0.3",
   "description": "",
   "main": "index.js",
   "scripts": {
