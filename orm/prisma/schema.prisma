@@ -15,15 +15,14 @@ datasource db {
 
 model Game {
   id            String   @id @default(uuid())
-  location      Location
-  court         Int
   team_light    Team     @relation("game_team_dark", fields: [team_light_id], references: [id])
   team_light_id String
   team_dark     Team     @relation("game_team_light", fields: [team_dark_id], references: [id])
   team_dark_id  String
   light_score   Int
   dark_score    Int
-  date          DateTime
+  timeslot      Timeslot @relation(fields: [timeslot_id], references: [id])
+  timeslot_id   String   @unique
 }
 
 model Team {
@@ -42,6 +41,15 @@ model Player {
   number     Int?
   team       Team   @relation(fields: [team_id], references: [id])
   team_id    String
+}
+
+model Timeslot {
+  id        String   @id @default(uuid())
+  location  Location
+  court     Int
+  age_group AgeGroup
+  date      DateTime
+  game      Game?
 }
 
 enum AgeGroup {
