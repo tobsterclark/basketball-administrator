@@ -1,6 +1,6 @@
 {
   "name": "@tobsterclark/prisma-orm",
-  "version": "1.0.3",
+  "version": "1.0.0-beta",
   "description": "",
   "main": "index.js",
   "scripts": {
