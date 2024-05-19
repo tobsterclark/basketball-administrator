@@ -34,4 +34,12 @@ module.exports = {
       '@typescript-eslint/parser': ['.ts', '.tsx'],
     },
   },
+  overrides: [
+    {
+      files: ['src/renderer/**'],
+      rules: {
+        indent: ['error', 4],
+      },
+    },
+  ],
 };

@@ -1,5 +1,6 @@
 {
     "prettier.jsxSingleQuote": true,
     "prettier.singleQuote": true,
-    "html.completion.attributeDefaultValue": "singlequotes"
+    "html.completion.attributeDefaultValue": "singlequotes",
+    "files.eol": "\n"
 }
