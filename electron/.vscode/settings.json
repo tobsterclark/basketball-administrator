@@ -16,6 +16,15 @@
   "javascript.format.enable": false,
   "typescript.format.enable": false,
 
+  // Prettier complained about single quotes and VS Code kept auto-completing to use single quotes instead of double quotes.
+  // These additions fixed VS Code auto completing to force autocompletion using double quotes.
+  "javascript.preferences.quoteStyle": "double",
+  "typescript.preferences.quoteStyle": "double",
+  "editor.autoClosingQuotes": "always",
+  "editor.autoClosingBrackets": "always",
+  "editor.formatOnType": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
   "search.exclude": {
     ".git": true,
     ".eslintcache": true,

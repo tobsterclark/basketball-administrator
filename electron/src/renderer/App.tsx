@@ -5,7 +5,8 @@ import './App.css';
 function Hello() {
   return (
     <div>
-      <p>Hello!</p>
+      <p>test</p>
+      <p className="text-black">hello</p>
     </div>
   );
 }
