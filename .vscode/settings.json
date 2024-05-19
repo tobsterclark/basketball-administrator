@@ -2,5 +2,6 @@
     "prettier.jsxSingleQuote": true,
     "prettier.singleQuote": true,
     "html.completion.attributeDefaultValue": "singlequotes",
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "editor.formatOnSave": true
 }
