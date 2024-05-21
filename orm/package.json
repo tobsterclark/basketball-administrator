@@ -1,13 +1,17 @@
 {
   "name": "@tobsterclark/prisma-orm",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "db:generate": "dotenv -- prisma generate",
-    "postinstall": "tsc && cp src/index.d.ts dist/index.d.ts && npx prisma generate"
+    "build": "tsc && cp src/index.d.ts dist/index.d.ts && npx prisma generate",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
   "author": "",
