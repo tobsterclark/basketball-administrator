@@ -1,36 +1,36 @@
 {
-  "name": "@tobsterclark/prisma-orm",
-  "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "scripts": {
-    "db:generate": "dotenv -- prisma generate",
-    "build": "tsc && cp src/index.d.ts dist/index.d.ts && npx prisma generate",
-    "prepublishOnly": "npm run build"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "publishConfig": {
-    "@tobsterclark:registry": "https://npm.pkg.github.com"
-  },
-  "devDependencies": {
-    "@types/node": "^20.12.7",
-    "@types/uuid": "^9.0.8",
-    "dotenv-cli": "^7.4.2",
-    "prisma": "^5.13.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.13.0"
-  }
+	"name": "@tobsterclark/prisma-orm",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist",
+		"src"
+	],
+	"scripts": {
+		"db:generate": "dotenv -- prisma generate",
+		"build": "tsc && cp src/index.d.ts dist/index.d.ts && npx prisma generate",
+		"prepublishOnly": "npm run build"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"publishConfig": {
+		"@tobsterclark:registry": "https://npm.pkg.github.com"
+	},
+	"devDependencies": {
+		"@types/node": "^20.12.7",
+		"@types/uuid": "^9.0.8",
+		"dotenv-cli": "^7.4.2",
+		"prisma": "^5.13.0",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.4.5"
+	},
+	"prisma": {
+		"seed": "ts-node prisma/seed.ts"
+	},
+	"dependencies": {
+		"@prisma/client": "^5.13.0"
+	}
 }
