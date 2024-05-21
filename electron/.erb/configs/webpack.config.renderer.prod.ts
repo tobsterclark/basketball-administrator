@@ -51,14 +51,6 @@ const configuration: webpack.Configuration = {
             },
           },
           'sass-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: [require('tailwindcss'), require('autoprefixer')],
-              },
-            },
-          },
         ],
         include: /\.module\.s?(c|a)ss$/,
       },
@@ -68,14 +60,7 @@ const configuration: webpack.Configuration = {
           MiniCssExtractPlugin.loader,
           'css-loader',
           'sass-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: [require('tailwindcss'), require('autoprefixer')],
-              },
-            },
-          },
+          'postcss-loader',
         ],
         exclude: /\.module\.s?(c|a)ss$/,
       },
