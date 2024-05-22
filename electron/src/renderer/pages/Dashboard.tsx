@@ -1,18 +1,11 @@
+import PageContainer from '../ui_components/PageContainer';
+import PageTitle from '../ui_components/PageTitle';
+
 const Dashboard = () => {
     return (
-        <div className="w-full h-full pl-20 pt-16 pr-8 overflow-y-auto dark:bg-darkbg dark:text-darktext">
+        <PageContainer>
             <div>
-                <div>
-                    <span className="text-3xl font-semibold dark:text-darkdecoration">
-                        Welcome back, mr basketball.
-                    </span>
-                    <hr className="w-[400px] mt-2 dark:border-1 dark:border-darkgray" />
-                    <div className="pt-2">
-                        <span className="font-light dark:text-white italic text-sm">
-                            Blah blah blah, i love basketball.
-                        </span>
-                    </div>
-                </div>
+                <PageTitle text="Welcome back, mr. basketball." />
 
                 <div className="w-full h-full flex flex-col gap-2 pt-6">
                     <div className="w-full h-1/5 mb-20 pb-10 relative">
@@ -47,7 +40,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );
 };
 

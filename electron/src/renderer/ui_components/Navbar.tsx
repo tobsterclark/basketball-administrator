@@ -36,7 +36,7 @@ const Navbar = () => {
             },
             {
                 name: 'Players',
-                link: '/question-search',
+                link: '/players',
                 icon: <GlobeAsiaAustraliaIcon className={iconStyle} />,
             },
             {
