@@ -67,21 +67,15 @@ const Players = () => {
 
                 <div className="flex flex-row gap-8 pt-12 pb-12">
                     {/* Table */}
-                    <div className="w-3/5 shadow-md">
+                    <div className="w-3/5 shadow-md flex-grow">
                         <DataGrid rows={rows} columns={columns} />
                     </div>
 
                     {/* Player data editor */}
                     <div className="bg-gray-50 shadow-md rounded-md">
                         <div className="pl-6 pr-6 pt-4">
-                            <div className="pb-8 w-36">
-                                <TextField
-                                    id="playerDataEditor_number"
-                                    label="Player Number"
-                                    variant="outlined"
-                                />
-                            </div>
-                            <div className="flex flex-row gap-4 pb-12">
+                            {/* First Name & Last Name */}
+                            <div className="flex flex-row gap-4 pb-8">
                                 <TextField
                                     id="playerDataEditor_firstName"
                                     label="First Name"
@@ -93,25 +87,19 @@ const Players = () => {
                                     variant="outlined"
                                 />
                             </div>
-                            <div className="pb-12 w-36">
-                                <FormControl fullWidth>
-                                    <InputLabel id="demo-simple-select-label">
-                                        Age Group
-                                    </InputLabel>
-                                    <Select
-                                        labelId="demo-simple-select-label"
-                                        id="demo-simple-select"
-                                        value=""
-                                        label="Age Group"
-                                    >
-                                        <MenuItem value="3-4">3-4</MenuItem>
-                                        <MenuItem value="5-6">5-6</MenuItem>
-                                        <MenuItem value="7-8">7-8</MenuItem>
-                                    </Select>
-                                </FormControl>
+
+                            {/* Player Number */}
+                            <div className="w-36 pb-8">
+                                <TextField
+                                    id="playerDataEditor_number"
+                                    label="Player Number"
+                                    variant="outlined"
+                                />
                             </div>
-                            <div className="flex flex-row gap-6">
-                                <div className="w-1/2 pb-12">
+
+                            <div className="flex flex-row gap-4 pb-8">
+                                {/* Team Select */}
+                                <div className="w-2/3 flex-grow">
                                     <FormControl fullWidth>
                                         <InputLabel id="demo-simple-select-label">
                                             Team
@@ -134,6 +122,28 @@ const Players = () => {
                                         </Select>
                                     </FormControl>
                                 </div>
+
+                                {/* Age Group */}
+                                <div className="flex-shrink w-1/3">
+                                    <FormControl fullWidth>
+                                        <InputLabel id="demo-simple-select-label">
+                                            Age Group
+                                        </InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value=""
+                                            label="Age Group"
+                                        >
+                                            <MenuItem value="3-4">3-4</MenuItem>
+                                            <MenuItem value="5-6">5-6</MenuItem>
+                                            <MenuItem value="7-8">7-8</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </div>
+                            </div>
+                            <div className="flex flex-row gap-6">
+                                {/* Save Button */}
                                 <div className="w-1/2 flex flex-col">
                                     <button
                                         type="button"
