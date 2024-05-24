@@ -1,9 +1,9 @@
 import { onCall, onRequest } from "firebase-functions/v2/https";
 import { promises as fs } from "fs";
 import { PDFDocument, TextAlignment } from "pdf-lib";
-import prismaClient, { Game, Prisma } from "@tobsterclark/prisma-orm";
+import { Prisma, PrismaClient } from "@prisma/client";
 
-const db = new prismaClient();
+const db = new PrismaClient();
 type ScoresheetResult = Prisma.GameGetPayload<{
   include: {
     team_dark: { include: { players: true } };

@@ -1,0 +1,6 @@
+.env
+.gitignore
+tsconfig.json
+
+prisma/seed.ts
+prisma/TestTeamData.json
