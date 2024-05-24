@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     FormControl,
     InputLabel,
@@ -6,17 +7,22 @@ import {
     TextField,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid';
-import { PrismaClient } from '@prisma/client';
+import { useEffect } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 
 const Players = () => {
-    const db = new PrismaClient();
-    async function fun() {
-        const test = await db.player.findMany();
-        console.log(test.length);
-    }
-    fun();
+    useEffect(() => {
+        async function prismaTest() {
+            window.electron.ipcRenderer.once('prisma-test', (players) => {
+                // eslint-disable-next-line no-console
+                console.log(players);
+            });
+        }
+
+        prismaTest();
+    }, []);
+
     const rows: GridRowsProp = [
         {
             id: 1,
