@@ -10,7 +10,7 @@
 	],
 	"scripts": {
 		"db:generate": "dotenv -- prisma generate",
-		"build": "tsc && cp src/index.d.ts dist/index.d.ts && npx prisma generate",
+		"build": "tsc && shx cp src/index.d.ts dist/index.d.ts && npx prisma generate",
 		"prepublishOnly": "npm run build"
 	},
 	"keywords": [],
@@ -24,6 +24,7 @@
 		"@types/uuid": "^9.0.8",
 		"dotenv-cli": "^7.4.2",
 		"prisma": "^5.13.0",
+		"shx": "^0.3.4",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.4.5"
 	},
