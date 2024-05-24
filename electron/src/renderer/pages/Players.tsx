@@ -119,7 +119,7 @@ const Players = () => {
                                                 Team 2
                                             </MenuItem>
                                             <MenuItem value="Team 3">
-                                                Team 3
+                                                Team 4
                                             </MenuItem>
                                         </Select>
                                     </FormControl>
