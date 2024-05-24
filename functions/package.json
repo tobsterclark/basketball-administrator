@@ -2,7 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
-    "build": "tsc && cp -R src/resources lib/resources",
+    "build": "tsc && mkdir lib/resources && cp -R src/resources lib/resources",
     "build-watch": "cp -R src/resources lib/resources && tsc --watch",
     "serve": "npm run build-watch | firebase emulators:start",
     "shell": "npm run build && firebase functions:shell",
