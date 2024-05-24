@@ -57,17 +57,19 @@ const Players = () => {
         <PageContainer>
             <PageTitle text="Player Management" />
             <div>
-                <div className="pb-12 pt-12">
+                <div className="pb-6 pt-12 md:w-1/2 xl:w-1/3 2xl:w-1/4">
                     <TextField
                         id="playerSearchInput"
                         label="Search players"
                         variant="filled"
+                        autoFocus
+                        fullWidth
                     />
                 </div>
 
-                <div className="flex flex-row gap-8 pt-12 pb-12">
+                <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
                     {/* Table */}
-                    <div className="w-3/5 shadow-md flex-grow">
+                    <div className="w-3/5 shadow-md ">
                         <DataGrid rows={rows} columns={columns} />
                     </div>
 
@@ -142,7 +144,7 @@ const Players = () => {
                                     </FormControl>
                                 </div>
                             </div>
-                            <div className="flex flex-row gap-6">
+                            <div className="flex flex-row gap-6 pb-4">
                                 {/* Save Button */}
                                 <div className="w-1/2 flex flex-col">
                                     <button
