@@ -18,6 +18,7 @@ const Players = () => {
                 // eslint-disable-next-line no-console
                 console.log(players);
             });
+            window.electron.ipcRenderer.sendMessage('prisma-test');
         }
 
         prismaTest();
