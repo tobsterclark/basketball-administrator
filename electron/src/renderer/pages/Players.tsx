@@ -7,16 +7,43 @@ import {
     TextField,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 
+type _Player = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    number: number;
+    team_id: string;
+};
+
+type _Players = _Player[];
+
 const Players = () => {
+    const [tableRowsPlayerData, setTableRowsPlayerData] =
+        useState<GridRowsProp>([]);
+
     useEffect(() => {
         async function prismaTest() {
-            window.electron.ipcRenderer.once('prisma-test', (players) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            window.electron.ipcRenderer.once('prisma-test', (data) => {
+                const players = data as _Players;
                 // eslint-disable-next-line no-console
                 console.log(players);
+                const rowData: GridRowsProp = players.map(
+                    (player: _Player, index: number) => ({
+                        id: index + 1,
+                        playerNumber: player.number,
+                        playerName: player.first_name,
+                        playerAgeGroup: 'N/A',
+                        playerDivision: 'N/A',
+                        playersAssignedTeam: player.team_id,
+                    }),
+                );
+
+                setTableRowsPlayerData(rowData);
             });
             window.electron.ipcRenderer.sendMessage('prisma-test');
         }
@@ -24,6 +51,7 @@ const Players = () => {
         prismaTest();
     }, []);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const rows: GridRowsProp = [
         {
             id: 1,
@@ -84,7 +112,10 @@ const Players = () => {
                 <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
                     {/* Table */}
                     <div className="w-3/5 shadow-md ">
-                        <DataGrid rows={rows} columns={columns} />
+                        <DataGrid
+                            rows={tableRowsPlayerData}
+                            columns={columns}
+                        />
                     </div>
 
                     {/* Player data editor */}

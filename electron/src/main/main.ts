@@ -31,7 +31,7 @@ const prisma = new PrismaClient();
 
 ipcMain.on('prisma-test', async (event) => {
     const players = await prisma.player.findMany();
-    console.log(players);
+    // console.log(players);
     event.reply('prisma-test', players);
 });
 
