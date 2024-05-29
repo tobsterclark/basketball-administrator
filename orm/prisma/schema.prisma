@@ -32,15 +32,17 @@ model Team {
   dark_games  Game[]   @relation("game_team_dark")
   light_games Game[]   @relation("game_team_light")
   players     Player[]
+  division    Int?
 }
 
 model Player {
-  id         String @id @default(uuid())
+  id         String   @id @default(uuid())
   first_name String
   last_name  String
   number     Int?
-  team       Team   @relation(fields: [team_id], references: [id])
+  team       Team     @relation(fields: [team_id], references: [id])
   team_id    String
+  age_group  AgeGroup
 }
 
 model Timeslot {
