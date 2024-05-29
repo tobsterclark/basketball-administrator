@@ -6,7 +6,12 @@ import {
     Select,
     TextField,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid';
+import {
+    DataGrid,
+    GridColDef,
+    GridRowsProp,
+    GridSortModel,
+} from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
@@ -25,72 +30,74 @@ const Players = () => {
     const [tableRowsPlayerData, setTableRowsPlayerData] =
         useState<GridRowsProp>([]);
 
-    useEffect(() => {
-        async function prismaTest() {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            window.electron.ipcRenderer.once('prisma-test', (data) => {
-                const players = data as _Players;
-                // eslint-disable-next-line no-console
-                console.log(players);
-                const rowData: GridRowsProp = players.map(
-                    (player: _Player, index: number) => ({
-                        id: index + 1,
-                        playerNumber: player.number,
-                        playerName: player.first_name,
-                        playerAgeGroup: 'N/A',
-                        playerDivision: 'N/A',
-                        playersAssignedTeam: player.team_id,
-                    }),
-                );
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 10,
+    });
 
-                setTableRowsPlayerData(rowData);
+    const [sortModel, setSortModel] = useState<GridSortModel>([
+        {
+            field: 'number',
+            sort: 'asc',
+        },
+    ]);
+
+    const [totalPlayers, setTotalPlayers] = useState<number>(-1);
+    const [totalPlayersLoaded, setTotalPlayersLoaded] =
+        useState<boolean>(false);
+
+    // Gets initial 10 players on page load
+    useEffect(() => {
+        if (!totalPlayersLoaded) return;
+        async function getPrismaData() {
+            window.electron.ipcRenderer.once(
+                'prismaFindManyPlayers',
+                (data) => {
+                    const players = data as _Players;
+                    const rowData: GridRowsProp = players.map(
+                        (player: _Player, index: number) => ({
+                            id: index + 1,
+                            number: player.number,
+                            first_name: player.first_name,
+                            age: 'N/A',
+                            playerDivision: 'N/A',
+                            playersAssignedTeam: player.team_id,
+                        }),
+                    );
+
+                    setTableRowsPlayerData(rowData);
+                },
+            );
+            window.electron.ipcRenderer.sendMessage('prismaFindManyPlayers', {
+                skip: paginationModel.page * paginationModel.pageSize,
+                take: paginationModel.pageSize,
+                orderBy: sortModel[0]
+                    ? { [sortModel[0].field]: sortModel[0].sort }
+                    : {},
             });
-            window.electron.ipcRenderer.sendMessage('prisma-test');
         }
 
-        prismaTest();
-    }, []);
+        getPrismaData();
+        console.log('Bazinga, the data is here! Using sort model', sortModel); // left here intentionally to monitor API calls
+    }, [paginationModel, sortModel, totalPlayers, totalPlayersLoaded]);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const rows: GridRowsProp = [
-        {
-            id: 1,
-            playerNumber: '061',
-            playerName: 'John Doe',
-            playerAgeGroup: '5-6',
-            playerDivision: 'N/A',
-            playersAssignedTeam: 'Dunkers',
-        },
-        {
-            id: 2,
-            playerNumber: '042',
-            playerName: 'Jane Smith',
-            playerAgeGroup: '7-8',
-            playerDivision: 'N/A',
-            playersAssignedTeam: 'Slammers',
-        },
-        {
-            id: 3,
-            playerNumber: '023',
-            playerName: 'Mike Johnson',
-            playerAgeGroup: '9-10',
-            playerDivision: 'N/A',
-            playersAssignedTeam: 'Shooters',
-        },
-        {
-            id: 4,
-            playerNumber: '085',
-            playerName: 'Sarah Davis',
-            playerAgeGroup: '11-12',
-            playerDivision: 'N/A',
-            playersAssignedTeam: 'Swishers',
-        },
-    ];
+    // Get total players on page load, needed for pagination
+    useEffect(() => {
+        async function getTotalPlayers() {
+            window.electron.ipcRenderer.once('prismaGetPlayerCount', (data) => {
+                const players = data as number;
+                setTotalPlayers(players);
+                setTotalPlayersLoaded(true);
+            });
+            window.electron.ipcRenderer.sendMessage('prismaGetPlayerCount');
+        }
+        getTotalPlayers();
+    }, [totalPlayers]);
 
     const columns: GridColDef[] = [
-        { field: 'playerNumber', headerName: 'Number', width: 100 },
-        { field: 'playerName', headerName: 'Name', width: 200 },
-        { field: 'playerAgeGroup', headerName: 'Age', width: 100 },
+        { field: 'number', headerName: 'Number', width: 100 },
+        { field: 'first_name', headerName: 'Name', width: 200 }, // TODO: fix first/last name when data is in correct format
+        { field: 'age', headerName: 'Age', width: 100 }, // TODO: fix when toby reseeds db to include player age info
         { field: 'playerDivision', headerName: 'Division', width: 100 },
         { field: 'playersAssignedTeam', headerName: 'Team', width: 150 },
     ];
@@ -115,6 +122,17 @@ const Players = () => {
                         <DataGrid
                             rows={tableRowsPlayerData}
                             columns={columns}
+                            pagination
+                            paginationMode="server"
+                            loading={!totalPlayersLoaded}
+                            rowCount={totalPlayers}
+                            paginationModel={paginationModel}
+                            onPaginationModelChange={setPaginationModel}
+                            pageSizeOptions={[10]}
+                            sortModel={sortModel}
+                            onSortModelChange={(newSortModel) =>
+                                setSortModel(newSortModel)
+                            }
                         />
                     </div>
 

@@ -29,10 +29,15 @@ let mainWindow: BrowserWindow | null = null;
 // Setting up Prisma for IPC
 const prisma = new PrismaClient();
 
-ipcMain.on('prisma-test', async (event) => {
-    const players = await prisma.player.findMany();
-    // console.log(players);
-    event.reply('prisma-test', players);
+ipcMain.on('prismaFindManyPlayers', async (event, args) => {
+    const { skip, take, orderBy } = args;
+    const players = await prisma.player.findMany({ skip, take, orderBy });
+    event.reply('prismaFindManyPlayers', players);
+});
+
+ipcMain.on('prismaGetPlayerCount', async (event) => {
+    const players = await prisma.player.count();
+    event.reply('prismaGetPlayerCount', players);
 });
 
 ipcMain.on('ipc-example', async (event, arg) => {
