@@ -16,23 +16,21 @@ import { useCallback, useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 
-type _Team = {
+interface Team {
     id: string;
     name: string;
     age_group: string;
     division: number;
-};
+}
 
-type _Player = {
+interface Player {
     id: string;
     first_name: string;
     last_name: string;
     number: number;
     team_id: string;
-    team: _Team;
-};
-
-type _Players = _Player[];
+    team: Team;
+}
 
 const Players = () => {
     const [tableRowsPlayerData, setTableRowsPlayerData] =
@@ -70,9 +68,9 @@ const Players = () => {
         if (!totalPlayersLoaded) return;
         async function getPrismaData() {
             window.electron.ipcRenderer.once('prismaPlayerFindMany', (data) => {
-                const players = data as _Players;
+                const players = data as Player[];
                 const rowData: GridRowsProp = players.map(
-                    (player: _Player, index: number) => ({
+                    (player: Player, index: number) => ({
                         id: index + 1,
                         number: player.number,
                         first_name: player.first_name,
