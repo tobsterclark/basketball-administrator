@@ -12,9 +12,16 @@ import {
     GridRowsProp,
     GridSortModel,
 } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
+
+type _Team = {
+    id: string;
+    name: string;
+    age_group: string;
+    division: number;
+};
 
 type _Player = {
     id: string;
@@ -22,6 +29,7 @@ type _Player = {
     last_name: string;
     number: number;
     team_id: string;
+    team: _Team;
 };
 
 type _Players = _Player[];
@@ -46,50 +54,62 @@ const Players = () => {
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
 
+    const getOrderBy = useCallback(() => {
+        if (sortModel.length === 0) return {};
+        if (sortModel[0].field === 'team_name') {
+            return { team: { name: sortModel[0].sort } };
+        }
+        if (sortModel[0].field === 'age_group') {
+            return { team: { age_group: sortModel[0].sort } };
+        }
+        return { [sortModel[0].field]: sortModel[0].sort };
+    }, [sortModel]);
+
     // Gets initial 10 players on page load
     useEffect(() => {
         if (!totalPlayersLoaded) return;
         async function getPrismaData() {
-            window.electron.ipcRenderer.once(
-                'prismaFindManyPlayers',
-                (data) => {
-                    const players = data as _Players;
-                    const rowData: GridRowsProp = players.map(
-                        (player: _Player, index: number) => ({
-                            id: index + 1,
-                            number: player.number,
-                            first_name: player.first_name,
-                            age: 'N/A',
-                            playerDivision: 'N/A',
-                            playersAssignedTeam: player.team_id,
-                        }),
-                    );
+            window.electron.ipcRenderer.once('prismaPlayerFindMany', (data) => {
+                const players = data as _Players;
+                const rowData: GridRowsProp = players.map(
+                    (player: _Player, index: number) => ({
+                        id: index + 1,
+                        number: player.number,
+                        first_name: player.first_name,
+                        age_group: player.team.age_group,
+                        team_division: player.team.division,
+                        team_name: player.team.name,
+                    }),
+                );
 
-                    setTableRowsPlayerData(rowData);
-                },
-            );
-            window.electron.ipcRenderer.sendMessage('prismaFindManyPlayers', {
+                setTableRowsPlayerData(rowData);
+            });
+            window.electron.ipcRenderer.sendMessage('prismaPlayerFindMany', {
                 skip: paginationModel.page * paginationModel.pageSize,
                 take: paginationModel.pageSize,
-                orderBy: sortModel[0]
-                    ? { [sortModel[0].field]: sortModel[0].sort }
-                    : {},
+                orderBy: getOrderBy(),
+                include: { team: true }, // Including the relational team data
             });
         }
-
         getPrismaData();
         console.log('Bazinga, the data is here! Using sort model', sortModel); // left here intentionally to monitor API calls
-    }, [paginationModel, sortModel, totalPlayers, totalPlayersLoaded]);
+    }, [
+        getOrderBy,
+        paginationModel,
+        sortModel,
+        totalPlayers,
+        totalPlayersLoaded,
+    ]);
 
     // Get total players on page load, needed for pagination
     useEffect(() => {
         async function getTotalPlayers() {
-            window.electron.ipcRenderer.once('prismaGetPlayerCount', (data) => {
+            window.electron.ipcRenderer.once('prismaPlayerGetCount', (data) => {
                 const players = data as number;
                 setTotalPlayers(players);
                 setTotalPlayersLoaded(true);
             });
-            window.electron.ipcRenderer.sendMessage('prismaGetPlayerCount');
+            window.electron.ipcRenderer.sendMessage('prismaPlayerGetCount');
         }
         getTotalPlayers();
     }, [totalPlayers]);
@@ -97,9 +117,9 @@ const Players = () => {
     const columns: GridColDef[] = [
         { field: 'number', headerName: 'Number', width: 100 },
         { field: 'first_name', headerName: 'Name', width: 200 }, // TODO: fix first/last name when data is in correct format
-        { field: 'age', headerName: 'Age', width: 100 }, // TODO: fix when toby reseeds db to include player age info
-        { field: 'playerDivision', headerName: 'Division', width: 100 },
-        { field: 'playersAssignedTeam', headerName: 'Team', width: 150 },
+        { field: 'age_group', headerName: 'Age', width: 100 },
+        // { field: 'team_division', headerName: 'Division', width: 100 }, // TODO: fix when team division info is included
+        { field: 'team_name', headerName: 'Team', width: 150 },
     ];
 
     return (

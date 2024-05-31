@@ -29,21 +29,39 @@ let mainWindow: BrowserWindow | null = null;
 // Setting up Prisma for IPC
 const prisma = new PrismaClient();
 
-ipcMain.on('prismaFindManyPlayers', async (event, args) => {
-    const { skip, take, orderBy } = args;
-    const players = await prisma.player.findMany({ skip, take, orderBy });
-    event.reply('prismaFindManyPlayers', players);
+/**
+ * Gets players using `prisma.player.findMany` method
+ * @param event - IPC event
+ * @param args - Expects `skip`, `take`, and `orderBy`
+ * @listens ipcMain:prismaPlayerFindMany
+ * @fires ipcMain:prismaFindManyPlayers
+ */
+ipcMain.on('prismaPlayerFindMany', async (event, args) => {
+    const { skip, take, orderBy, include } = args;
+    const players = await prisma.player.findMany({
+        skip,
+        take,
+        orderBy,
+        include,
+    });
+    event.reply('prismaPlayerFindMany', players);
 });
 
-ipcMain.on('prismaGetPlayerCount', async (event) => {
+/**
+ * Get the total count of players
+ * @param event - IPC event
+ * @listens ipcMain:prismaPlayerGetCount
+ * @fires ipcMain:prismaGetPlayerCount
+ */
+ipcMain.on('prismaPlayerGetCount', async (event) => {
     const players = await prisma.player.count();
-    event.reply('prismaGetPlayerCount', players);
+    event.reply('prismaPlayerGetCount', players);
 });
 
-ipcMain.on('ipc-example', async (event, arg) => {
-    const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-    console.log(msgTemplate(arg));
-    event.reply('ipc-example', msgTemplate('pong'));
+ipcMain.on('prismaPlayerGetTeam', async (event, args) => {
+    const { id } = args;
+    const team = await prisma.team.findUnique({ where: { id } });
+    event.reply('prismaPlayerGetTeam', team);
 });
 
 if (process.env.NODE_ENV === 'production') {
