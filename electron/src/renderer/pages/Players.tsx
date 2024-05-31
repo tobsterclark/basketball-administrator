@@ -9,6 +9,7 @@ import {
 import {
     DataGrid,
     GridColDef,
+    GridRowSelectionModel,
     GridRowsProp,
     GridSortModel,
 } from '@mui/x-data-grid';
@@ -33,6 +34,12 @@ interface Player {
 }
 
 const Players = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
+    const [rowSelectionModel, setRowSelectionModel] =
+        useState<GridRowSelectionModel>([]);
+
     const [tableRowsPlayerData, setTableRowsPlayerData] =
         useState<GridRowsProp>([]);
 
@@ -69,16 +76,14 @@ const Players = () => {
         async function getPrismaData() {
             window.electron.ipcRenderer.once('prismaPlayerFindMany', (data) => {
                 const players = data as Player[];
-                const rowData: GridRowsProp = players.map(
-                    (player: Player, index: number) => ({
-                        id: index + 1,
-                        number: player.number,
-                        first_name: player.first_name,
-                        age_group: player.team.age_group,
-                        team_division: player.team.division,
-                        team_name: player.team.name,
-                    }),
-                );
+                const rowData: GridRowsProp = players.map((player: Player) => ({
+                    id: player.id,
+                    number: player.number,
+                    first_name: player.first_name,
+                    age_group: player.team.age_group,
+                    team_division: player.team.division,
+                    team_name: player.team.name,
+                }));
 
                 setTableRowsPlayerData(rowData);
             });
@@ -151,11 +156,17 @@ const Players = () => {
                             onSortModelChange={(newSortModel) =>
                                 setSortModel(newSortModel)
                             }
+                            onRowSelectionModelChange={(
+                                newRowSelectionModel,
+                            ) => {
+                                setRowSelectionModel(newRowSelectionModel);
+                            }}
+                            rowSelectionModel={rowSelectionModel}
                         />
                     </div>
 
                     {/* Player data editor */}
-                    <div className="bg-gray-50 shadow-md rounded-md">
+                    <div className="bg-gray-50 shadow-md rounded-md h-min">
                         <div className="pl-6 pr-6 pt-4">
                             {/* First Name & Last Name */}
                             <div className="flex flex-row gap-4 pb-8">
@@ -163,11 +174,13 @@ const Players = () => {
                                     id="playerDataEditor_firstName"
                                     label="First Name"
                                     variant="outlined"
+                                    disabled={selectedPlayer === null}
                                 />
                                 <TextField
                                     id="playerDataEditor_lastName"
                                     label="Last Name"
                                     variant="outlined"
+                                    disabled={selectedPlayer === null}
                                 />
                             </div>
 
@@ -177,14 +190,18 @@ const Players = () => {
                                     id="playerDataEditor_number"
                                     label="Player Number"
                                     variant="outlined"
+                                    disabled={selectedPlayer === null}
                                 />
                             </div>
 
-                            <div className="flex flex-row gap-4 pb-8">
+                            <div className="flex flex-row gap-4 pb-12">
                                 {/* Team Select */}
                                 <div className="w-2/3 flex-grow">
                                     <FormControl fullWidth>
-                                        <InputLabel id="demo-simple-select-label">
+                                        <InputLabel
+                                            id="demo-simple-select-label"
+                                            disabled={selectedPlayer === null}
+                                        >
                                             Team
                                         </InputLabel>
                                         <Select
@@ -192,6 +209,7 @@ const Players = () => {
                                             id="demo-simple-select"
                                             value=""
                                             label="Team"
+                                            disabled={selectedPlayer === null}
                                         >
                                             <MenuItem value="Team 1">
                                                 Team 1
@@ -209,7 +227,10 @@ const Players = () => {
                                 {/* Age Group */}
                                 <div className="flex-shrink w-1/3">
                                     <FormControl fullWidth>
-                                        <InputLabel id="demo-simple-select-label">
+                                        <InputLabel
+                                            id="demo-simple-select-label"
+                                            disabled={selectedPlayer === null}
+                                        >
                                             Age Group
                                         </InputLabel>
                                         <Select
@@ -217,6 +238,7 @@ const Players = () => {
                                             id="demo-simple-select"
                                             value=""
                                             label="Age Group"
+                                            disabled={selectedPlayer === null}
                                         >
                                             <MenuItem value="3-4">3-4</MenuItem>
                                             <MenuItem value="5-6">5-6</MenuItem>
@@ -225,12 +247,23 @@ const Players = () => {
                                     </FormControl>
                                 </div>
                             </div>
-                            <div className="flex flex-row gap-6 pb-4">
+                            <div className="flex flex-row gap-6 pb-8">
+                                {/* Cancel Button */}
+                                <div className="w-1/2 flex flex-col">
+                                    <button
+                                        type="button"
+                                        disabled={selectedPlayer === null}
+                                        className="bg-slate-200 hover:bg-blue-700 text-slate-600 font-semibold py-4 px-4 rounded disabled:cursor-not-allowed"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
                                 {/* Save Button */}
                                 <div className="w-1/2 flex flex-col">
                                     <button
                                         type="button"
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded"
+                                        disabled={selectedPlayer === null}
+                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
                                     >
                                         Save
                                     </button>
