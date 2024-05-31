@@ -48,6 +48,21 @@ ipcMain.on('prismaPlayerFindMany', async (event, args) => {
 });
 
 /**
+ * Gets teams using `prisma.team.findMany` method
+ * @param event - IPC event
+ */
+ipcMain.on('prismaTeamFindMany', async (event, args) => {
+    const { skip, take, orderBy, include } = args;
+    const teams = await prisma.team.findMany({
+        skip,
+        take,
+        orderBy,
+        include,
+    });
+    event.reply('prismaTeamFindMany', teams);
+});
+
+/**
  * Get the total count of players
  * @param event - IPC event
  * @listens ipcMain:prismaPlayerGetCount
