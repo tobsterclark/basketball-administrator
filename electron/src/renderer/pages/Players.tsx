@@ -13,7 +13,7 @@ import {
     GridRowsProp,
     GridSortModel,
 } from '@mui/x-data-grid';
-import { useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 
@@ -36,6 +36,9 @@ interface Player {
 const Players = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+    const [selectedPlayerEdit, setSelectedPlayerEdit] = useState<Player | null>(
+        null,
+    );
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -58,6 +61,23 @@ const Players = () => {
     const [totalPlayers, setTotalPlayers] = useState<number>(-1);
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
+
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (selectedPlayerEdit) {
+            setSelectedPlayerEdit({
+                ...selectedPlayerEdit,
+                [e.target.name]: e.target.value,
+            });
+        }
+    };
+
+    const selectPlayerById = (id: string) => {
+        const player = tableRowsPlayerData.find(
+            (row) => row.id === id,
+        ) as Player;
+        setSelectedPlayer(player);
+        setSelectedPlayerEdit(player);
+    };
 
     const getOrderBy = useCallback(() => {
         if (sortModel.length === 0) return {};
@@ -160,6 +180,9 @@ const Players = () => {
                                 newRowSelectionModel,
                             ) => {
                                 setRowSelectionModel(newRowSelectionModel);
+                                selectPlayerById(
+                                    newRowSelectionModel[0] as string,
+                                );
                             }}
                             rowSelectionModel={rowSelectionModel}
                         />
@@ -174,6 +197,8 @@ const Players = () => {
                                     id="playerDataEditor_firstName"
                                     label="First Name"
                                     variant="outlined"
+                                    value={selectedPlayerEdit?.first_name ?? ''}
+                                    onChange={handleInputChange}
                                     disabled={selectedPlayer === null}
                                 />
                                 <TextField
@@ -190,6 +215,8 @@ const Players = () => {
                                     id="playerDataEditor_number"
                                     label="Player Number"
                                     variant="outlined"
+                                    value={selectedPlayerEdit?.number ?? ''}
+                                    onChange={handleInputChange}
                                     disabled={selectedPlayer === null}
                                 />
                             </div>
