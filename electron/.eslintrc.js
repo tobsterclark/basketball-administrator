@@ -1,5 +1,9 @@
 module.exports = {
-    extends: 'erb',
+    extends: [
+        'erb',
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended',
+    ],
     plugins: ['@typescript-eslint'],
     rules: {
         // A temporary hack related to IDE not resolving correct package.json
@@ -16,11 +20,16 @@ module.exports = {
         'import/extensions': 'off',
         'import/no-unresolved': 'off',
         'import/no-import-module-exports': 'off',
+        'import/prefer-default-export': 'off',
         'no-shadow': 'off',
         '@typescript-eslint/no-shadow': 'error',
         'no-unused-vars': 'off',
         '@typescript-eslint/no-unused-vars': 'error',
+        'promise/catch-or-return': 'off',
+        'promise/always-return': 'off',
+        indent: ['error', 4, { SwitchCase: 1 }],
     },
+    parser: '@typescript-eslint/parser',
     parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
@@ -43,12 +52,4 @@ module.exports = {
             '@typescript-eslint/parser': ['.ts', '.tsx'],
         },
     },
-    overrides: [
-        {
-            files: ['src/renderer/**'],
-            rules: {
-                indent: ['error', 4],
-            },
-        },
-    ],
 };
