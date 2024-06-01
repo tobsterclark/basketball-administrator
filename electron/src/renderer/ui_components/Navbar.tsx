@@ -30,8 +30,8 @@ const Navbar = () => {
                 icon: <Squares2X2Icon className={iconStyle} />,
             },
             {
-                name: 'Scores',
-                link: '/question-finder',
+                name: 'Results',
+                link: '/results',
                 icon: <CalendarDaysIcon className={iconStyle} />,
             },
             {
@@ -41,7 +41,7 @@ const Navbar = () => {
             },
             {
                 name: 'Teams',
-                link: '/courses',
+                link: '/teams',
                 icon: <ArrowTrendingUpIcon className={iconStyle} />,
             },
         ];
