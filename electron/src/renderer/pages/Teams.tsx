@@ -49,7 +49,7 @@ const Teams = () => {
             </div>
             <div className="flex flex-row gap-12 justify-between pt-2">
                 {/* Team editor */}
-                <div className="w-1/3">
+                <div className="w-1/4">
                     <button type="button" className="flex flex-row gap-4">
                         <SectionTitle text="teamName" />
                         <PencilSquareIcon className="h-6 w-6 inline-block mt-1" />
