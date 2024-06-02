@@ -12,10 +12,12 @@ import {
     GridRowSelectionModel,
     GridRowsProp,
     GridSortModel,
+    gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
+import FormCancelSave from '../ui_components/FormCancelSave';
 
 interface Team {
     id: string;
@@ -185,6 +187,16 @@ const Players = () => {
                                 );
                             }}
                             rowSelectionModel={rowSelectionModel}
+                            sx={{
+                                [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                                [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                            }}
                         />
                     </div>
 
@@ -274,27 +286,13 @@ const Players = () => {
                                     </FormControl>
                                 </div>
                             </div>
-                            <div className="flex flex-row gap-6 pb-8">
-                                {/* Cancel Button */}
-                                <div className="w-1/2 flex flex-col">
-                                    <button
-                                        type="button"
-                                        disabled={selectedPlayer === null}
-                                        className="bg-slate-200 hover:bg-blue-700 text-slate-600 font-semibold py-4 px-4 rounded disabled:cursor-not-allowed"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                                {/* Save Button */}
-                                <div className="w-1/2 flex flex-col">
-                                    <button
-                                        type="button"
-                                        disabled={selectedPlayer === null}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
-                                    >
-                                        Save
-                                    </button>
-                                </div>
+                            <div className="pb-8">
+                                <FormCancelSave
+                                    cancelButtonDisabled={
+                                        selectedPlayer === null
+                                    }
+                                    saveButtonDisabled={selectedPlayer === null}
+                                />
                             </div>
                         </div>
                     </div>
