@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, gridClasses } from '@mui/x-data-grid';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import SectionTitle from '../ui_components/SectionTitle';
@@ -17,10 +17,17 @@ const Teams = () => {
     const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
         id: i,
         number: i + 1,
-        first_name: `John Doe ${i + 1}`,
+        firstName: `John Doe ${i + 1}`,
     }));
 
-    const columns: GridColDef[] = [
+    const standingsRowsTEMP = Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        position: `${i + 1}th`,
+        teamName: `Basketball!`,
+        points: 10 * (i + 1),
+    }));
+
+    const teamEditorColumns: GridColDef[] = [
         {
             field: 'number',
             flex: 0.1,
@@ -28,7 +35,7 @@ const Teams = () => {
             filterable: false,
         },
         {
-            field: 'first_name',
+            field: 'firstName',
             flex: 1,
             sortable: false,
             filterable: false,
@@ -41,6 +48,24 @@ const Teams = () => {
             renderCell: () => (
                 <TrashIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
             ),
+        },
+    ];
+
+    const standingsColumns: GridColDef[] = [
+        {
+            field: 'position',
+            headerName: 'Pos',
+            width: 40,
+        },
+        {
+            field: 'teamName',
+            headerName: 'Team',
+            flex: 1,
+        },
+        {
+            field: 'points',
+            headerName: 'Points',
+            flex: 0.35,
         },
     ];
 
@@ -126,7 +151,7 @@ const Teams = () => {
                         <div className="shadow-md">
                             <DataGrid
                                 rows={teamMemberRowsTEMP}
-                                columns={columns}
+                                columns={teamEditorColumns}
                                 slots={{ columnHeaders: () => null }}
                                 autoHeight
                                 disableColumnMenu
@@ -136,6 +161,16 @@ const Teams = () => {
                                 disableColumnFilter
                                 disableColumnSelector
                                 disableDensitySelector
+                                sx={{
+                                    [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                        {
+                                            outline: 'none',
+                                        },
+                                    [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                        {
+                                            outline: 'none',
+                                        },
+                                }}
                             />
                         </div>
                         <div className="pt-8 pb-4">
@@ -144,12 +179,44 @@ const Teams = () => {
                     </div>
                 </div>
 
-                <div className="flex-grow">
-                    <p>hi</p>
+                <div className="w-1/4">
+                    <h3 className="text-lg font-medium pt-6 pb-2">Standings</h3>
+                    <div className="w-full">
+                        <DataGrid
+                            rows={standingsRowsTEMP}
+                            columns={standingsColumns}
+                            pageSizeOptions={[10]}
+                            disableRowSelectionOnClick
+                            disableColumnResize
+                            disableColumnFilter
+                            disableColumnSelector
+                            disableColumnSorting
+                            disableDensitySelector
+                            disableColumnMenu
+                            sx={{
+                                [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                                [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                                [`& .${gridClasses.columnSeparator}`]: {
+                                    [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
+                                        {
+                                            display: 'none',
+                                        },
+                                },
+                            }}
+                        />
+                    </div>
                 </div>
 
                 <div className="flex-grow">
-                    <p>hi</p>
+                    <h3 className="text-lg font-medium pt-6 pb-2">
+                        Recent Games
+                    </h3>
                 </div>
             </div>
         </PageContainer>

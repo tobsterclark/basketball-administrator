@@ -12,6 +12,7 @@ import {
     GridRowSelectionModel,
     GridRowsProp,
     GridSortModel,
+    gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
@@ -186,6 +187,16 @@ const Players = () => {
                                 );
                             }}
                             rowSelectionModel={rowSelectionModel}
+                            sx={{
+                                [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                                [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                    {
+                                        outline: 'none',
+                                    },
+                            }}
                         />
                     </div>
 
