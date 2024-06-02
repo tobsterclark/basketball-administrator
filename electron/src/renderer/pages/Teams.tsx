@@ -3,15 +3,11 @@ import {
     InputLabel,
     MenuItem,
     Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableRow,
     TextField,
 } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import SectionTitle from '../ui_components/SectionTitle';
@@ -23,6 +19,30 @@ const Teams = () => {
         number: i + 1,
         first_name: `John Doe ${i + 1}`,
     }));
+
+    const columns: GridColDef[] = [
+        {
+            field: 'number',
+            flex: 0.1,
+            sortable: false,
+            filterable: false,
+        },
+        {
+            field: 'first_name',
+            flex: 1,
+            sortable: false,
+            filterable: false,
+        },
+        {
+            field: 'actions',
+            sortable: false,
+            align: 'right',
+            filterable: false,
+            renderCell: () => (
+                <TrashIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
+            ),
+        },
+    ];
 
     return (
         <PageContainer>
@@ -103,25 +123,21 @@ const Teams = () => {
                         <h3 className="text-lg font-medium pt-6 pb-2">
                             Members
                         </h3>
-                        <TableContainer className="shadow-md">
-                            <Table>
-                                <TableBody>
-                                    {teamMemberRowsTEMP.map((row) => (
-                                        <TableRow key={row.id}>
-                                            <TableCell className="w-16">
-                                                {row.number}
-                                            </TableCell>
-                                            <TableCell>
-                                                {row.first_name}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <TrashIcon className="h-4 w-4 inline-block text-red-600" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        <div className="shadow-md">
+                            <DataGrid
+                                rows={teamMemberRowsTEMP}
+                                columns={columns}
+                                slots={{ columnHeaders: () => null }}
+                                autoHeight
+                                disableColumnMenu
+                                disableColumnSorting
+                                disableRowSelectionOnClick
+                                hideFooter
+                                disableColumnFilter
+                                disableColumnSelector
+                                disableDensitySelector
+                            />
+                        </div>
                         <div className="pt-8 pb-4">
                             <FormCancelSave />
                         </div>
