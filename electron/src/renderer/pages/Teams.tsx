@@ -5,7 +5,7 @@ import {
     Select,
     TextField,
 } from '@mui/material';
-import { PlusCircleIcon } from '@heroicons/react/24/solid';
+import { ArrowDownTrayIcon, PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { DataGrid, GridColDef, gridClasses } from '@mui/x-data-grid';
 import PageContainer from '../ui_components/PageContainer';
@@ -25,6 +25,15 @@ const Teams = () => {
         position: `${i + 1}th`,
         teamName: `Basketball!`,
         points: 10 * (i + 1),
+    }));
+
+    const recentGamesRowsTEMP = Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        date: `21/3`,
+        venue: `Belrose`,
+        court: `CT1`,
+        teamA: `Sharks`,
+        teamB: `Bounce`,
     }));
 
     const teamEditorColumns: GridColDef[] = [
@@ -69,6 +78,40 @@ const Teams = () => {
         },
     ];
 
+    const recentGamesColumns: GridColDef[] = [
+        {
+            field: 'date',
+            headerName: 'Date',
+        },
+        {
+            field: 'venue',
+            headerName: 'Venue',
+        },
+        {
+            field: 'court',
+            headerName: 'Court',
+        },
+        {
+            field: 'teamA',
+            headerName: 'Team A',
+        },
+        {
+            field: 'teamB',
+            headerName: 'Team B',
+        },
+        {
+            field: 'download',
+            headerName: ``,
+            sortable: false,
+            align: 'right',
+            filterable: false,
+            renderCell: () => (
+                <ArrowDownTrayIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
+            ),
+            flex: 0.1,
+        },
+    ];
+
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
@@ -95,7 +138,10 @@ const Teams = () => {
             <div className="flex flex-row gap-12 justify-between pt-2">
                 {/* Team editor */}
                 <div className="w-1/4">
-                    <button type="button" className="flex flex-row gap-4">
+                    <button
+                        type="button"
+                        className="flex flex-row gap-4 hover:bg-gray-100"
+                    >
                         <SectionTitle text="teamName" />
                         <PencilSquareIcon className="h-6 w-6 inline-block mt-1" />
                     </button>
@@ -174,7 +220,10 @@ const Teams = () => {
                             />
                         </div>
                         <div className="pt-8 pb-4">
-                            <FormCancelSave />
+                            <FormCancelSave
+                                saveButtonDisabled
+                                cancelButtonDisabled
+                            />
                         </div>
                     </div>
                 </div>
@@ -213,9 +262,39 @@ const Teams = () => {
                     </div>
                 </div>
 
-                <div className="flex-grow">
+                <div className="w-2/5">
                     <h3 className="text-lg font-medium pt-6 pb-2">
                         Recent Games
+                        <div className="">
+                            <DataGrid
+                                rows={recentGamesRowsTEMP}
+                                columns={recentGamesColumns}
+                                pageSizeOptions={[10]}
+                                disableRowSelectionOnClick
+                                disableColumnResize
+                                disableColumnFilter
+                                disableColumnSelector
+                                disableColumnSorting
+                                disableDensitySelector
+                                disableColumnMenu
+                                sx={{
+                                    [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                        {
+                                            outline: 'none',
+                                        },
+                                    [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                        {
+                                            outline: 'none',
+                                        },
+                                    [`& .${gridClasses.columnSeparator}`]: {
+                                        [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
+                                            {
+                                                display: 'none',
+                                            },
+                                    },
+                                }}
+                            />
+                        </div>
                     </h3>
                 </div>
             </div>
