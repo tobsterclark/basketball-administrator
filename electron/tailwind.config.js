@@ -9,9 +9,9 @@ module.exports = {
                 cyan: colors.cyan,
             },
         },
-        variants: {
-            extend: {},
-        },
-        plugins: [],
     },
+    variants: {
+        extend: {},
+    },
+    plugins: [],
 };
