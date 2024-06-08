@@ -15,28 +15,18 @@ import {
     gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { Player, Prisma } from '@prisma/client';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
+import { IpcChannels } from '../../general/IpcChannels';
+import {
+    CrudOperations,
+    ModelName,
+    PrismaCall,
+} from '../../general/prismaTypes';
 import FormCancelSave from '../ui_components/FormCancelSave';
 
-interface Team {
-    id: string;
-    name: string;
-    age_group: string;
-    division: number;
-}
-
-interface Player {
-    id: string;
-    first_name: string;
-    last_name: string;
-    number: number;
-    team_id: string;
-    team: Team;
-}
-
 const Players = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [selectedPlayerEdit, setSelectedPlayerEdit] = useState<Player | null>(
         null,
@@ -83,40 +73,52 @@ const Players = () => {
 
     const getOrderBy = useCallback(() => {
         if (sortModel.length === 0) return {};
-        if (sortModel[0].field === 'team_name') {
-            return { team: { name: sortModel[0].sort } };
+
+        switch (sortModel[0].field) {
+            case 'team_name':
+                return { team: { name: sortModel[0].sort } };
+            case 'age_group':
+                return { team: { age_group: sortModel[0].sort } };
+            default:
+                return { [sortModel[0].field]: sortModel[0].sort };
         }
-        if (sortModel[0].field === 'age_group') {
-            return { team: { age_group: sortModel[0].sort } };
-        }
-        return { [sortModel[0].field]: sortModel[0].sort };
     }, [sortModel]);
 
     // Gets initial 10 players on page load
     useEffect(() => {
         if (!totalPlayersLoaded) return;
-        async function getPrismaData() {
-            window.electron.ipcRenderer.once('prismaPlayerFindMany', (data) => {
-                const players = data as Player[];
-                const rowData: GridRowsProp = players.map((player: Player) => ({
+
+        const playerDataRequest: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.findMany,
+            data: {
+                skip: paginationModel.page * paginationModel.pageSize,
+                take: paginationModel.pageSize,
+                orderBy: getOrderBy(),
+                include: { team: true },
+            },
+        };
+
+        type PlayerDataResponse = Prisma.PlayerGetPayload<{
+            include: { team: true };
+        }>;
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, playerDataRequest)
+            .then((data) => {
+                const players = data as PlayerDataResponse[];
+                const rowData: GridRowsProp = players.map((player) => ({
                     id: player.id,
                     number: player.number,
                     first_name: player.first_name,
-                    age_group: player.team.age_group,
+                    age_group: player.age_group,
                     team_division: player.team.division,
                     team_name: player.team.name,
                 }));
 
                 setTableRowsPlayerData(rowData);
             });
-            window.electron.ipcRenderer.sendMessage('prismaPlayerFindMany', {
-                skip: paginationModel.page * paginationModel.pageSize,
-                take: paginationModel.pageSize,
-                orderBy: getOrderBy(),
-                include: { team: true }, // Including the relational team data
-            });
-        }
-        getPrismaData();
+
         console.log('Bazinga, the data is here! Using sort model', sortModel); // left here intentionally to monitor API calls
     }, [
         getOrderBy,
@@ -128,15 +130,17 @@ const Players = () => {
 
     // Get total players on page load, needed for pagination
     useEffect(() => {
-        async function getTotalPlayers() {
-            window.electron.ipcRenderer.once('prismaPlayerGetCount', (data) => {
-                const players = data as number;
-                setTotalPlayers(players);
+        const totalPlayersRequest: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.count,
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, totalPlayersRequest)
+            .then((data) => {
+                setTotalPlayers(data as number);
                 setTotalPlayersLoaded(true);
             });
-            window.electron.ipcRenderer.sendMessage('prismaPlayerGetCount');
-        }
-        getTotalPlayers();
     }, [totalPlayers]);
 
     const columns: GridColDef[] = [
@@ -189,13 +193,13 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                             }}
                         />
                     </div>

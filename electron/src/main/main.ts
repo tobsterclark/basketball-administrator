@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
 /**
@@ -12,9 +13,10 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import { PrismaClient } from '@prisma/client';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { IpcChannels } from '../general/IpcChannels';
+import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
 
 class AppUpdater {
     constructor() {
@@ -26,58 +28,9 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-// Setting up Prisma for IPC
-const prisma = new PrismaClient();
-
-/**
- * Gets players using `prisma.player.findMany` method
- * @param event - IPC event
- * @param args - Expects `skip`, `take`, and `orderBy`
- * @listens ipcMain:prismaPlayerFindMany
- * @fires ipcMain:prismaFindManyPlayers
- */
-ipcMain.on('prismaPlayerFindMany', async (event, args) => {
-    const { skip, take, orderBy, include } = args;
-    const players = await prisma.player.findMany({
-        skip,
-        take,
-        orderBy,
-        include,
-    });
-    event.reply('prismaPlayerFindMany', players);
-});
-
-/**
- * Gets teams using `prisma.team.findMany` method
- * @param event - IPC event
- */
-ipcMain.on('prismaTeamFindMany', async (event, args) => {
-    const { skip, take, orderBy, include } = args;
-    const teams = await prisma.team.findMany({
-        skip,
-        take,
-        orderBy,
-        include,
-    });
-    event.reply('prismaTeamFindMany', teams);
-});
-
-/**
- * Get the total count of players
- * @param event - IPC event
- * @listens ipcMain:prismaPlayerGetCount
- * @fires ipcMain:prismaGetPlayerCount
- */
-ipcMain.on('prismaPlayerGetCount', async (event) => {
-    const players = await prisma.player.count();
-    event.reply('prismaPlayerGetCount', players);
-});
-
-ipcMain.on('prismaPlayerGetTeam', async (event, args) => {
-    const { id } = args;
-    const team = await prisma.team.findUnique({ where: { id } });
-    event.reply('prismaPlayerGetTeam', team);
-});
+// ipc handlers get defined here
+// implementation should be in a separate file
+ipcMain.handle(IpcChannels.PrismaClient, handleIpcPrismaCalls);
 
 if (process.env.NODE_ENV === 'production') {
     const sourceMapSupport = require('source-map-support');
@@ -157,7 +110,7 @@ const createWindow = async () => {
 
     // Remove this if your app does not use auto updates
     // eslint-disable-next-line
-  new AppUpdater();
+    new AppUpdater();
 };
 
 /**

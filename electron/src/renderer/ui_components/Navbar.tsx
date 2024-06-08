@@ -31,7 +31,9 @@ const Navbar = () => {
             },
             {
                 name: 'Results',
-                link: '/results',
+                // TODO: replace with proper link once page exists
+                // link: '/results',
+                link: '/',
                 icon: <CalendarDaysIcon className={iconStyle} />,
             },
             {
