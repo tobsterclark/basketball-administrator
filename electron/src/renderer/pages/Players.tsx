@@ -14,7 +14,7 @@ import {
     GridSortModel,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
-import { Team } from '@prisma/client';
+import { Player, Prisma } from '@prisma/client';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import { IpcChannels } from '../../general/IpcChannels';
@@ -23,16 +23,6 @@ import {
     ModelName,
     PrismaCall,
 } from '../../general/prismaTypes';
-
-// TODO: Use Prisma generated type here
-interface Player {
-    id: string;
-    first_name: string;
-    last_name: string;
-    number: number;
-    team_id: string;
-    team: Team;
-}
 
 const Players = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -107,15 +97,19 @@ const Players = () => {
             },
         };
 
+        type PlayerDataResponse = Prisma.PlayerGetPayload<{
+            include: { team: true };
+        }>;
+
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, playerDataRequest)
             .then((data) => {
-                const players = data as Player[];
-                const rowData: GridRowsProp = players.map((player: Player) => ({
+                const players = data as PlayerDataResponse[];
+                const rowData: GridRowsProp = players.map((player) => ({
                     id: player.id,
                     number: player.number,
                     first_name: player.first_name,
-                    age_group: player.team.age_group,
+                    age_group: player.age_group,
                     team_division: player.team.division,
                     team_name: player.team.name,
                 }));

@@ -1,24 +1,31 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { IpcChannels } from '../../general/IpcChannels';
-import { PrismaCall } from '../../general/prismaTypes';
-
-const prisma = new PrismaClient();
-
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { IpcMainInvokeEvent } from 'electron';
+import {
+    PrismaCall,
+    PrismaValidator,
+    prismaClient,
+} from '../../general/prismaTypes';
+
 export const handleIpcPrismaCalls = async (
-    event: Electron.IpcMainEvent,
-    ...args: any
+    event: IpcMainInvokeEvent,
+    ...args: any[]
 ) => {
-    const prismaCall = args as PrismaCall;
+    if (args[0] == null || args.length > 1)
+        throw Error('Prisma IPC calls must be provided one arg');
+    const prismaCall = args[0] as PrismaCall;
 
-    const data = Prisma.validator(
-        prisma,
-        prismaCall.model,
-        prismaCall.operation,
-    )(prismaCall.data || {});
+    let res: any;
 
-    // @ts-ignore: type errors with Prisma Validator
-    await prisma[prismaCall.model][prismaCall.operation]({ data });
+    if (prismaCall.data) {
+        // @ts-ignore: type errors with Prisma Validator
+        res = await prismaClient[prismaCall.model][prismaCall.operation](
+            PrismaValidator(prismaCall),
+        );
+    } else {
+        // @ts-ignore: type errors with Prisma Validator
+        res = await prismaClient[prismaCall.model][prismaCall.operation]();
+    }
 
-    event.reply(IpcChannels.PrismaClient);
+    return res;
 };
