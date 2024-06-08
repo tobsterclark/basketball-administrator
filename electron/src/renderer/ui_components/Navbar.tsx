@@ -24,38 +24,39 @@ const Navbar = () => {
             link: string;
             icon: React.JSX.Element;
         }[] = [
-                {
-                    name: 'Dashboard',
-                    link: '/',
-                    icon: <Squares2X2Icon className={iconStyle} />,
-                },
-                {
-                    name: 'Scores',
-                    // link: '/question-finder',
-                    link: '/',
-                    icon: <CalendarDaysIcon className={iconStyle} />,
-                },
-                {
-                    name: 'Players',
-                    link: '/players',
-                    icon: <GlobeAsiaAustraliaIcon className={iconStyle} />,
-                },
-                {
-                    name: 'Teams',
-                    link: '/',
-                    // link: '/courses',
-                    icon: <ArrowTrendingUpIcon className={iconStyle} />,
-                },
-            ];
+            {
+                name: 'Dashboard',
+                link: '/',
+                icon: <Squares2X2Icon className={iconStyle} />,
+            },
+            {
+                name: 'Results',
+                // TODO: replace with proper link once page exists
+                // link: '/results',
+                link: '/',
+                icon: <CalendarDaysIcon className={iconStyle} />,
+            },
+            {
+                name: 'Players',
+                link: '/players',
+                icon: <GlobeAsiaAustraliaIcon className={iconStyle} />,
+            },
+            {
+                name: 'Teams',
+                link: '/teams',
+                icon: <ArrowTrendingUpIcon className={iconStyle} />,
+            },
+        ];
 
         return (
             <div className={divStyle}>
                 {linkList.map((value, index) => {
                     let fullLinkStyle = linkStyle;
-                    fullLinkStyle += ` rounded-lg ${locationPathName === value.link
+                    fullLinkStyle += ` rounded-lg ${
+                        locationPathName === value.link
                             ? 'bg-red-500 shadow-sm'
                             : 'hover:bg-gray-100 bg-transparent'
-                        }`;
+                    }`;
 
                     return (
                         <Link
