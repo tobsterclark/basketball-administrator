@@ -75,10 +75,10 @@ const Players = () => {
         if (sortModel.length === 0) return {};
 
         switch (sortModel[0].field) {
-            case 'team_name':
+            case 'teamName':
                 return { team: { name: sortModel[0].sort } };
-            case 'age_group':
-                return { team: { age_group: sortModel[0].sort } };
+            case 'ageGroup':
+                return { team: { ageGroup: sortModel[0].sort } };
             default:
                 return { [sortModel[0].field]: sortModel[0].sort };
         }
@@ -110,10 +110,10 @@ const Players = () => {
                 const rowData: GridRowsProp = players.map((player) => ({
                     id: player.id,
                     number: player.number,
-                    first_name: player.firstName,
-                    age_group: player.ageGroup.displayName,
-                    team_division: player.team.division,
-                    team_name: player.team.name,
+                    firstName: player.firstName,
+                    ageGroup: player.ageGroup.displayName,
+                    teamDivision: player.team.division,
+                    teamName: player.team.name,
                 }));
 
                 setTableRowsPlayerData(rowData);
@@ -145,10 +145,10 @@ const Players = () => {
 
     const columns: GridColDef[] = [
         { field: 'number', headerName: 'Number', width: 100 },
-        { field: 'first_name', headerName: 'Name', width: 200 }, // TODO: fix first/last name when data is in correct format
-        { field: 'age_group', headerName: 'Age', width: 100 },
+        { field: 'firstName', headerName: 'Name', width: 200 }, // TODO: fix first/last name when data is in correct format
+        { field: 'ageGroup', headerName: 'Age', width: 100 },
         // { field: 'team_division', headerName: 'Division', width: 100 }, // TODO: fix when team division info is included
-        { field: 'team_name', headerName: 'Team', width: 150 },
+        { field: 'teamName', headerName: 'Team', width: 150 },
     ];
 
     return (
@@ -193,13 +193,13 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                             }}
                         />
                     </div>
@@ -213,7 +213,7 @@ const Players = () => {
                                     id="playerDataEditor_firstName"
                                     label="First Name"
                                     variant="outlined"
-                                    value={selectedPlayerEdit?.first_name ?? ''}
+                                    value={selectedPlayerEdit?.firstName ?? ''}
                                     onChange={handleInputChange}
                                     disabled={selectedPlayer === null}
                                 />
