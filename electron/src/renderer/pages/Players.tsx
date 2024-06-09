@@ -31,11 +31,6 @@ const Players = () => {
         include: { team: true; ageGroup: true };
     }>;
 
-    type ageGroupDataResponse =
-        Prisma.AgeGroupGetPayload<Prisma.AgeGroupDefaultArgs>;
-
-    type teamNamesDataResponse = Prisma.TeamGetPayload<Prisma.TeamDefaultArgs>;
-
     const [selectedPlayer, setSelectedPlayer] =
         useState<PlayerDataResponse | null>(null);
     const [selectedPlayerEdit, setSelectedPlayerEdit] =
@@ -63,8 +58,8 @@ const Players = () => {
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
 
-    const [validAgeGroups, setValidAgeGroups] = useState<string[]>([]);
-    const [teamNames, setTeamNames] = useState<string[]>([]);
+    const [allAgeGroups, setAllAgeGroups] = useState<string[]>([]);
+    const [allTeamNames, setAllTeamNames] = useState<string[]>([]);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (selectedPlayerEdit) {
@@ -136,7 +131,7 @@ const Players = () => {
         totalPlayersLoaded,
     ]);
 
-    // Get total players on page load, needed for pagination
+    // Get total number of players on page load, needed for pagination
     useEffect(() => {
         const totalPlayersRequest: PrismaCall = {
             model: ModelName.player,
@@ -151,38 +146,39 @@ const Players = () => {
             });
     }, [totalPlayers]);
 
-    // Get valid age groups and team names on page load
+    // Gets all age groups and team names for dropdowns on mount, ignores duplicates
     useEffect(() => {
         const ageGroupRequest: PrismaCall = {
             model: ModelName.ageGroup,
             operation: CrudOperations.findMany,
         };
 
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, ageGroupRequest)
-            .then((data) => {
-                const ageGroups = data as ageGroupDataResponse[];
-                const ageGroupNames = ageGroups.map(
-                    (ageGroup) => ageGroup.displayName,
-                );
-                const uniqueAgeGroupNames = [...new Set(ageGroupNames)]; // removes duplicates
-                setValidAgeGroups(uniqueAgeGroupNames);
-                console.log(`Age groups: ${uniqueAgeGroupNames}`);
-            });
-
         const teamNamesRequest: PrismaCall = {
             model: ModelName.team,
             operation: CrudOperations.findMany,
         };
 
+        type AgeGroupDisplayName = { displayName: string };
+        type TeamNames = { name: string };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, ageGroupRequest)
+            .then((data) => {
+                const ageGroups = data as AgeGroupDisplayName[];
+                setAllAgeGroups([
+                    ...new Set(
+                        ageGroups.map((ageGroup) => ageGroup.displayName),
+                    ),
+                ]);
+            });
+
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, teamNamesRequest)
             .then((data) => {
-                const allTeams = data as teamNamesDataResponse[];
-                const allTeamNames = allTeams.map((team) => team.name);
-                const uniqueTeamNames = [...new Set(allTeamNames)]; // removes duplicates
-                setTeamNames(uniqueTeamNames);
-                console.log(`team names: ${uniqueTeamNames}`);
+                const dataAllTeamNames = data as TeamNames[];
+                setAllTeamNames([
+                    ...new Set(dataAllTeamNames.map((team) => team.name)),
+                ]);
             });
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -302,7 +298,7 @@ const Players = () => {
                                             label="Team"
                                             disabled={selectedPlayer === null}
                                         >
-                                            {teamNames.map((teamName) => (
+                                            {allTeamNames.map((teamName) => (
                                                 <MenuItem value={teamName}>
                                                     {teamName}
                                                 </MenuItem>
@@ -330,7 +326,7 @@ const Players = () => {
                                             label="Age Group"
                                             disabled={selectedPlayer === null}
                                         >
-                                            {validAgeGroups.map((ageGroup) => (
+                                            {allAgeGroups.map((ageGroup) => (
                                                 <MenuItem value={ageGroup}>
                                                     {ageGroup}
                                                 </MenuItem>
