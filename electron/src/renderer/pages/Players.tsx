@@ -15,7 +15,7 @@ import {
     gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
-import { Player, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import { IpcChannels } from '../../general/IpcChannels';
@@ -27,10 +27,19 @@ import {
 import FormCancelSave from '../ui_components/FormCancelSave';
 
 const Players = () => {
-    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-    const [selectedPlayerEdit, setSelectedPlayerEdit] = useState<Player | null>(
-        null,
-    );
+    type PlayerDataResponse = Prisma.PlayerGetPayload<{
+        include: { team: true; ageGroup: true };
+    }>;
+
+    type ageGroupDataResponse =
+        Prisma.AgeGroupGetPayload<Prisma.AgeGroupDefaultArgs>;
+
+    type teamNamesDataResponse = Prisma.TeamGetPayload<Prisma.TeamDefaultArgs>;
+
+    const [selectedPlayer, setSelectedPlayer] =
+        useState<PlayerDataResponse | null>(null);
+    const [selectedPlayerEdit, setSelectedPlayerEdit] =
+        useState<PlayerDataResponse | null>(null);
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -54,6 +63,9 @@ const Players = () => {
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
 
+    const [validAgeGroups, setValidAgeGroups] = useState<string[]>([]);
+    const [teamNames, setTeamNames] = useState<string[]>([]);
+
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (selectedPlayerEdit) {
             setSelectedPlayerEdit({
@@ -66,7 +78,7 @@ const Players = () => {
     const selectPlayerById = (id: string) => {
         const player = tableRowsPlayerData.find(
             (row) => row.id === id,
-        ) as Player;
+        ) as PlayerDataResponse;
         setSelectedPlayer(player);
         setSelectedPlayerEdit(player);
     };
@@ -98,10 +110,6 @@ const Players = () => {
                 include: { team: true, ageGroup: true },
             },
         };
-
-        type PlayerDataResponse = Prisma.PlayerGetPayload<{
-            include: { team: true; ageGroup: true };
-        }>;
 
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, playerDataRequest)
@@ -142,6 +150,43 @@ const Players = () => {
                 setTotalPlayersLoaded(true);
             });
     }, [totalPlayers]);
+
+    // Get valid age groups and team names on page load
+    useEffect(() => {
+        const ageGroupRequest: PrismaCall = {
+            model: ModelName.ageGroup,
+            operation: CrudOperations.findMany,
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, ageGroupRequest)
+            .then((data) => {
+                const ageGroups = data as ageGroupDataResponse[];
+                const ageGroupNames = ageGroups.map(
+                    (ageGroup) => ageGroup.displayName,
+                );
+                const uniqueAgeGroupNames = [...new Set(ageGroupNames)]; // removes duplicates
+                setValidAgeGroups(uniqueAgeGroupNames);
+                console.log(`Age groups: ${uniqueAgeGroupNames}`);
+            });
+
+        const teamNamesRequest: PrismaCall = {
+            model: ModelName.team,
+            operation: CrudOperations.findMany,
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, teamNamesRequest)
+            .then((data) => {
+                const allTeams = data as teamNamesDataResponse[];
+                const allTeamNames = allTeams.map((team) => team.name);
+                const uniqueTeamNames = [...new Set(allTeamNames)]; // removes duplicates
+                setTeamNames(uniqueTeamNames);
+                console.log(`team names: ${uniqueTeamNames}`);
+            });
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const columns: GridColDef[] = [
         { field: 'number', headerName: 'Number', width: 100 },
@@ -250,19 +295,18 @@ const Players = () => {
                                         <Select
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
-                                            value=""
+                                            value={
+                                                selectedPlayerEdit?.teamName ??
+                                                ''
+                                            }
                                             label="Team"
                                             disabled={selectedPlayer === null}
                                         >
-                                            <MenuItem value="Team 1">
-                                                Team 1
-                                            </MenuItem>
-                                            <MenuItem value="Team 2">
-                                                Team 2
-                                            </MenuItem>
-                                            <MenuItem value="Team 3">
-                                                Team 4
-                                            </MenuItem>
+                                            {teamNames.map((teamName) => (
+                                                <MenuItem value={teamName}>
+                                                    {teamName}
+                                                </MenuItem>
+                                            ))}
                                         </Select>
                                     </FormControl>
                                 </div>
@@ -279,13 +323,18 @@ const Players = () => {
                                         <Select
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
-                                            value=""
+                                            value={
+                                                selectedPlayerEdit?.ageGroup ??
+                                                ''
+                                            }
                                             label="Age Group"
                                             disabled={selectedPlayer === null}
                                         >
-                                            <MenuItem value="3-4">3-4</MenuItem>
-                                            <MenuItem value="5-6">5-6</MenuItem>
-                                            <MenuItem value="7-8">7-8</MenuItem>
+                                            {validAgeGroups.map((ageGroup) => (
+                                                <MenuItem value={ageGroup}>
+                                                    {ageGroup}
+                                                </MenuItem>
+                                            ))}
                                         </Select>
                                     </FormControl>
                                 </div>
