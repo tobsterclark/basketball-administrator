@@ -10,6 +10,7 @@ export enum ModelName {
     game = 'game',
     player = 'player',
     timeslot = 'timeslot',
+    ageGroup = 'ageGroup',
 }
 
 export enum CrudOperations {

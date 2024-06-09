@@ -95,12 +95,12 @@ const Players = () => {
                 skip: paginationModel.page * paginationModel.pageSize,
                 take: paginationModel.pageSize,
                 orderBy: getOrderBy(),
-                include: { team: true },
+                include: { team: true, ageGroup: true },
             },
         };
 
         type PlayerDataResponse = Prisma.PlayerGetPayload<{
-            include: { team: true };
+            include: { team: true; ageGroup: true };
         }>;
 
         window.electron.ipcRenderer
@@ -110,8 +110,8 @@ const Players = () => {
                 const rowData: GridRowsProp = players.map((player) => ({
                     id: player.id,
                     number: player.number,
-                    first_name: player.first_name,
-                    age_group: player.age_group,
+                    first_name: player.firstName,
+                    age_group: player.ageGroup.displayName,
                     team_division: player.team.division,
                     team_name: player.team.name,
                 }));
