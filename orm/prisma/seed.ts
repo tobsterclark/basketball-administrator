@@ -1,29 +1,29 @@
-import { AgeGroup, Location, Prisma, PrismaClient } from "@prisma/client";
+import { Location, Prisma, PrismaClient } from "@prisma/client";
 import sampleData from "./TestTeamData.json";
 
 const prisma = new PrismaClient();
 
-type TimeslotCreateResponse = Prisma.Payload<typeof prisma.timeslot, "create">;
-
 // TODO: This is ugly af, too tired to not write jank
 async function main() {
-    await seedTeamsPlayers();
-    await seedTimeslots();
-    await seedGames();
+    const adultAgeGroupId = await seedTeamsPlayers();
+    await seedTimeslots(adultAgeGroupId);
+    await seedGames(adultAgeGroupId);
 }
 
+// I despise everythign about what im doing but oh well
 async function seedTeamsPlayers() {
     const keys = Object.keys(sampleData);
+    let adultAgeGroup = ""
 
     for (const key of keys) {
         const players = sampleData[key as keyof typeof sampleData];
-        const [teamName, ageGroup] = key.split("-");
+        const [teamName, unformattedAgeGroup] = key.split("-");
+        const ageGroup = unformattedAgeGroup === "adults" ? unformattedAgeGroup : `years ${unformattedAgeGroup}`
 
         const team = await prisma.team.create({
             data: {
                 name: teamName,
-                age_group:
-                    ageGroup == "adults" ? AgeGroup.ADULTS : AgeGroup.KIDS,
+                ageGroup: { create: { displayName: ageGroup } },
                 division: null,
             },
         });
@@ -32,29 +32,33 @@ async function seedTeamsPlayers() {
             players.map(async (val) => {
                 return await prisma.player.create({
                     data: {
-                        first_name: val[0]?.toString() || "",
-                        last_name: "",
+                        firstName: val[0]?.toString() || "",
+                        lastName: "",
                         number: Number(val[1]),
                         team: { connect: team },
-                        age_group: team.age_group,
+                        ageGroup: { connect: { id: team.ageGroupId } },
                     },
                 });
             }),
         );
 
+        if (ageGroup === "adults") { adultAgeGroup = team.ageGroupId }
+
         console.log(`created team ${key}`);
     }
+
+    return adultAgeGroup
 }
 
 // TODO: This is so poorly done
-async function seedTimeslots() {
+async function seedTimeslots(adultAgeGroupId: string) {
     const dateTime1 = new Date(Date.parse("2024-05-22T19:00:00"));
     const dateTime2 = new Date(Date.parse("2024-05-22T19:45:00"));
     const dateTime3 = new Date(Date.parse("2024-05-22T20:30:00"));
     const timeslot: Prisma.TimeslotCreateInput = {
         location: Location.ST_IVES,
         court: 1,
-        age_group: AgeGroup.ADULTS,
+        ageGroup: { connect: { id: adultAgeGroupId } },
         date: dateTime1,
     };
     let allTimeslots: Prisma.TimeslotCreateInput[] = [timeslot];
@@ -70,25 +74,26 @@ async function seedTimeslots() {
     }
 }
 
-async function seedGames() {
-    const timeslots = await prisma.timeslot.findMany({
-        where: { age_group: AgeGroup.ADULTS },
-    });
-    const teams = await prisma.team.findMany({
-        where: { age_group: AgeGroup.ADULTS },
-    });
+async function seedGames(adultAgeGroupId: string) {
+    const timeslots = await prisma.timeslot.findMany({ where: { ageGroupId: adultAgeGroupId } });
+    const teams = await prisma.team.findMany({ where: { ageGroupId: adultAgeGroupId } });
 
     for (const slot of timeslots) {
         const lightTeam = teams.pop();
         const darkTeam = teams.pop();
 
+        if (lightTeam === undefined || darkTeam === undefined) {
+            console.warn("One of the two teams was undefined!!")
+            break
+        }
+
         await prisma.game.create({
             data: {
-                team_dark: { connect: darkTeam },
-                team_light: { connect: lightTeam },
+                darkTeam: { connect: darkTeam },
+                lightTeam: { connect: lightTeam },
                 timeslot: { connect: slot },
-                light_score: 40,
-                dark_score: 25,
+                lightScore: 40,
+                darkScore: 25,
             },
         });
     }

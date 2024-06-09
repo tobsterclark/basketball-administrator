@@ -5,61 +5,69 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model Game {
-  id            String   @id @default(uuid())
-  team_light    Team     @relation("game_team_dark", fields: [team_light_id], references: [id])
-  team_light_id String
-  team_dark     Team     @relation("game_team_light", fields: [team_dark_id], references: [id])
-  team_dark_id  String
-  light_score   Int
-  dark_score    Int
-  timeslot      Timeslot @relation(fields: [timeslot_id], references: [id])
-  timeslot_id   String   @unique
+    id          String   @id @default(uuid()) @map("_id")
+    lightTeam   Team     @relation("game_team_dark", fields: [lightTeamId], references: [id])
+    lightTeamId String
+    darkTeam    Team     @relation("game_team_light", fields: [darkTeamId], references: [id])
+    darkTeamId  String
+    lightScore  Int
+    darkScore   Int
+    timeslot    Timeslot @relation(fields: [timeslotId], references: [id])
+    timeslotId  String   @unique
 }
 
 model Team {
-  id          String   @id @default(uuid())
-  name        String
-  age_group   AgeGroup
-  dark_games  Game[]   @relation("game_team_dark")
-  light_games Game[]   @relation("game_team_light")
-  players     Player[]
-  division    Int?
+    id         String   @id @default(uuid()) @map("_id")
+    name       String
+    ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+    ageGroupId String
+    lightGames Game[]   @relation("game_team_light")
+    darkGames  Game[]   @relation("game_team_dark")
+    players    Player[]
+    division   Int?
 }
 
 model Player {
-  id         String   @id @default(uuid())
-  first_name String
-  last_name  String
-  number     Int?
-  team       Team     @relation(fields: [team_id], references: [id])
-  team_id    String
-  age_group  AgeGroup
+    id         String   @id @default(uuid()) @map("_id")
+    firstName  String
+    lastName   String
+    number     Int?
+    team       Team     @relation(fields: [teamId], references: [id])
+    teamId     String
+    ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+    ageGroupId String
 }
 
 model Timeslot {
-  id        String   @id @default(uuid())
-  location  Location
-  court     Int
-  age_group AgeGroup
-  date      DateTime
-  game      Game?
+    id         String   @id @default(uuid()) @map("_id")
+    location   Location
+    court      Int
+    ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+    ageGroupId String
+    date       DateTime
+    game       Game?
+
+    @@unique([location, date, court])
 }
 
-enum AgeGroup {
-  KIDS
-  ADULTS
+model AgeGroup {
+    id          String     @id @default(uuid()) @map("_id")
+    displayName String
+    timeslots   Timeslot[]
+    players     Player[]
+    teams       Team[]
 }
 
 enum Location {
-  ST_IVES
-  BELROSE
+    ST_IVES
+    BELROSE
 }
