@@ -58,6 +58,8 @@ const Players = () => {
         },
     ]);
 
+    const [searchBoxInput, setSearchBoxInput] = useState<string>('');
+
     const [totalPlayers, setTotalPlayers] = useState<number>(-1);
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
@@ -225,6 +227,8 @@ const Players = () => {
                         label="Search players"
                         variant="filled"
                         autoFocus
+                        value={searchBoxInput}
+                        onChange={(e) => setSearchBoxInput(e.target.value)}
                         fullWidth
                     />
                 </div>
