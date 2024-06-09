@@ -31,6 +31,10 @@ const Players = () => {
         include: { team: true; ageGroup: true };
     }>;
 
+    const [cachedPlayers, setCachedPlayers] = useState<
+        Map<string, PlayerDataResponse>
+    >(new Map());
+
     const [selectedPlayer, setSelectedPlayer] =
         useState<PlayerDataResponse | null>(null);
     const [selectedPlayerEdit, setSelectedPlayerEdit] =
@@ -70,12 +74,15 @@ const Players = () => {
         }
     };
 
+    // Selects player from cachedPlayers map
     const selectPlayerById = (id: string) => {
-        const player = tableRowsPlayerData.find(
-            (row) => row.id === id,
-        ) as PlayerDataResponse;
-        setSelectedPlayer(player);
-        setSelectedPlayerEdit(player);
+        const player = cachedPlayers.get(id);
+        if (player) {
+            setSelectedPlayer(player);
+            setSelectedPlayerEdit(player);
+            console.log(`updated selected player to be:`);
+            console.log(player);
+        }
     };
 
     const getOrderBy = useCallback(() => {
@@ -110,6 +117,17 @@ const Players = () => {
             .invoke(IpcChannels.PrismaClient, playerDataRequest)
             .then((data) => {
                 const players = data as PlayerDataResponse[];
+
+                // Updating player cache to include newly fetched players
+                setCachedPlayers((currentCache) => {
+                    const newCache = new Map(currentCache);
+                    players.forEach((player) => {
+                        newCache.set(player.id, player);
+                    });
+                    return newCache;
+                });
+
+                // Map results to table rows
                 const rowData: GridRowsProp = players.map((player) => ({
                     id: player.id,
                     number: player.number,
@@ -123,6 +141,8 @@ const Players = () => {
             });
 
         console.log('Bazinga, the data is here! Using sort model', sortModel); // left here intentionally to monitor API calls
+
+        // if cachedPlayers is added to dep arr, infinite loop caused
     }, [
         getOrderBy,
         paginationModel,
@@ -156,6 +176,9 @@ const Players = () => {
         const teamNamesRequest: PrismaCall = {
             model: ModelName.team,
             operation: CrudOperations.findMany,
+            data: {
+                orderBy: { name: 'asc' },
+            },
         };
 
         type AgeGroupDisplayName = { displayName: string };
@@ -167,7 +190,7 @@ const Players = () => {
                 const ageGroups = data as AgeGroupDisplayName[];
                 setAllAgeGroups([
                     ...new Set(
-                        ageGroups.map((ageGroup) => ageGroup.displayName),
+                        ageGroups.map((ageGroup) => ageGroup.displayName), // avoids duplicates
                     ),
                 ]);
             });
@@ -177,7 +200,7 @@ const Players = () => {
             .then((data) => {
                 const dataAllTeamNames = data as TeamNames[];
                 setAllTeamNames([
-                    ...new Set(dataAllTeamNames.map((team) => team.name)),
+                    ...new Set(dataAllTeamNames.map((team) => team.name)), // avoids duplicates
                 ]);
             });
 
@@ -292,8 +315,8 @@ const Players = () => {
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={
-                                                selectedPlayerEdit?.teamName ??
-                                                ''
+                                                selectedPlayerEdit?.team
+                                                    ?.name ?? ''
                                             }
                                             label="Team"
                                             disabled={selectedPlayer === null}
@@ -320,8 +343,8 @@ const Players = () => {
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={
-                                                selectedPlayerEdit?.ageGroup ??
-                                                ''
+                                                selectedPlayerEdit?.ageGroup
+                                                    ?.displayName ?? ''
                                             }
                                             label="Age Group"
                                             disabled={selectedPlayer === null}
