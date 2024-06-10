@@ -170,6 +170,9 @@ const configuration: webpack.Configuration = {
   },
 
   devServer: {
+    client: {
+      logging: 'warn', // NOTE: set to warn to suppress HMR & webpack-dev-server updates
+    },
     port,
     compress: true,
     hot: true,

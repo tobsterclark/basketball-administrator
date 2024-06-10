@@ -4,6 +4,7 @@ import {
     InputLabel,
     MenuItem,
     Select,
+    SelectChangeEvent,
     TextField,
 } from '@mui/material';
 import {
@@ -29,6 +30,14 @@ import FormCancelSave from '../ui_components/FormCancelSave';
 const Players = () => {
     type PlayerDataResponse = Prisma.PlayerGetPayload<{
         include: { team: true; ageGroup: true };
+    }>;
+
+    type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
+        select: { id: true; displayName: true };
+    }>;
+
+    type TeamDataResponse = Prisma.TeamGetPayload<{
+        select: { id: true; name: true; ageGroupId: true; division: true };
     }>;
 
     const [cachedPlayers, setCachedPlayers] = useState<
@@ -64,15 +73,31 @@ const Players = () => {
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
 
-    const [allAgeGroups, setAllAgeGroups] = useState<string[]>([]);
-    const [allTeamNames, setAllTeamNames] = useState<string[]>([]);
+    const [allAgeGroups, setAllAgeGroups] = useState<AgeGroupDataResponse[]>(
+        [],
+    );
+    const [allTeamNames, setAllTeamNames] = useState<TeamDataResponse[]>([]);
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handlePlayerEditorInputChange = (
+        e: ChangeEvent<HTMLInputElement>,
+    ) => {
         if (selectedPlayerEdit) {
+            console.log(`updating '${e.target.name}' to '${e.target.value}'`);
             setSelectedPlayerEdit({
                 ...selectedPlayerEdit,
                 [e.target.name]: e.target.value,
             });
+        }
+    };
+
+    const handlePlayerEditorMenuChange = (e: SelectChangeEvent<string>) => {
+        if (selectedPlayerEdit) {
+            console.log(`updating ${e.target.name} to '${e.target.value}'`);
+            // const ageGroupId =
+            // setSelectedPlayerEdit({
+            //     ...selectedPlayerEdit,
+            //     ageGroup: { displayName: e.target.value as string },
+            // });
         }
     };
 
@@ -197,27 +222,18 @@ const Players = () => {
             },
         };
 
-        type AgeGroupDisplayName = { displayName: string };
-        type TeamNames = { name: string };
-
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, ageGroupRequest)
             .then((data) => {
-                const ageGroups = data as AgeGroupDisplayName[];
-                setAllAgeGroups([
-                    ...new Set(
-                        ageGroups.map((ageGroup) => ageGroup.displayName), // avoids duplicates
-                    ),
-                ]);
+                const ageGroups = data as AgeGroupDataResponse[];
+                setAllAgeGroups(ageGroups);
             });
 
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, teamNamesRequest)
             .then((data) => {
-                const dataAllTeamNames = data as TeamNames[];
-                setAllTeamNames([
-                    ...new Set(dataAllTeamNames.map((team) => team.name)), // avoids duplicates
-                ]);
+                const dataAllTeamNames = data as TeamDataResponse[];
+                setAllTeamNames(dataAllTeamNames);
             });
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,13 +311,15 @@ const Players = () => {
                                     id="playerDataEditor_firstName"
                                     label="First Name"
                                     variant="outlined"
+                                    name="firstName"
                                     value={selectedPlayerEdit?.firstName ?? ''}
-                                    onChange={handleInputChange}
+                                    onChange={handlePlayerEditorInputChange}
                                     disabled={selectedPlayer === null}
                                 />
                                 <TextField
                                     id="playerDataEditor_lastName"
                                     label="Last Name"
+                                    name="lastName"
                                     variant="outlined"
                                     disabled={selectedPlayer === null}
                                 />
@@ -313,8 +331,9 @@ const Players = () => {
                                     id="playerDataEditor_number"
                                     label="Player Number"
                                     variant="outlined"
+                                    name="number"
                                     value={selectedPlayerEdit?.number ?? ''}
-                                    onChange={handleInputChange}
+                                    onChange={handlePlayerEditorInputChange}
                                     disabled={selectedPlayer === null}
                                 />
                             </div>
@@ -333,15 +352,14 @@ const Players = () => {
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={
-                                                selectedPlayerEdit?.team
-                                                    ?.name ?? ''
+                                                selectedPlayerEdit?.teamId ?? ''
                                             }
                                             label="Team"
                                             disabled={selectedPlayer === null}
                                         >
-                                            {allTeamNames.map((teamName) => (
-                                                <MenuItem value={teamName}>
-                                                    {teamName}
+                                            {allTeamNames.map((team) => (
+                                                <MenuItem value={team.id}>
+                                                    {team.name}
                                                 </MenuItem>
                                             ))}
                                         </Select>
@@ -361,15 +379,19 @@ const Players = () => {
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={
-                                                selectedPlayerEdit?.ageGroup
-                                                    ?.displayName ?? ''
+                                                selectedPlayerEdit?.ageGroupId ??
+                                                ''
                                             }
                                             label="Age Group"
                                             disabled={selectedPlayer === null}
+                                            name="ageGroupId"
+                                            onChange={
+                                                handlePlayerEditorMenuChange
+                                            }
                                         >
                                             {allAgeGroups.map((ageGroup) => (
-                                                <MenuItem value={ageGroup}>
-                                                    {ageGroup}
+                                                <MenuItem value={ageGroup.id}>
+                                                    {ageGroup.displayName}
                                                 </MenuItem>
                                             ))}
                                         </Select>
