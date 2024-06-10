@@ -94,13 +94,13 @@ const Players = () => {
             case 'teamName':
                 return { team: { name: sortModel[0].sort } };
             case 'ageGroup':
-                return { team: { ageGroup: sortModel[0].sort } };
+                return { ageGroup: { displayName: sortModel[0].sort } };
             default:
                 return { [sortModel[0].field]: sortModel[0].sort };
         }
     }, [sortModel]);
 
-    // Gets initial 10 players on page load
+    // Gets 10 players at a time, used for pagination
     useEffect(() => {
         if (!totalPlayersLoaded) return;
 
@@ -115,10 +115,11 @@ const Players = () => {
                 /* eslint-disable indent */
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
-                    ? {
+                    ? // If search box has data, only return results that start with search input
+                      {
                           where: {
                               firstName: {
-                                  contains: searchBoxInput,
+                                  startsWith: searchBoxInput,
                                   mode: 'insensitive',
                               },
                           },
@@ -156,9 +157,7 @@ const Players = () => {
                 setTableRowsPlayerData(rowData);
             });
 
-        console.log('Bazinga, the data is here! Using sort model', sortModel); // left here intentionally to monitor API calls
-
-        // if cachedPlayers is added to dep arr, infinite loop caused
+        console.log('Bazinga, data fetched! Using sort model', sortModel); // left here intentionally to monitor API calls
     }, [
         getOrderBy,
         paginationModel,
