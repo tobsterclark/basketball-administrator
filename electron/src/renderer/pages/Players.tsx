@@ -381,7 +381,15 @@ const Players = () => {
                                     cancelButtonDisabled={
                                         selectedPlayer === null
                                     }
-                                    saveButtonDisabled={selectedPlayer === null}
+                                    saveButtonDisabled={
+                                        selectedPlayer === null ||
+                                        selectedPlayer === selectedPlayerEdit
+                                    }
+                                    onCancelClick={() => {
+                                        setSelectedPlayerEdit(null);
+                                        setSelectedPlayer(null);
+                                        setRowSelectionModel([]);
+                                    }}
                                 />
                             </div>
                         </div>
