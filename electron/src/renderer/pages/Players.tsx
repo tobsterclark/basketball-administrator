@@ -112,6 +112,20 @@ const Players = () => {
                 take: paginationModel.pageSize,
                 orderBy: getOrderBy(),
                 include: { team: true, ageGroup: true },
+                /* eslint-disable indent */
+                /* eslint-disable prettier/prettier */
+                ...(searchBoxInput
+                    ? {
+                          where: {
+                              firstName: {
+                                  contains: searchBoxInput,
+                                  mode: 'insensitive',
+                              },
+                          },
+                      }
+                    : {}),
+                /* eslint-enable indent */
+                /* eslint-enable prettier/prettier */
             },
         };
 
@@ -151,6 +165,7 @@ const Players = () => {
         sortModel,
         totalPlayers,
         totalPlayersLoaded,
+        searchBoxInput,
     ]);
 
     // Get total number of players on page load, needed for pagination
