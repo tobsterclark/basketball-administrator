@@ -92,12 +92,33 @@ const Players = () => {
 
     const handlePlayerEditorMenuChange = (e: SelectChangeEvent<string>) => {
         if (selectedPlayerEdit) {
-            console.log(`updating ${e.target.name} to '${e.target.value}'`);
-            // const ageGroupId =
-            // setSelectedPlayerEdit({
-            //     ...selectedPlayerEdit,
-            //     ageGroup: { displayName: e.target.value as string },
-            // });
+            if (e.target.name === 'teamId') {
+                const team = allTeamNames.find(
+                    (foundTeam) => foundTeam.id === e.target.value,
+                );
+                if (team) {
+                    setSelectedPlayerEdit({
+                        ...selectedPlayerEdit,
+                        teamId: team.id,
+                    });
+                } else {
+                    console.error(`Team with id ${e.target.value} not found`);
+                }
+            } else if (e.target.name === 'ageGroupId') {
+                const ageGroup = allAgeGroups.find(
+                    (foundAgeGroup) => foundAgeGroup.id === e.target.value,
+                );
+                if (ageGroup) {
+                    setSelectedPlayerEdit({
+                        ...selectedPlayerEdit,
+                        ageGroupId: ageGroup.id,
+                    });
+                } else {
+                    console.error(
+                        `Age group with id ${e.target.value} not found`,
+                    );
+                }
+            }
         }
     };
 
@@ -319,8 +340,10 @@ const Players = () => {
                                 <TextField
                                     id="playerDataEditor_lastName"
                                     label="Last Name"
-                                    name="lastName"
                                     variant="outlined"
+                                    name="lastName"
+                                    value={selectedPlayerEdit?.lastName ?? ''}
+                                    onChange={handlePlayerEditorInputChange}
                                     disabled={selectedPlayer === null}
                                 />
                             </div>
@@ -355,7 +378,11 @@ const Players = () => {
                                                 selectedPlayerEdit?.teamId ?? ''
                                             }
                                             label="Team"
+                                            name="teamId"
                                             disabled={selectedPlayer === null}
+                                            onChange={
+                                                handlePlayerEditorMenuChange
+                                            }
                                         >
                                             {allTeamNames.map((team) => (
                                                 <MenuItem value={team.id}>
