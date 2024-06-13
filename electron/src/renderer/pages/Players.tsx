@@ -32,6 +32,9 @@ const Players = () => {
         include: { team: true; ageGroup: true };
     }>;
 
+    // For storing player data in cache without team and age group data. Used for updating database & to reduce repeated data
+    type PlayerCache = Omit<PlayerDataResponse, 'team' | 'ageGroup'>;
+
     type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
         select: { id: true; displayName: true };
     }>;
@@ -41,13 +44,14 @@ const Players = () => {
     }>;
 
     const [cachedPlayers, setCachedPlayers] = useState<
-        Map<string, PlayerDataResponse>
+        Map<string, PlayerCache>
     >(new Map());
 
-    const [selectedPlayer, setSelectedPlayer] =
-        useState<PlayerDataResponse | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>(
+        null,
+    );
     const [selectedPlayerEdit, setSelectedPlayerEdit] =
-        useState<PlayerDataResponse | null>(null);
+        useState<PlayerCache | null>(null);
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -83,10 +87,13 @@ const Players = () => {
     ) => {
         if (selectedPlayerEdit) {
             console.log(`updating '${e.target.name}' to '${e.target.value}'`);
-            setSelectedPlayerEdit({
+            const updatedPlayer = {
                 ...selectedPlayerEdit,
                 [e.target.name]: e.target.value,
-            });
+            };
+            setSelectedPlayerEdit(updatedPlayer);
+            console.log('selectedPlayerEdit:');
+            console.log(updatedPlayer);
         }
     };
 
@@ -97,10 +104,13 @@ const Players = () => {
                     (foundTeam) => foundTeam.id === e.target.value,
                 );
                 if (team) {
-                    setSelectedPlayerEdit({
+                    const updatedPlayer = {
                         ...selectedPlayerEdit,
                         teamId: team.id,
-                    });
+                    };
+                    setSelectedPlayerEdit(updatedPlayer);
+                    console.log('selectedPlayerEdit:');
+                    console.log(updatedPlayer);
                 } else {
                     console.error(`Team with id ${e.target.value} not found`);
                 }
@@ -109,10 +119,13 @@ const Players = () => {
                     (foundAgeGroup) => foundAgeGroup.id === e.target.value,
                 );
                 if (ageGroup) {
-                    setSelectedPlayerEdit({
+                    const updatedPlayer = {
                         ...selectedPlayerEdit,
                         ageGroupId: ageGroup.id,
-                    });
+                    };
+                    setSelectedPlayerEdit(updatedPlayer);
+                    console.log('selectedPlayerEdit:');
+                    console.log(updatedPlayer);
                 } else {
                     console.error(
                         `Age group with id ${e.target.value} not found`,
@@ -181,10 +194,16 @@ const Players = () => {
             .then((data) => {
                 const players = data as PlayerDataResponse[];
 
+                // Removing team and age group objects from players to store in cache
+                const playersCached = players.map(
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    ({ team, ageGroup, ...rest }) => rest,
+                );
+
                 // Updating player cache to include newly fetched players
                 setCachedPlayers((currentCache) => {
                     const newCache = new Map(currentCache);
-                    players.forEach((player) => {
+                    playersCached.forEach((player) => {
                         newCache.set(player.id, player);
                     });
                     return newCache;
@@ -385,7 +404,10 @@ const Players = () => {
                                             }
                                         >
                                             {allTeamNames.map((team) => (
-                                                <MenuItem value={team.id}>
+                                                <MenuItem
+                                                    key={team.id}
+                                                    value={team.id}
+                                                >
                                                     {team.name}
                                                 </MenuItem>
                                             ))}
