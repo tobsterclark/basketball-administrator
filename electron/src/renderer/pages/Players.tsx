@@ -13,10 +13,12 @@ import {
     GridRowSelectionModel,
     GridRowsProp,
     GridSortModel,
+    GridValidRowModel,
     gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { Prisma } from '@prisma/client';
+import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import { IpcChannels } from '../../general/IpcChannels';
@@ -81,6 +83,58 @@ const Players = () => {
         [],
     );
     const [allTeamNames, setAllTeamNames] = useState<TeamDataResponse[]>([]);
+
+    const [isCreatingNewPlayer, setIsCreatingNewPlayer] =
+        useState<boolean>(false);
+
+    const [escrowPlayer, setEscrowPlayer] = useState<GridValidRowModel | null>(
+        null,
+    );
+
+    const handleNewPlayer = () => {
+        if (!isCreatingNewPlayer) {
+            setIsCreatingNewPlayer(true);
+            const newPlayer: PlayerCache = {
+                id: 'TEMP',
+                number: 0,
+                firstName: '',
+                lastName: '',
+                teamId: '',
+                ageGroupId: '',
+            };
+            // Store last player in table into escrow
+            setEscrowPlayer(
+                tableRowsPlayerData[tableRowsPlayerData.length - 1],
+            );
+
+            // Remove last index in tableRowsPlayerData
+            setTableRowsPlayerData((currentRows) => {
+                const removeLast = currentRows.slice(0, -1);
+                const newRows = [{ ...newPlayer }, ...removeLast];
+                return newRows;
+            });
+            setRowSelectionModel([newPlayer.id]);
+            setSelectedPlayer(newPlayer);
+            setSelectedPlayerEdit(newPlayer);
+        }
+    };
+
+    // Handles resetting states if new player creation is cancelled. Also resets selected player on call.
+    const handleCancelNewPlayer = () => {
+        setIsCreatingNewPlayer(false);
+        if (escrowPlayer) {
+            setTableRowsPlayerData((currentRows) => {
+                const removeFirst = currentRows.slice(1);
+                const newRows = [...removeFirst, escrowPlayer];
+                return newRows;
+            });
+
+            setEscrowPlayer(null);
+        }
+        setRowSelectionModel([]);
+        setSelectedPlayer(null);
+        setSelectedPlayerEdit(null);
+    };
 
     const handlePlayerEditorInputChange = (
         e: ChangeEvent<HTMLInputElement>,
@@ -291,16 +345,29 @@ const Players = () => {
         <PageContainer>
             <PageTitle text="Player Management" />
             <div>
-                <div className="pb-6 pt-12 md:w-1/2 xl:w-1/3 2xl:w-1/4">
-                    <TextField
-                        id="playerSearchInput"
-                        label="Search players"
-                        variant="filled"
-                        autoFocus
-                        value={searchBoxInput}
-                        onChange={(e) => setSearchBoxInput(e.target.value)}
-                        fullWidth
-                    />
+                <div className="flex flex-row pt-12 pb-6 gap-6">
+                    <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
+                        <TextField
+                            id="playerSearchInput"
+                            label="Search players"
+                            variant="filled"
+                            autoFocus
+                            value={searchBoxInput}
+                            onChange={(e) => setSearchBoxInput(e.target.value)}
+                            fullWidth
+                        />
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            disabled={isCreatingNewPlayer}
+                            onClick={handleNewPlayer}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
+                        >
+                            New Player
+                            <PlusCircleIcon className="h-6 w-6 inline-block ml-2" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
@@ -314,15 +381,22 @@ const Players = () => {
                             loading={!totalPlayersLoaded}
                             rowCount={totalPlayers}
                             paginationModel={paginationModel}
-                            onPaginationModelChange={setPaginationModel}
+                            onPaginationModelChange={(newPaginationModel) => {
+                                handleCancelNewPlayer();
+                                setPaginationModel(newPaginationModel);
+                            }}
                             pageSizeOptions={[10]}
                             sortModel={sortModel}
-                            onSortModelChange={(newSortModel) =>
-                                setSortModel(newSortModel)
-                            }
+                            onSortModelChange={(newSortModel) => {
+                                handleCancelNewPlayer();
+                                setSortModel(newSortModel);
+                            }}
                             onRowSelectionModelChange={(
                                 newRowSelectionModel,
                             ) => {
+                                if (isCreatingNewPlayer) {
+                                    handleCancelNewPlayer();
+                                }
                                 setRowSelectionModel(newRowSelectionModel);
                                 selectPlayerById(
                                     newRowSelectionModel[0] as string,
@@ -452,6 +526,7 @@ const Players = () => {
                                     cancelButtonDisabled={
                                         selectedPlayer === null
                                     }
+                                    // Add functionality to savebutton disabled if new player all fields arent filled
                                     saveButtonDisabled={
                                         selectedPlayer === null ||
                                         selectedPlayer === selectedPlayerEdit
@@ -460,6 +535,9 @@ const Players = () => {
                                         setSelectedPlayerEdit(null);
                                         setSelectedPlayer(null);
                                         setRowSelectionModel([]);
+                                        if (isCreatingNewPlayer) {
+                                            handleCancelNewPlayer();
+                                        }
                                     }}
                                 />
                             </div>
