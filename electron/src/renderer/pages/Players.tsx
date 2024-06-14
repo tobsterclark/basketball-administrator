@@ -91,6 +91,20 @@ const Players = () => {
         null,
     );
 
+    // Used for checking if all fields are filled in new player creation, to disable save button
+    const checkForValidNewPlayer = (): boolean => {
+        if (
+            selectedPlayerEdit?.firstName !== '' &&
+            selectedPlayerEdit?.lastName !== '' &&
+            selectedPlayerEdit?.number !== 0 &&
+            selectedPlayerEdit?.teamId !== '' &&
+            selectedPlayerEdit?.ageGroupId !== ''
+        ) {
+            return false;
+        }
+        return true;
+    };
+
     const handleNewPlayer = () => {
         if (!isCreatingNewPlayer) {
             setIsCreatingNewPlayer(true);
@@ -513,7 +527,10 @@ const Players = () => {
                                             }
                                         >
                                             {allAgeGroups.map((ageGroup) => (
-                                                <MenuItem value={ageGroup.id}>
+                                                <MenuItem
+                                                    key={ageGroup.id}
+                                                    value={ageGroup.id}
+                                                >
                                                     {ageGroup.displayName}
                                                 </MenuItem>
                                             ))}
@@ -528,8 +545,16 @@ const Players = () => {
                                     }
                                     // Add functionality to savebutton disabled if new player all fields arent filled
                                     saveButtonDisabled={
-                                        selectedPlayer === null ||
-                                        selectedPlayer === selectedPlayerEdit
+                                        !isCreatingNewPlayer
+                                            ? selectedPlayer === null ||
+                                              selectedPlayer ===
+                                                  selectedPlayerEdit
+                                            : checkForValidNewPlayer()
+                                    }
+                                    saveButtonText={
+                                        isCreatingNewPlayer
+                                            ? 'Add Player'
+                                            : 'Save'
                                     }
                                     onCancelClick={() => {
                                         setSelectedPlayerEdit(null);

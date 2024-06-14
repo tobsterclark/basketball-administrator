@@ -5,6 +5,7 @@ type FormCancelSaveProps = {
     saveButtonDisabled?: boolean;
     onCancelClick?: () => void;
     onSaveClick?: () => void;
+    saveButtonText?: string;
 };
 
 const FormCancelSave: React.FC<FormCancelSaveProps> = ({
@@ -12,6 +13,7 @@ const FormCancelSave: React.FC<FormCancelSaveProps> = ({
     saveButtonDisabled,
     onCancelClick,
     onSaveClick,
+    saveButtonText,
 }) => {
     return (
         <div className="flex flex-row gap-6">
@@ -40,7 +42,7 @@ const FormCancelSave: React.FC<FormCancelSaveProps> = ({
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded disabled:bg-blue-300 disabled:hover:bg-blue-300 disabled:cursor-not-allowed"
                     onClick={onSaveClick}
                 >
-                    Save
+                    {saveButtonText}
                 </button>
             </div>
         </div>
@@ -52,6 +54,7 @@ FormCancelSave.defaultProps = {
     saveButtonDisabled: false,
     onCancelClick: () => {},
     onSaveClick: () => {},
+    saveButtonText: 'Save',
 };
 
 export default FormCancelSave;
