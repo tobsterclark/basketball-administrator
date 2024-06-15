@@ -92,7 +92,7 @@ const Players = () => {
     );
 
     // Used for checking if all fields are filled in new player creation, to disable save button
-    const checkForValidNewPlayer = (): boolean => {
+    const newPlayerIsValid = (): boolean => {
         if (
             selectedPlayerEdit?.firstName !== '' &&
             selectedPlayerEdit?.lastName !== '' &&
@@ -100,9 +100,66 @@ const Players = () => {
             selectedPlayerEdit?.teamId !== '' &&
             selectedPlayerEdit?.ageGroupId !== ''
         ) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
+    };
+
+    const createNewPlayerPrisma = () => {
+        if (isCreatingNewPlayer && newPlayerIsValid() && selectedPlayerEdit) {
+            const newPlayerPush: PrismaCall = {
+                model: ModelName.player,
+                operation: CrudOperations.create,
+                data: {
+                    data: {
+                        firstName: selectedPlayerEdit.firstName,
+                        lastName: selectedPlayerEdit.lastName,
+                        number: selectedPlayerEdit.number, // TODO: this is being sent with a string type for some reason
+                        teamId: selectedPlayerEdit.teamId,
+                        ageGroupId: selectedPlayerEdit.ageGroupId,
+                        team: { connect: { id: selectedPlayerEdit.teamId } },
+                        ageGroup: {
+                            connect: { id: selectedPlayerEdit.ageGroupId },
+                        },
+                    },
+                },
+            };
+
+            window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, newPlayerPush)
+                .then((data) => {
+                    const newPlayer = data as PlayerDataResponse;
+                    console.log(`New player added to DB! -->`);
+                    console.log(newPlayer);
+
+                    // Removing team and age group objects from players to store in cache
+                    // const playersCached = players.map(
+                    //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    //     ({ team, ageGroup, ...rest }) => rest,
+                    // );
+
+                    // // Updating player cache to include newly fetched players
+                    // setCachedPlayers((currentCache) => {
+                    //     const newCache = new Map(currentCache);
+                    //     playersCached.forEach((player) => {
+                    //         newCache.set(player.id, player);
+                    //     });
+                    //     return newCache;
+                    // });
+
+                    // // Map results to table rows
+                    // const rowData: GridRowsProp = players.map((player) => ({
+                    //     id: player.id,
+                    //     number: player.number,
+                    //     firstName: player.firstName,
+                    //     ageGroup: player.ageGroup.displayName,
+                    //     teamDivision: player.team.division,
+                    //     teamName: player.team.name,
+                    // }));
+
+                    // setTableRowsPlayerData(rowData);
+                });
+        }
     };
 
     const handleNewPlayer = () => {
@@ -543,25 +600,37 @@ const Players = () => {
                                     cancelButtonDisabled={
                                         selectedPlayer === null
                                     }
-                                    // Add functionality to savebutton disabled if new player all fields arent filled
-                                    saveButtonDisabled={
-                                        !isCreatingNewPlayer
-                                            ? selectedPlayer === null ||
-                                              selectedPlayer ===
-                                                  selectedPlayerEdit
-                                            : checkForValidNewPlayer()
-                                    }
-                                    saveButtonText={
-                                        isCreatingNewPlayer
-                                            ? 'Add Player'
-                                            : 'Save'
-                                    }
                                     onCancelClick={() => {
                                         setSelectedPlayerEdit(null);
                                         setSelectedPlayer(null);
                                         setRowSelectionModel([]);
                                         if (isCreatingNewPlayer) {
                                             handleCancelNewPlayer();
+                                        }
+                                    }}
+                                    // Add functionality to savebutton disabled if new player all fields arent filled
+                                    saveButtonDisabled={
+                                        !isCreatingNewPlayer
+                                            ? selectedPlayer === null ||
+                                              selectedPlayer ===
+                                                  selectedPlayerEdit
+                                            : !newPlayerIsValid()
+                                    }
+                                    saveButtonText={
+                                        isCreatingNewPlayer
+                                            ? 'Add Player'
+                                            : 'Save'
+                                    }
+                                    onSaveClick={() => {
+                                        if (
+                                            isCreatingNewPlayer &&
+                                            newPlayerIsValid()
+                                        ) {
+                                            createNewPlayerPrisma();
+                                        } else {
+                                            console.log(
+                                                `Add logic for UPDATING Player info! isCreating new player: ${isCreatingNewPlayer}, newPlayerIsValid(): ${newPlayerIsValid()}`,
+                                            );
                                         }
                                     }}
                                 />
