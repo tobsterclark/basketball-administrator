@@ -8,10 +8,10 @@ import {
 import { ArrowDownTrayIcon, PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { DataGrid, GridColDef, gridClasses } from '@mui/x-data-grid';
-import PageContainer from '../ui_components/PageContainer';
-import PageTitle from '../ui_components/PageTitle';
-import SectionTitle from '../ui_components/SectionTitle';
-import FormCancelSave from '../ui_components/FormCancelSave';
+import PageContainer from '../../ui_components/PageContainer';
+import PageTitle from '../../ui_components/PageTitle';
+import SectionTitle from '../../ui_components/SectionTitle';
+import FormCancelSave from '../../ui_components/FormCancelSave';
 
 const Teams = () => {
     const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
@@ -209,13 +209,13 @@ const Teams = () => {
                                 disableDensitySelector
                                 sx={{
                                     [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
+                                    {
+                                        outline: 'none',
+                                    },
                                     [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
+                                    {
+                                        outline: 'none',
+                                    },
                                 }}
                             />
                         </div>
@@ -244,18 +244,18 @@ const Teams = () => {
                             disableColumnMenu
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnSeparator}`]: {
                                     [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                        {
-                                            display: 'none',
-                                        },
+                                    {
+                                        display: 'none',
+                                    },
                                 },
                             }}
                         />
@@ -279,18 +279,18 @@ const Teams = () => {
                                 disableColumnMenu
                                 sx={{
                                     [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
+                                    {
+                                        outline: 'none',
+                                    },
                                     [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
+                                    {
+                                        outline: 'none',
+                                    },
                                     [`& .${gridClasses.columnSeparator}`]: {
                                         [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                            {
-                                                display: 'none',
-                                            },
+                                        {
+                                            display: 'none',
+                                        },
                                     },
                                 }}
                             />

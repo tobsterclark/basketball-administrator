@@ -3,8 +3,8 @@ import 'tailwindcss/tailwind.css';
 import './App.css';
 import Inlet from './Inlet';
 import Dashboard from './pages/Dashboard';
-import Players from './pages/Players';
-import Teams from './pages/Teams';
+import Players from './pages/players/Players';
+import Teams from './pages/teams/Teams';
 
 const App = () => {
     return (

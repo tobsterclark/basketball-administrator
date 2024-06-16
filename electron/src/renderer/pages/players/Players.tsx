@@ -18,16 +18,16 @@ import {
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { Prisma } from '@prisma/client';
-import { PlusCircleIcon } from '@heroicons/react/24/solid';
-import PageContainer from '../ui_components/PageContainer';
-import PageTitle from '../ui_components/PageTitle';
-import { IpcChannels } from '../../general/IpcChannels';
+import PageContainer from '../../ui_components/PageContainer';
+import PageTitle from '../../ui_components/PageTitle';
+import { IpcChannels } from '../../../general/IpcChannels';
 import {
     CrudOperations,
     ModelName,
     PrismaCall,
-} from '../../general/prismaTypes';
-import FormCancelSave from '../ui_components/FormCancelSave';
+} from '../../../general/prismaTypes';
+import FormCancelSave from '../../ui_components/FormCancelSave';
+import { PlayerSearch } from './components/PlayerSearch';
 
 const Players = () => {
     type PlayerDataResponse = Prisma.PlayerGetPayload<{
@@ -300,14 +300,14 @@ const Players = () => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                      {
-                          where: {
-                              firstName: {
-                                  startsWith: searchBoxInput,
-                                  mode: 'insensitive',
-                              },
-                          },
-                      }
+                    {
+                        where: {
+                            firstName: {
+                                startsWith: searchBoxInput,
+                                mode: 'insensitive',
+                            },
+                        },
+                    }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -416,31 +416,12 @@ const Players = () => {
         <PageContainer>
             <PageTitle text="Player Management" />
             <div>
-                <div className="flex flex-row pt-12 pb-6 gap-6">
-                    <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
-                        <TextField
-                            id="playerSearchInput"
-                            label="Search players"
-                            variant="filled"
-                            autoFocus
-                            value={searchBoxInput}
-                            onChange={(e) => setSearchBoxInput(e.target.value)}
-                            fullWidth
-                        />
-                    </div>
-                    <div>
-                        <button
-                            type="button"
-                            disabled={isCreatingNewPlayer}
-                            onClick={handleNewPlayer}
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
-                        >
-                            New Player
-                            <PlusCircleIcon className="h-6 w-6 inline-block ml-2" />
-                        </button>
-                    </div>
-                </div>
-
+                <PlayerSearch
+                    searchBoxInput={searchBoxInput}
+                    setSearchBoxInput={setSearchBoxInput}
+                    addPlayerDisabled={isCreatingNewPlayer}
+                    handleAddPlayer={handleNewPlayer}
+                />
                 <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
                     {/* Table */}
                     <div className="w-3/5 shadow-md ">
@@ -476,13 +457,13 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                             }}
                         />
                     </div>
@@ -612,8 +593,8 @@ const Players = () => {
                                     saveButtonDisabled={
                                         !isCreatingNewPlayer
                                             ? selectedPlayer === null ||
-                                              selectedPlayer ===
-                                                  selectedPlayerEdit
+                                            selectedPlayer ===
+                                            selectedPlayerEdit
                                             : !newPlayerIsValid()
                                     }
                                     saveButtonText={
