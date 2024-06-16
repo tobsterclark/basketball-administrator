@@ -1,12 +1,7 @@
 import { TextField } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
+import { PlayerSearchProps } from './Types';
 
-interface PlayerSearchProps {
-    searchBoxInput: string;
-    setSearchBoxInput: (val: string) => void;
-    addPlayerDisabled: boolean;
-    handleAddPlayer: () => void;
-}
 
 export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
     const {

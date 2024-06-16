@@ -1,13 +1,5 @@
 /* eslint-disable no-console */
 import {
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    TextField,
-} from '@mui/material';
-import {
     DataGrid,
     GridColDef,
     GridRowSelectionModel,
@@ -16,8 +8,7 @@ import {
     GridValidRowModel,
     gridClasses,
 } from '@mui/x-data-grid';
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
-import { Prisma } from '@prisma/client';
+import { useCallback, useEffect, useState } from 'react';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { IpcChannels } from '../../../general/IpcChannels';
@@ -26,34 +17,21 @@ import {
     ModelName,
     PrismaCall,
 } from '../../../general/prismaTypes';
-import FormCancelSave from '../../ui_components/FormCancelSave';
 import { PlayerSearch } from './components/PlayerSearch';
+import {
+    AgeGroupDataResponse,
+    PlayerCache,
+    PlayerDataResponse,
+    TeamDataResponse,
+} from './components/Types';
+import { PlayerData } from './components/PlayerData';
 
 const Players = () => {
-    type PlayerDataResponse = Prisma.PlayerGetPayload<{
-        include: { team: true; ageGroup: true };
-    }>;
-
-    // For storing player data in cache without team and age group data. Used for updating database & to reduce repeated data
-    type PlayerCache = Omit<PlayerDataResponse, 'team' | 'ageGroup'>;
-
-    type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
-        select: { id: true; displayName: true };
-    }>;
-
-    type TeamDataResponse = Prisma.TeamGetPayload<{
-        select: { id: true; name: true; ageGroupId: true; division: true };
-    }>;
-
     const [cachedPlayers, setCachedPlayers] = useState<
         Map<string, PlayerCache>
     >(new Map());
 
-    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>(
-        null,
-    );
-    const [selectedPlayerEdit, setSelectedPlayerEdit] =
-        useState<PlayerCache | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>();
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -94,11 +72,11 @@ const Players = () => {
     // Used for checking if all fields are filled in new player creation, to disable save button
     const newPlayerIsValid = (): boolean => {
         if (
-            selectedPlayerEdit?.firstName !== '' &&
-            selectedPlayerEdit?.lastName !== '' &&
-            selectedPlayerEdit?.number !== 0 &&
-            selectedPlayerEdit?.teamId !== '' &&
-            selectedPlayerEdit?.ageGroupId !== ''
+            selectedPlayer?.firstName !== '' &&
+            selectedPlayer?.lastName !== '' &&
+            selectedPlayer?.number !== 0 &&
+            selectedPlayer?.teamId !== '' &&
+            selectedPlayer?.ageGroupId !== ''
         ) {
             return true;
         }
@@ -109,12 +87,12 @@ const Players = () => {
         if (
             isCreatingNewPlayer &&
             newPlayerIsValid() &&
-            selectedPlayerEdit &&
-            selectedPlayerEdit.number !== null
+            selectedPlayer &&
+            selectedPlayer.number !== null
         ) {
             // Converts player number as string to number/int as req. by Prisma
             const playerNumberInt: number = parseInt(
-                String(selectedPlayerEdit.number),
+                String(selectedPlayer.number),
                 10,
             );
 
@@ -124,12 +102,12 @@ const Players = () => {
                 data: {
                     include: { team: true, ageGroup: true }, // used for getting team and age group data in returned object
                     data: {
-                        firstName: selectedPlayerEdit.firstName,
-                        lastName: selectedPlayerEdit.lastName,
+                        firstName: selectedPlayer.firstName,
+                        lastName: selectedPlayer.lastName,
                         number: playerNumberInt,
-                        team: { connect: { id: selectedPlayerEdit.teamId } },
+                        team: { connect: { id: selectedPlayer.teamId } },
                         ageGroup: {
-                            connect: { id: selectedPlayerEdit.ageGroupId },
+                            connect: { id: selectedPlayer.ageGroupId },
                         },
                     },
                 },
@@ -200,7 +178,6 @@ const Players = () => {
             });
             setRowSelectionModel([newPlayer.id]);
             setSelectedPlayer(newPlayer);
-            setSelectedPlayerEdit(newPlayer);
         }
     };
 
@@ -218,71 +195,12 @@ const Players = () => {
         }
         setRowSelectionModel([]);
         setSelectedPlayer(null);
-        setSelectedPlayerEdit(null);
-    };
-
-    const handlePlayerEditorInputChange = (
-        e: ChangeEvent<HTMLInputElement>,
-    ) => {
-        if (selectedPlayerEdit) {
-            const { name } = e.target;
-            let { value } = e.target;
-            if (name === 'number') {
-                // Regex to remove all non-numeric characters and leading zeroes
-                // (unless the zero is the only character in the string),
-                // and limit number input to 6 characters
-                value = value.replace(/\D/g, '').replace(/^0+(?!$)/, '');
-                value = value.substring(0, 6);
-            }
-            const updatedPlayer = {
-                ...selectedPlayerEdit,
-                [name]: value,
-            };
-            setSelectedPlayerEdit(updatedPlayer);
-        }
-    };
-
-    const handlePlayerEditorMenuChange = (e: SelectChangeEvent<string>) => {
-        if (selectedPlayerEdit) {
-            if (e.target.name === 'teamId') {
-                const team = allTeamNames.find(
-                    (foundTeam) => foundTeam.id === e.target.value,
-                );
-                if (team) {
-                    const updatedPlayer = {
-                        ...selectedPlayerEdit,
-                        teamId: team.id,
-                    };
-                    setSelectedPlayerEdit(updatedPlayer);
-                } else {
-                    console.error(`Team with id ${e.target.value} not found`);
-                }
-            } else if (e.target.name === 'ageGroupId') {
-                const ageGroup = allAgeGroups.find(
-                    (foundAgeGroup) => foundAgeGroup.id === e.target.value,
-                );
-                if (ageGroup) {
-                    const updatedPlayer = {
-                        ...selectedPlayerEdit,
-                        ageGroupId: ageGroup.id,
-                    };
-                    setSelectedPlayerEdit(updatedPlayer);
-                } else {
-                    console.error(
-                        `Age group with id ${e.target.value} not found`,
-                    );
-                }
-            }
-        }
     };
 
     // Selects player from cachedPlayers map
     const selectPlayerById = (id: string) => {
         const player = cachedPlayers.get(id);
-        if (player) {
-            setSelectedPlayer(player);
-            setSelectedPlayerEdit(player);
-        }
+        if (player) setSelectedPlayer(player);
     };
 
     const getOrderBy = useCallback(() => {
@@ -314,14 +232,14 @@ const Players = () => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                      {
-                          where: {
-                              firstName: {
-                                  startsWith: searchBoxInput,
-                                  mode: 'insensitive',
-                              },
-                          },
-                      }
+                    {
+                        where: {
+                            firstName: {
+                                startsWith: searchBoxInput,
+                                mode: 'insensitive',
+                            },
+                        },
+                    }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -471,167 +389,46 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                             }}
                         />
                     </div>
 
                     {/* Player data editor */}
-                    <div className="bg-gray-50 shadow-md rounded-md h-min">
-                        <div className="pl-6 pr-6 pt-4">
-                            {/* First Name & Last Name */}
-                            <div className="flex flex-row gap-4 pb-8">
-                                <TextField
-                                    id="playerDataEditor_firstName"
-                                    label="First Name"
-                                    variant="outlined"
-                                    name="firstName"
-                                    value={selectedPlayerEdit?.firstName ?? ''}
-                                    onChange={handlePlayerEditorInputChange}
-                                    disabled={selectedPlayer === null}
-                                />
-                                <TextField
-                                    id="playerDataEditor_lastName"
-                                    label="Last Name"
-                                    variant="outlined"
-                                    name="lastName"
-                                    value={selectedPlayerEdit?.lastName ?? ''}
-                                    onChange={handlePlayerEditorInputChange}
-                                    disabled={selectedPlayer === null}
-                                />
-                            </div>
-
-                            {/* Player Number */}
-                            <div className="w-36 pb-8">
-                                <TextField
-                                    id="playerDataEditor_number"
-                                    label="Player Number"
-                                    variant="outlined"
-                                    name="number"
-                                    value={selectedPlayerEdit?.number ?? ''}
-                                    onChange={handlePlayerEditorInputChange}
-                                    disabled={selectedPlayer === null}
-                                />
-                            </div>
-
-                            <div className="flex flex-row gap-4 pb-12">
-                                {/* Team Select */}
-                                <div className="w-2/3 flex-grow">
-                                    <FormControl fullWidth>
-                                        <InputLabel
-                                            id="demo-simple-select-label"
-                                            disabled={selectedPlayer === null}
-                                        >
-                                            Team
-                                        </InputLabel>
-                                        <Select
-                                            labelId="demo-simple-select-label"
-                                            id="demo-simple-select"
-                                            value={
-                                                selectedPlayerEdit?.teamId ?? ''
-                                            }
-                                            label="Team"
-                                            name="teamId"
-                                            disabled={selectedPlayer === null}
-                                            onChange={
-                                                handlePlayerEditorMenuChange
-                                            }
-                                        >
-                                            {allTeamNames.map((team) => (
-                                                <MenuItem
-                                                    key={team.id}
-                                                    value={team.id}
-                                                >
-                                                    {team.name}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </div>
-
-                                {/* Age Group */}
-                                <div className="flex-shrink w-1/3">
-                                    <FormControl fullWidth>
-                                        <InputLabel
-                                            id="demo-simple-select-label"
-                                            disabled={selectedPlayer === null}
-                                        >
-                                            Age Group
-                                        </InputLabel>
-                                        <Select
-                                            labelId="demo-simple-select-label"
-                                            id="demo-simple-select"
-                                            value={
-                                                selectedPlayerEdit?.ageGroupId ??
-                                                ''
-                                            }
-                                            label="Age Group"
-                                            disabled={selectedPlayer === null}
-                                            name="ageGroupId"
-                                            onChange={
-                                                handlePlayerEditorMenuChange
-                                            }
-                                        >
-                                            {allAgeGroups.map((ageGroup) => (
-                                                <MenuItem
-                                                    key={ageGroup.id}
-                                                    value={ageGroup.id}
-                                                >
-                                                    {ageGroup.displayName}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                </div>
-                            </div>
-                            <div className="pb-8">
-                                <FormCancelSave
-                                    cancelButtonDisabled={
-                                        selectedPlayer === null
-                                    }
-                                    onCancelClick={() => {
-                                        setSelectedPlayerEdit(null);
-                                        setSelectedPlayer(null);
-                                        setRowSelectionModel([]);
-                                        if (isCreatingNewPlayer) {
-                                            handleCancelNewPlayer();
-                                        }
-                                    }}
-                                    // Add functionality to savebutton disabled if new player all fields arent filled
-                                    saveButtonDisabled={
-                                        !isCreatingNewPlayer
-                                            ? selectedPlayer === null ||
-                                              selectedPlayer ===
-                                                  selectedPlayerEdit
-                                            : !newPlayerIsValid()
-                                    }
-                                    saveButtonText={
-                                        isCreatingNewPlayer
-                                            ? 'Add Player'
-                                            : 'Save'
-                                    }
-                                    onSaveClick={() => {
-                                        if (
-                                            isCreatingNewPlayer &&
-                                            newPlayerIsValid()
-                                        ) {
-                                            createNewPlayerPrisma();
-                                        } else {
-                                            console.log(
-                                                `Add logic for UPDATING Player info! isCreating new player: ${isCreatingNewPlayer}, newPlayerIsValid(): ${newPlayerIsValid()}`,
-                                            );
-                                        }
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    {/* TODO: I feel like we could further minimise what we pass through here */}
+                    <PlayerData
+                        selectedPlayer={selectedPlayer}
+                        updateSelectedPlayer={setSelectedPlayer}
+                        teams={allTeamNames}
+                        ageGroups={allAgeGroups}
+                        isCreatingNewPlayer={isCreatingNewPlayer}
+                        onCancelClick={() => {
+                            setSelectedPlayer(null);
+                            setRowSelectionModel([]);
+                            if (isCreatingNewPlayer) handleCancelNewPlayer();
+                        }}
+                        onSaveClick={() => {
+                            if (isCreatingNewPlayer && newPlayerIsValid()) {
+                                createNewPlayerPrisma();
+                            } else {
+                                // TODO: Add logic for updating player info
+                                console.warn(
+                                    'player not valid or not being created',
+                                );
+                            }
+                        }}
+                        saveButtonDisabled={
+                            isCreatingNewPlayer
+                                ? !newPlayerIsValid()
+                                : selectedPlayer === null
+                        }
+                    />
                 </div>
             </div>
         </PageContainer>
