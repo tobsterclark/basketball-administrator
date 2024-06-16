@@ -122,6 +122,7 @@ const Players = () => {
                 model: ModelName.player,
                 operation: CrudOperations.create,
                 data: {
+                    include: { team: true, ageGroup: true }, // used for getting team and age group data in returned object
                     data: {
                         firstName: selectedPlayerEdit.firstName,
                         lastName: selectedPlayerEdit.lastName,
@@ -151,32 +152,26 @@ const Players = () => {
                     // - remove escrow player
                     // - set isCreatingNewPlayer to false
 
-                    // Removing team and age group objects from players to store in cache
-                    // const playersCached = players.map(
-                    //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    //     ({ team, ageGroup, ...rest }) => rest,
-                    // );
+                    // Remove blank table row and add new player to start of table
+                    const newPlayerRowData: GridRowsProp = [
+                        {
+                            id: newPlayer.id,
+                            number: newPlayer.number,
+                            firstName: newPlayer.firstName,
+                            ageGroup: newPlayer.ageGroup.displayName,
+                            teamDivision: newPlayer.team.division,
+                            teamName: newPlayer.team.name,
+                        },
+                    ];
 
-                    // // Updating player cache to include newly fetched players
-                    // setCachedPlayers((currentCache) => {
-                    //     const newCache = new Map(currentCache);
-                    //     playersCached.forEach((player) => {
-                    //         newCache.set(player.id, player);
-                    //     });
-                    //     return newCache;
-                    // });
-
-                    // // Map results to table rows
-                    // const rowData: GridRowsProp = players.map((player) => ({
-                    //     id: player.id,
-                    //     number: player.number,
-                    //     firstName: player.firstName,
-                    //     ageGroup: player.ageGroup.displayName,
-                    //     teamDivision: player.team.division,
-                    //     teamName: player.team.name,
-                    // }));
-
-                    // setTableRowsPlayerData(rowData);
+                    // TODO: Prevent other function from readding cached player
+                    setTableRowsPlayerData((currentRows) => {
+                        const removeFirst = currentRows.slice(1);
+                        const newRows = [...newPlayerRowData, ...removeFirst];
+                        console.log('new table rows:');
+                        console.log(newRows);
+                        return newRows;
+                    });
                 });
         }
     };
@@ -239,14 +234,11 @@ const Players = () => {
                 value = value.replace(/\D/g, '').replace(/^0+(?!$)/, '');
                 value = value.substring(0, 6);
             }
-            console.log(`updating '${name}' to '${value}'`);
             const updatedPlayer = {
                 ...selectedPlayerEdit,
                 [name]: value,
             };
             setSelectedPlayerEdit(updatedPlayer);
-            console.log('selectedPlayerEdit:');
-            console.log(updatedPlayer);
         }
     };
 
@@ -262,8 +254,6 @@ const Players = () => {
                         teamId: team.id,
                     };
                     setSelectedPlayerEdit(updatedPlayer);
-                    console.log('selectedPlayerEdit:');
-                    console.log(updatedPlayer);
                 } else {
                     console.error(`Team with id ${e.target.value} not found`);
                 }
@@ -277,8 +267,6 @@ const Players = () => {
                         ageGroupId: ageGroup.id,
                     };
                     setSelectedPlayerEdit(updatedPlayer);
-                    console.log('selectedPlayerEdit:');
-                    console.log(updatedPlayer);
                 } else {
                     console.error(
                         `Age group with id ${e.target.value} not found`,
@@ -294,8 +282,6 @@ const Players = () => {
         if (player) {
             setSelectedPlayer(player);
             setSelectedPlayerEdit(player);
-            console.log(`updated selected player to be:`);
-            console.log(player);
         }
     };
 
