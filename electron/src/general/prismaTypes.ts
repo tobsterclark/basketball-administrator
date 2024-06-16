@@ -18,6 +18,7 @@ export enum CrudOperations {
     findFirst = 'findFirst',
     findMany = 'findMany',
     count = 'count',
+    create = 'create',
 }
 
 // TODO: how tf should we strongly type this crap

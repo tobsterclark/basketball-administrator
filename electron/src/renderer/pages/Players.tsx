@@ -13,10 +13,12 @@ import {
     GridRowSelectionModel,
     GridRowsProp,
     GridSortModel,
+    GridValidRowModel,
     gridClasses,
 } from '@mui/x-data-grid';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { Prisma } from '@prisma/client';
+import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import { IpcChannels } from '../../general/IpcChannels';
@@ -32,6 +34,9 @@ const Players = () => {
         include: { team: true; ageGroup: true };
     }>;
 
+    // For storing player data in cache without team and age group data. Used for updating database & to reduce repeated data
+    type PlayerCache = Omit<PlayerDataResponse, 'team' | 'ageGroup'>;
+
     type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
         select: { id: true; displayName: true };
     }>;
@@ -41,13 +46,14 @@ const Players = () => {
     }>;
 
     const [cachedPlayers, setCachedPlayers] = useState<
-        Map<string, PlayerDataResponse>
+        Map<string, PlayerCache>
     >(new Map());
 
-    const [selectedPlayer, setSelectedPlayer] =
-        useState<PlayerDataResponse | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>(
+        null,
+    );
     const [selectedPlayerEdit, setSelectedPlayerEdit] =
-        useState<PlayerDataResponse | null>(null);
+        useState<PlayerCache | null>(null);
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -78,15 +84,141 @@ const Players = () => {
     );
     const [allTeamNames, setAllTeamNames] = useState<TeamDataResponse[]>([]);
 
+    const [isCreatingNewPlayer, setIsCreatingNewPlayer] =
+        useState<boolean>(false);
+
+    const [escrowPlayer, setEscrowPlayer] = useState<GridValidRowModel | null>(
+        null,
+    );
+
+    // Used for checking if all fields are filled in new player creation, to disable save button
+    const newPlayerIsValid = (): boolean => {
+        if (
+            selectedPlayerEdit?.firstName !== '' &&
+            selectedPlayerEdit?.lastName !== '' &&
+            selectedPlayerEdit?.number !== 0 &&
+            selectedPlayerEdit?.teamId !== '' &&
+            selectedPlayerEdit?.ageGroupId !== ''
+        ) {
+            return true;
+        }
+        return false;
+    };
+
+    const createNewPlayerPrisma = () => {
+        if (isCreatingNewPlayer && newPlayerIsValid() && selectedPlayerEdit) {
+            const newPlayerPush: PrismaCall = {
+                model: ModelName.player,
+                operation: CrudOperations.create,
+                data: {
+                    data: {
+                        firstName: selectedPlayerEdit.firstName,
+                        lastName: selectedPlayerEdit.lastName,
+                        number: selectedPlayerEdit.number, // TODO: this is being sent with a string type for some reason
+                        teamId: selectedPlayerEdit.teamId,
+                        ageGroupId: selectedPlayerEdit.ageGroupId,
+                        team: { connect: { id: selectedPlayerEdit.teamId } },
+                        ageGroup: {
+                            connect: { id: selectedPlayerEdit.ageGroupId },
+                        },
+                    },
+                },
+            };
+
+            window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, newPlayerPush)
+                .then((data) => {
+                    const newPlayer = data as PlayerDataResponse;
+                    console.log(`New player added to DB! -->`);
+                    console.log(newPlayer);
+
+                    // Removing team and age group objects from players to store in cache
+                    // const playersCached = players.map(
+                    //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    //     ({ team, ageGroup, ...rest }) => rest,
+                    // );
+
+                    // // Updating player cache to include newly fetched players
+                    // setCachedPlayers((currentCache) => {
+                    //     const newCache = new Map(currentCache);
+                    //     playersCached.forEach((player) => {
+                    //         newCache.set(player.id, player);
+                    //     });
+                    //     return newCache;
+                    // });
+
+                    // // Map results to table rows
+                    // const rowData: GridRowsProp = players.map((player) => ({
+                    //     id: player.id,
+                    //     number: player.number,
+                    //     firstName: player.firstName,
+                    //     ageGroup: player.ageGroup.displayName,
+                    //     teamDivision: player.team.division,
+                    //     teamName: player.team.name,
+                    // }));
+
+                    // setTableRowsPlayerData(rowData);
+                });
+        }
+    };
+
+    const handleNewPlayer = () => {
+        if (!isCreatingNewPlayer) {
+            setIsCreatingNewPlayer(true);
+            const newPlayer: PlayerCache = {
+                id: 'TEMP',
+                number: 0,
+                firstName: '',
+                lastName: '',
+                teamId: '',
+                ageGroupId: '',
+            };
+            // Store last player in table into escrow
+            setEscrowPlayer(
+                tableRowsPlayerData[tableRowsPlayerData.length - 1],
+            );
+
+            // Remove last index in tableRowsPlayerData
+            setTableRowsPlayerData((currentRows) => {
+                const removeLast = currentRows.slice(0, -1);
+                const newRows = [{ ...newPlayer }, ...removeLast];
+                return newRows;
+            });
+            setRowSelectionModel([newPlayer.id]);
+            setSelectedPlayer(newPlayer);
+            setSelectedPlayerEdit(newPlayer);
+        }
+    };
+
+    // Handles resetting states if new player creation is cancelled. Also resets selected player on call.
+    const handleCancelNewPlayer = () => {
+        setIsCreatingNewPlayer(false);
+        if (escrowPlayer) {
+            setTableRowsPlayerData((currentRows) => {
+                const removeFirst = currentRows.slice(1);
+                const newRows = [...removeFirst, escrowPlayer];
+                return newRows;
+            });
+
+            setEscrowPlayer(null);
+        }
+        setRowSelectionModel([]);
+        setSelectedPlayer(null);
+        setSelectedPlayerEdit(null);
+    };
+
     const handlePlayerEditorInputChange = (
         e: ChangeEvent<HTMLInputElement>,
     ) => {
         if (selectedPlayerEdit) {
             console.log(`updating '${e.target.name}' to '${e.target.value}'`);
-            setSelectedPlayerEdit({
+            const updatedPlayer = {
                 ...selectedPlayerEdit,
                 [e.target.name]: e.target.value,
-            });
+            };
+            setSelectedPlayerEdit(updatedPlayer);
+            console.log('selectedPlayerEdit:');
+            console.log(updatedPlayer);
         }
     };
 
@@ -97,10 +229,13 @@ const Players = () => {
                     (foundTeam) => foundTeam.id === e.target.value,
                 );
                 if (team) {
-                    setSelectedPlayerEdit({
+                    const updatedPlayer = {
                         ...selectedPlayerEdit,
                         teamId: team.id,
-                    });
+                    };
+                    setSelectedPlayerEdit(updatedPlayer);
+                    console.log('selectedPlayerEdit:');
+                    console.log(updatedPlayer);
                 } else {
                     console.error(`Team with id ${e.target.value} not found`);
                 }
@@ -109,10 +244,13 @@ const Players = () => {
                     (foundAgeGroup) => foundAgeGroup.id === e.target.value,
                 );
                 if (ageGroup) {
-                    setSelectedPlayerEdit({
+                    const updatedPlayer = {
                         ...selectedPlayerEdit,
                         ageGroupId: ageGroup.id,
-                    });
+                    };
+                    setSelectedPlayerEdit(updatedPlayer);
+                    console.log('selectedPlayerEdit:');
+                    console.log(updatedPlayer);
                 } else {
                     console.error(
                         `Age group with id ${e.target.value} not found`,
@@ -181,10 +319,16 @@ const Players = () => {
             .then((data) => {
                 const players = data as PlayerDataResponse[];
 
+                // Removing team and age group objects from players to store in cache
+                const playersCached = players.map(
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    ({ team, ageGroup, ...rest }) => rest,
+                );
+
                 // Updating player cache to include newly fetched players
                 setCachedPlayers((currentCache) => {
                     const newCache = new Map(currentCache);
-                    players.forEach((player) => {
+                    playersCached.forEach((player) => {
                         newCache.set(player.id, player);
                     });
                     return newCache;
@@ -272,16 +416,29 @@ const Players = () => {
         <PageContainer>
             <PageTitle text="Player Management" />
             <div>
-                <div className="pb-6 pt-12 md:w-1/2 xl:w-1/3 2xl:w-1/4">
-                    <TextField
-                        id="playerSearchInput"
-                        label="Search players"
-                        variant="filled"
-                        autoFocus
-                        value={searchBoxInput}
-                        onChange={(e) => setSearchBoxInput(e.target.value)}
-                        fullWidth
-                    />
+                <div className="flex flex-row pt-12 pb-6 gap-6">
+                    <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
+                        <TextField
+                            id="playerSearchInput"
+                            label="Search players"
+                            variant="filled"
+                            autoFocus
+                            value={searchBoxInput}
+                            onChange={(e) => setSearchBoxInput(e.target.value)}
+                            fullWidth
+                        />
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            disabled={isCreatingNewPlayer}
+                            onClick={handleNewPlayer}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
+                        >
+                            New Player
+                            <PlusCircleIcon className="h-6 w-6 inline-block ml-2" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
@@ -295,15 +452,22 @@ const Players = () => {
                             loading={!totalPlayersLoaded}
                             rowCount={totalPlayers}
                             paginationModel={paginationModel}
-                            onPaginationModelChange={setPaginationModel}
+                            onPaginationModelChange={(newPaginationModel) => {
+                                handleCancelNewPlayer();
+                                setPaginationModel(newPaginationModel);
+                            }}
                             pageSizeOptions={[10]}
                             sortModel={sortModel}
-                            onSortModelChange={(newSortModel) =>
-                                setSortModel(newSortModel)
-                            }
+                            onSortModelChange={(newSortModel) => {
+                                handleCancelNewPlayer();
+                                setSortModel(newSortModel);
+                            }}
                             onRowSelectionModelChange={(
                                 newRowSelectionModel,
                             ) => {
+                                if (isCreatingNewPlayer) {
+                                    handleCancelNewPlayer();
+                                }
                                 setRowSelectionModel(newRowSelectionModel);
                                 selectPlayerById(
                                     newRowSelectionModel[0] as string,
@@ -385,7 +549,10 @@ const Players = () => {
                                             }
                                         >
                                             {allTeamNames.map((team) => (
-                                                <MenuItem value={team.id}>
+                                                <MenuItem
+                                                    key={team.id}
+                                                    value={team.id}
+                                                >
                                                     {team.name}
                                                 </MenuItem>
                                             ))}
@@ -417,7 +584,10 @@ const Players = () => {
                                             }
                                         >
                                             {allAgeGroups.map((ageGroup) => (
-                                                <MenuItem value={ageGroup.id}>
+                                                <MenuItem
+                                                    key={ageGroup.id}
+                                                    value={ageGroup.id}
+                                                >
                                                     {ageGroup.displayName}
                                                 </MenuItem>
                                             ))}
@@ -430,14 +600,38 @@ const Players = () => {
                                     cancelButtonDisabled={
                                         selectedPlayer === null
                                     }
-                                    saveButtonDisabled={
-                                        selectedPlayer === null ||
-                                        selectedPlayer === selectedPlayerEdit
-                                    }
                                     onCancelClick={() => {
                                         setSelectedPlayerEdit(null);
                                         setSelectedPlayer(null);
                                         setRowSelectionModel([]);
+                                        if (isCreatingNewPlayer) {
+                                            handleCancelNewPlayer();
+                                        }
+                                    }}
+                                    // Add functionality to savebutton disabled if new player all fields arent filled
+                                    saveButtonDisabled={
+                                        !isCreatingNewPlayer
+                                            ? selectedPlayer === null ||
+                                              selectedPlayer ===
+                                                  selectedPlayerEdit
+                                            : !newPlayerIsValid()
+                                    }
+                                    saveButtonText={
+                                        isCreatingNewPlayer
+                                            ? 'Add Player'
+                                            : 'Save'
+                                    }
+                                    onSaveClick={() => {
+                                        if (
+                                            isCreatingNewPlayer &&
+                                            newPlayerIsValid()
+                                        ) {
+                                            createNewPlayerPrisma();
+                                        } else {
+                                            console.log(
+                                                `Add logic for UPDATING Player info! isCreating new player: ${isCreatingNewPlayer}, newPlayerIsValid(): ${newPlayerIsValid()}`,
+                                            );
+                                        }
                                     }}
                                 />
                             </div>
