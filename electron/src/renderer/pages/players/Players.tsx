@@ -106,7 +106,18 @@ const Players = () => {
     };
 
     const createNewPlayerPrisma = () => {
-        if (isCreatingNewPlayer && newPlayerIsValid() && selectedPlayerEdit) {
+        if (
+            isCreatingNewPlayer &&
+            newPlayerIsValid() &&
+            selectedPlayerEdit &&
+            selectedPlayerEdit.number !== null
+        ) {
+            // Converts player number as string to number/int as req. by Prisma
+            const playerNumberInt: number = parseInt(
+                String(selectedPlayerEdit.number),
+                10,
+            );
+
             const newPlayerPush: PrismaCall = {
                 model: ModelName.player,
                 operation: CrudOperations.create,
@@ -114,9 +125,7 @@ const Players = () => {
                     data: {
                         firstName: selectedPlayerEdit.firstName,
                         lastName: selectedPlayerEdit.lastName,
-                        number: selectedPlayerEdit.number, // TODO: this is being sent with a string type for some reason
-                        teamId: selectedPlayerEdit.teamId,
-                        ageGroupId: selectedPlayerEdit.ageGroupId,
+                        number: playerNumberInt,
                         team: { connect: { id: selectedPlayerEdit.teamId } },
                         ageGroup: {
                             connect: { id: selectedPlayerEdit.ageGroupId },
@@ -131,6 +140,16 @@ const Players = () => {
                     const newPlayer = data as PlayerDataResponse;
                     console.log(`New player added to DB! -->`);
                     console.log(newPlayer);
+
+                    // TODO on successful player creation:
+                    // - Update blank table row to reflect new player entry
+                    // - change add player button to a disabled save button
+                    // - update player cache with new player
+                    // - update selected player to new player
+                    // - update selected player edit to new player
+                    // - update row selection model to new player
+                    // - remove escrow player
+                    // - set isCreatingNewPlayer to false
 
                     // Removing team and age group objects from players to store in cache
                     // const playersCached = players.map(
@@ -167,7 +186,7 @@ const Players = () => {
             setIsCreatingNewPlayer(true);
             const newPlayer: PlayerCache = {
                 id: 'TEMP',
-                number: 0,
+                number: null,
                 firstName: '',
                 lastName: '',
                 teamId: '',
@@ -211,10 +230,19 @@ const Players = () => {
         e: ChangeEvent<HTMLInputElement>,
     ) => {
         if (selectedPlayerEdit) {
-            console.log(`updating '${e.target.name}' to '${e.target.value}'`);
+            const { name } = e.target;
+            let { value } = e.target;
+            if (name === 'number') {
+                // Regex to remove all non-numeric characters and leading zeroes
+                // (unless the zero is the only character in the string),
+                // and limit number input to 6 characters
+                value = value.replace(/\D/g, '').replace(/^0+(?!$)/, '');
+                value = value.substring(0, 6);
+            }
+            console.log(`updating '${name}' to '${value}'`);
             const updatedPlayer = {
                 ...selectedPlayerEdit,
-                [e.target.name]: e.target.value,
+                [name]: value,
             };
             setSelectedPlayerEdit(updatedPlayer);
             console.log('selectedPlayerEdit:');
@@ -300,14 +328,14 @@ const Players = () => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                    {
-                        where: {
-                            firstName: {
-                                startsWith: searchBoxInput,
-                                mode: 'insensitive',
-                            },
-                        },
-                    }
+                      {
+                          where: {
+                              firstName: {
+                                  startsWith: searchBoxInput,
+                                  mode: 'insensitive',
+                              },
+                          },
+                      }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -457,13 +485,13 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                             }}
                         />
                     </div>
@@ -593,8 +621,8 @@ const Players = () => {
                                     saveButtonDisabled={
                                         !isCreatingNewPlayer
                                             ? selectedPlayer === null ||
-                                            selectedPlayer ===
-                                            selectedPlayerEdit
+                                              selectedPlayer ===
+                                                  selectedPlayerEdit
                                             : !newPlayerIsValid()
                                     }
                                     saveButtonText={
