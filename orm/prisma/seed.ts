@@ -23,7 +23,7 @@ async function seedTeamsPlayers() {
         const team = await prisma.team.create({
             data: {
                 name: teamName,
-                ageGroup: { create: { displayName: ageGroup } },
+                ageGroup: { connectOrCreate: { where: { displayName: ageGroup }, create: { displayName: ageGroup } } },
                 division: null,
             },
         });

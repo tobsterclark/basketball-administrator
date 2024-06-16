@@ -61,7 +61,7 @@ model Timeslot {
 
 model AgeGroup {
     id          String     @id @default(uuid()) @map("_id")
-    displayName String
+    displayName String     @unique
     timeslots   Timeslot[]
     players     Player[]
     teams       Team[]
