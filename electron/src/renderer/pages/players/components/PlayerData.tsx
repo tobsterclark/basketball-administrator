@@ -21,7 +21,6 @@ export const PlayerData = (props: PlayerDataProps) => {
         onSaveClick,
         saveButtonDisabled,
     } = props;
-    // const handleTextInput = (e: SelectChangeEvent<string>) => {
 
     // Takes the text field name and value and updates the selected player with it
     // Expecting the provided name to be a valid key in the PlayerCache object
