@@ -31,7 +31,9 @@ const Players = () => {
         Map<string, PlayerCache>
     >(new Map());
 
-    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>();
+    const [selectedPlayer, setSelectedPlayer] = useState<PlayerCache | null>(
+        null,
+    );
 
     const [rowSelectionModel, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
@@ -232,14 +234,14 @@ const Players = () => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                    {
-                        where: {
-                            firstName: {
-                                startsWith: searchBoxInput,
-                                mode: 'insensitive',
-                            },
-                        },
-                    }
+                      {
+                          where: {
+                              firstName: {
+                                  startsWith: searchBoxInput,
+                                  mode: 'insensitive',
+                              },
+                          },
+                      }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -389,13 +391,13 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                             }}
                         />
                     </div>
