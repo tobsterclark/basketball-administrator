@@ -1,3 +1,4 @@
+/** eslint-disable no-console */
 import {
     FormControl,
     InputLabel,
@@ -12,20 +13,27 @@ import { PlayerDataProps } from './Types';
 
 export const PlayerData = (props: PlayerDataProps) => {
     const {
-        selectedPlayer,
-        updateSelectedPlayer,
+        player,
+        updatePlayer,
         teams,
         ageGroups,
         isCreatingNewPlayer,
-        onCancelClick,
-        onSaveClick,
-        saveButtonDisabled,
+        onValidSave,
+        onCancel,
     } = props;
+
+    // Used for checking if all fields are filled in new player creation, to disable save button
+    const newPlayerIsValid = (): boolean =>
+        player?.firstName !== '' &&
+        player?.lastName !== '' &&
+        player?.number !== 0 &&
+        player?.teamId !== '' &&
+        player?.ageGroupId !== '';
 
     // Takes the text field name and value and updates the selected player with it
     // Expecting the provided name to be a valid key in the PlayerCache object
     const handleTextInput = (e: ChangeEvent<HTMLInputElement>) => {
-        if (!selectedPlayer) return;
+        if (!player) return;
         let { value } = e.target;
 
         if (e.target.name === 'number') {
@@ -36,16 +44,16 @@ export const PlayerData = (props: PlayerDataProps) => {
             value = value.substring(0, 6);
         }
 
-        updateSelectedPlayer({ ...selectedPlayer, [e.target.name]: value });
+        updatePlayer({ ...player, [e.target.name]: value });
     };
 
     // Takes input from a selection and updates selected player
     // Expecting the provided name to be a valid key in the PlayerCachee object
     const handleSelectInput = (e: SelectChangeEvent<string>) => {
-        if (!selectedPlayer) return;
+        if (!player) return;
         const { name, value } = e.target;
 
-        updateSelectedPlayer({ ...selectedPlayer, [name]: value });
+        updatePlayer({ ...player, [name]: value });
     };
 
     return (
@@ -58,18 +66,18 @@ export const PlayerData = (props: PlayerDataProps) => {
                         label="First Name"
                         variant="outlined"
                         name="firstName"
-                        value={selectedPlayer?.firstName ?? ''}
+                        value={player?.firstName ?? ''}
                         onChange={handleTextInput}
-                        disabled={selectedPlayer === null}
+                        disabled={player === null}
                     />
                     <TextField
                         id="playerDataEditor_lastName"
                         label="Last Name"
                         variant="outlined"
                         name="lastName"
-                        value={selectedPlayer?.lastName ?? ''}
+                        value={player?.lastName ?? ''}
                         onChange={handleTextInput}
-                        disabled={selectedPlayer === null}
+                        disabled={player === null}
                     />
                 </div>
 
@@ -80,9 +88,9 @@ export const PlayerData = (props: PlayerDataProps) => {
                         label="Player Number"
                         variant="outlined"
                         name="number"
-                        value={selectedPlayer?.number ?? ''}
+                        value={player?.number ?? ''}
                         onChange={handleTextInput}
-                        disabled={selectedPlayer === null}
+                        disabled={player === null}
                     />
                 </div>
 
@@ -92,17 +100,17 @@ export const PlayerData = (props: PlayerDataProps) => {
                         <FormControl fullWidth>
                             <InputLabel
                                 id="demo-simple-select-label"
-                                disabled={selectedPlayer === null}
+                                disabled={player === null}
                             >
                                 Team
                             </InputLabel>
                             <Select
                                 labelId="demo-simple-select-label"
                                 id="demo-simple-select"
-                                value={selectedPlayer?.teamId ?? ''}
+                                value={player?.teamId ?? ''}
                                 label="Team"
                                 name="teamId"
-                                disabled={selectedPlayer === null}
+                                disabled={player === null}
                                 onChange={handleSelectInput}
                             >
                                 {teams.map((team) => (
@@ -119,16 +127,16 @@ export const PlayerData = (props: PlayerDataProps) => {
                         <FormControl fullWidth>
                             <InputLabel
                                 id="demo-simple-select-label"
-                                disabled={selectedPlayer === null}
+                                disabled={player === null}
                             >
                                 Age Group
                             </InputLabel>
                             <Select
                                 labelId="demo-simple-select-label"
                                 id="demo-simple-select"
-                                value={selectedPlayer?.ageGroupId ?? ''}
+                                value={player?.ageGroupId ?? ''}
                                 label="Age Group"
-                                disabled={selectedPlayer === null}
+                                disabled={player === null}
                                 name="ageGroupId"
                                 onChange={handleSelectInput}
                             >
@@ -146,14 +154,22 @@ export const PlayerData = (props: PlayerDataProps) => {
                 </div>
                 <div className="pb-8">
                     <FormCancelSave
-                        cancelButtonDisabled={selectedPlayer === null}
-                        onCancelClick={onCancelClick}
-                        // Add functionality to savebutton disabled if new player all fields arent filled
-                        saveButtonDisabled={saveButtonDisabled}
+                        cancelButtonDisabled={player === null}
+                        saveButtonDisabled={
+                            isCreatingNewPlayer
+                                ? !newPlayerIsValid()
+                                : player === null
+                        }
                         saveButtonText={
                             isCreatingNewPlayer ? 'Add Player' : 'Save'
                         }
-                        onSaveClick={onSaveClick}
+                        onCancelClick={onCancel}
+                        onSaveClick={() => {
+                            // TODO: Error handling
+                            if (newPlayerIsValid() && player !== null)
+                                onValidSave(player);
+                            else console.warn('new player not valid');
+                        }}
                     />
                 </div>
             </div>

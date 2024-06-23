@@ -18,15 +18,13 @@ import {
     PrismaCall,
 } from '../../../general/prismaTypes';
 import { PlayerSearch } from './components/PlayerSearch';
-import {
-    AgeGroupDataResponse,
-    PlayerCache,
-    PlayerDataResponse,
-    TeamDataResponse,
-} from './components/Types';
+import { PlayerCache, PlayerDataResponse } from './components/Types';
 import { PlayerData } from './components/PlayerData';
+import { PlayerProps } from './PlayersProps';
 
-const Players = () => {
+const Players = (playersProps: PlayerProps) => {
+    const { ageGroups, teams } = playersProps;
+
     const [cachedPlayers, setCachedPlayers] = useState<
         Map<string, PlayerCache>
     >(new Map());
@@ -59,11 +57,6 @@ const Players = () => {
     const [totalPlayersLoaded, setTotalPlayersLoaded] =
         useState<boolean>(false);
 
-    const [allAgeGroups, setAllAgeGroups] = useState<AgeGroupDataResponse[]>(
-        [],
-    );
-    const [allTeamNames, setAllTeamNames] = useState<TeamDataResponse[]>([]);
-
     const [isCreatingNewPlayer, setIsCreatingNewPlayer] =
         useState<boolean>(false);
 
@@ -71,90 +64,59 @@ const Players = () => {
         null,
     );
 
-    // Used for checking if all fields are filled in new player creation, to disable save button
-    const newPlayerIsValid = (): boolean => {
-        if (
-            selectedPlayer?.firstName !== '' &&
-            selectedPlayer?.lastName !== '' &&
-            selectedPlayer?.number !== 0 &&
-            selectedPlayer?.teamId !== '' &&
-            selectedPlayer?.ageGroupId !== ''
-        ) {
-            return true;
-        }
-        return false;
-    };
+    const createNewPlayerPrisma = (player: PlayerCache) => {
+        // Converts player number as string to number/int as req. by Prisma
+        const playerNumberInt = parseInt(String(player.number), 10);
+        const newPlayerPush: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.create,
+            data: {
+                include: { team: true, ageGroup: true }, // used for getting team and age group data in returned object
+                data: { ...player, number: playerNumberInt },
+            },
+        };
 
-    const createNewPlayerPrisma = () => {
-        if (
-            isCreatingNewPlayer &&
-            newPlayerIsValid() &&
-            selectedPlayer &&
-            selectedPlayer.number !== null
-        ) {
-            // Converts player number as string to number/int as req. by Prisma
-            const playerNumberInt: number = parseInt(
-                String(selectedPlayer.number),
-                10,
-            );
 
-            const newPlayerPush: PrismaCall = {
-                model: ModelName.player,
-                operation: CrudOperations.create,
-                data: {
-                    include: { team: true, ageGroup: true }, // used for getting team and age group data in returned object
-                    data: {
-                        firstName: selectedPlayer.firstName,
-                        lastName: selectedPlayer.lastName,
-                        number: playerNumberInt,
-                        team: { connect: { id: selectedPlayer.teamId } },
-                        ageGroup: {
-                            connect: { id: selectedPlayer.ageGroupId },
-                        },
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, newPlayerPush)
+            .then((data) => {
+                const newPlayer = data as PlayerDataResponse;
+                console.log(`New player added to DB! -->`);
+                console.log(newPlayer);
+
+                // TODO on successful player creation:
+                // - Update blank table row to reflect new player entry
+                // - change add player button to a disabled save button
+                // - update player cache with new player
+                // - update selected player to new player
+                // - update selected player edit to new player
+                // - update row selection model to new player
+                // - remove escrow player
+                // - set isCreatingNewPlayer to false
+
+                // Remove blank table row and add new player to start of table
+                const newPlayerRowData: GridRowsProp = [
+                    {
+                        id: newPlayer.id,
+                        number: newPlayer.number,
+                        firstName: newPlayer.firstName,
+                        ageGroup: newPlayer.ageGroup.displayName,
+                        teamDivision: newPlayer.team.division,
+                        teamName: newPlayer.team.name,
                     },
-                },
-            };
+                ];
 
-            window.electron.ipcRenderer
-                .invoke(IpcChannels.PrismaClient, newPlayerPush)
-                .then((data) => {
-                    const newPlayer = data as PlayerDataResponse;
-                    console.log(`New player added to DB! -->`);
-                    console.log(newPlayer);
-
-                    // TODO on successful player creation:
-                    // - Update blank table row to reflect new player entry
-                    // - change add player button to a disabled save button
-                    // - update player cache with new player
-                    // - update selected player to new player
-                    // - update selected player edit to new player
-                    // - update row selection model to new player
-                    // - remove escrow player
-                    // - set isCreatingNewPlayer to false
-
-                    // Remove blank table row and add new player to start of table
-                    const newPlayerRowData: GridRowsProp = [
-                        {
-                            id: newPlayer.id,
-                            number: newPlayer.number,
-                            firstName: newPlayer.firstName,
-                            ageGroup: newPlayer.ageGroup.displayName,
-                            teamDivision: newPlayer.team.division,
-                            teamName: newPlayer.team.name,
-                        },
-                    ];
-
-                    // TODO: Prevent other function from readding cached player
-                    setTableRowsPlayerData((currentRows) => {
-                        const removeFirst = currentRows.slice(1);
-                        const newRows = [...newPlayerRowData, ...removeFirst];
-                        console.log('new table rows:');
-                        console.log(newRows);
-                        return newRows;
-                    });
+                // TODO: Prevent other function from readding cached player
+                setTableRowsPlayerData((currentRows) => {
+                    const removeFirst = currentRows.slice(1);
+                    const newRows = [...newPlayerRowData, ...removeFirst];
+                    console.log('new table rows:');
+                    console.log(newRows);
+                    return newRows;
                 });
-        }
-    };
+            });
+    }
+
 
     const handleNewPlayer = () => {
         if (!isCreatingNewPlayer) {
@@ -234,14 +196,14 @@ const Players = () => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                      {
-                          where: {
-                              firstName: {
-                                  startsWith: searchBoxInput,
-                                  mode: 'insensitive',
-                              },
-                          },
-                      }
+                    {
+                        where: {
+                            firstName: {
+                                startsWith: searchBoxInput,
+                                mode: 'insensitive',
+                            },
+                        },
+                    }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -306,37 +268,6 @@ const Players = () => {
             });
     }, [totalPlayers]);
 
-    // Gets all age groups and team names for dropdowns on mount, ignores duplicates
-    useEffect(() => {
-        const ageGroupRequest: PrismaCall = {
-            model: ModelName.ageGroup,
-            operation: CrudOperations.findMany,
-        };
-
-        const teamNamesRequest: PrismaCall = {
-            model: ModelName.team,
-            operation: CrudOperations.findMany,
-            data: {
-                orderBy: { name: 'asc' },
-            },
-        };
-
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, ageGroupRequest)
-            .then((data) => {
-                const ageGroups = data as AgeGroupDataResponse[];
-                setAllAgeGroups(ageGroups);
-            });
-
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, teamNamesRequest)
-            .then((data) => {
-                const dataAllTeamNames = data as TeamDataResponse[];
-                setAllTeamNames(dataAllTeamNames);
-            });
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const columns: GridColDef[] = [
         { field: 'number', headerName: 'Number', width: 100 },
@@ -391,45 +322,35 @@ const Players = () => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                {
+                                    outline: 'none',
+                                },
                             }}
                         />
                     </div>
 
                     {/* Player data editor */}
-                    {/* TODO: I feel like we could further minimise what we pass through here */}
                     <PlayerData
-                        selectedPlayer={selectedPlayer}
-                        updateSelectedPlayer={setSelectedPlayer}
-                        teams={allTeamNames}
-                        ageGroups={allAgeGroups}
+                        player={selectedPlayer}
+                        updatePlayer={setSelectedPlayer}
+                        teams={teams}
+                        ageGroups={ageGroups}
                         isCreatingNewPlayer={isCreatingNewPlayer}
-                        onCancelClick={() => {
+                        onCancel={() => {
                             setSelectedPlayer(null);
                             setRowSelectionModel([]);
                             if (isCreatingNewPlayer) handleCancelNewPlayer();
                         }}
-                        onSaveClick={() => {
-                            if (isCreatingNewPlayer && newPlayerIsValid()) {
-                                createNewPlayerPrisma();
-                            } else {
-                                // TODO: Add logic for updating player info
-                                console.warn(
-                                    'player not valid or not being created',
-                                );
-                            }
+                        // TODO: Handle player updated
+                        onValidSave={(player: PlayerCache) => {
+                            if (isCreatingNewPlayer)
+                                createNewPlayerPrisma(player);
+                            else console.warn('player being created');
                         }}
-                        saveButtonDisabled={
-                            isCreatingNewPlayer
-                                ? !newPlayerIsValid()
-                                : selectedPlayer === null
-                        }
                     />
                 </div>
             </div>

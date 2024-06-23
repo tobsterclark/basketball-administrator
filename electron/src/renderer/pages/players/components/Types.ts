@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { Dispatch, SetStateAction } from 'react';
 
 export type PlayerDataResponse = Prisma.PlayerGetPayload<{
     include: { team: true; ageGroup: true };
@@ -18,14 +19,13 @@ export type TeamDataResponse = Prisma.TeamGetPayload<{
 // Sub component prop interfaces
 
 export interface PlayerDataProps {
-    selectedPlayer: PlayerCache | null;
-    updateSelectedPlayer: (player: PlayerCache) => void;
+    player: PlayerCache | null;
+    updatePlayer: Dispatch<SetStateAction<PlayerCache | null>>;
     teams: TeamDataResponse[];
     ageGroups: AgeGroupDataResponse[];
     isCreatingNewPlayer: boolean;
-    onCancelClick: () => void;
-    onSaveClick: () => void;
-    saveButtonDisabled: boolean;
+    onCancel: () => void;
+    onValidSave: (player: PlayerCache) => void;
 }
 
 export interface PlayerSearchProps {
