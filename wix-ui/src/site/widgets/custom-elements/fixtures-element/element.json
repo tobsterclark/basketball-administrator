@@ -1,0 +1,17 @@
+{
+    "$schema": "https://dev.wix.com/wix-cli/schemas/custom-element.json",
+    "id": "e8312912-f63b-4fd9-a233-76760316d901",
+    "name": "competitions",
+    "width": {
+        "defaultWidth": 300,
+        "stretchByDefault": true,
+        "allowStretch": true
+    },
+    "height": {
+        "defaultHeight": 150
+    },
+    "installation": {
+        "autoAddToSite": false,
+        "essential": true
+    }
+}
