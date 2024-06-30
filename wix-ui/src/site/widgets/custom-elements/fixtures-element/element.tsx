@@ -1,17 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import reactToWebComponent from 'react-to-webcomponent';
-import { Table, TableActionCell, TableColumn, TableToolbar, Text, WixDesignSystemProvider, InfoIcon } from '@wix/design-system';
+import { WixDesignSystemProvider } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
-import { DocSend, FunnelChart } from '@wix/wix-ui-icons-common';
+import { Fixtures } from './components/fixtures';
+import { Competitions } from './components/competitions';
 
 type Props = {
     name: string;
 };
-
-interface Competition {
-    displayName: string
-}
 
 const exampleData: Competition[] = [
     { displayName: "Years 3/4" },
@@ -22,41 +19,12 @@ const exampleData: Competition[] = [
 ]
 
 function CustomElement(props: Props) {
-    const columns: TableColumn<Competition>[] = [
-        { title: "", render: (row) => row.displayName },
-        {
-            title: "",
-            render: () => (
-                <TableActionCell
-                    primaryAction={{ text: "Fixture", onClick: () => { }, visibility: 'always' }}
-                    secondaryActions={[
-                        {
-                            text: "Results",
-                            icon: <DocSend />,
-                            onClick: () => { }
-                        },
-                        {
-                            text: "Ladder",
-                            icon: <FunnelChart />,
-                            onClick: () => { }
-                        }
-                    ]}
-                    numOfVisibleSecondaryActions={2}
-                    alwaysShowSecondaryActions={true}
-                />
-            )
-        }
-    ]
+    const [view, setView] = useState<ViewType>(Competitions)
 
     return (
         <WixDesignSystemProvider>
             <div>
-                <Table data={exampleData} columns={columns}>
-                    <TableToolbar>
-                        <TableToolbar.Title>Competitions</TableToolbar.Title >
-                    </TableToolbar>
-                    <Table.Content titleBarVisible={false} />
-                </Table >
+                {view({ onCompetitionSelect: (competition: Competition, view: ViewType) => { setView(view) }, competitions: exampleData })}
             </div>
         </WixDesignSystemProvider>
     );
