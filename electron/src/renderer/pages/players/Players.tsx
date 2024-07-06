@@ -72,10 +72,9 @@ const Players = (playersProps: PlayerProps) => {
             operation: CrudOperations.create,
             data: {
                 include: { team: true, ageGroup: true }, // used for getting team and age group data in returned object
-                data: { ...player, number: playerNumberInt },
+                data: { ...player, number: playerNumberInt, id: undefined },
             },
         };
-
 
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, newPlayerPush)
@@ -115,8 +114,7 @@ const Players = (playersProps: PlayerProps) => {
                     return newRows;
                 });
             });
-    }
-
+    };
 
     const handleNewPlayer = () => {
         if (!isCreatingNewPlayer) {
@@ -196,14 +194,14 @@ const Players = (playersProps: PlayerProps) => {
                 /* eslint-disable prettier/prettier */
                 ...(searchBoxInput
                     ? // If search box has data, only return results that start with search input
-                    {
-                        where: {
-                            firstName: {
-                                startsWith: searchBoxInput,
-                                mode: 'insensitive',
-                            },
-                        },
-                    }
+                      {
+                          where: {
+                              firstName: {
+                                  startsWith: searchBoxInput,
+                                  mode: 'insensitive',
+                              },
+                          },
+                      }
                     : {}),
                 /* eslint-enable indent */
                 /* eslint-enable prettier/prettier */
@@ -268,7 +266,6 @@ const Players = (playersProps: PlayerProps) => {
             });
     }, [totalPlayers]);
 
-
     const columns: GridColDef[] = [
         { field: 'number', headerName: 'Number', width: 100 },
         { field: 'firstName', headerName: 'Name', width: 200 }, // TODO: fix first/last name when data is in correct format
@@ -322,13 +319,13 @@ const Players = (playersProps: PlayerProps) => {
                             rowSelectionModel={rowSelectionModel}
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                             }}
                         />
                     </div>
