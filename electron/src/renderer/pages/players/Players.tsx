@@ -60,9 +60,40 @@ const Players = (playersProps: PlayerProps) => {
     const [isCreatingNewPlayer, setIsCreatingNewPlayer] =
         useState<boolean>(false);
 
+    const [
+        newPlayerAddedDontRunCancelMrDataGrid,
+        setNewPlayerAddedDontRunCancelMrDataGrid,
+    ] = useState<boolean>(false);
+
     const [escrowPlayer, setEscrowPlayer] = useState<GridValidRowModel | null>(
         null,
     );
+
+    const updateExistingPlayerPrisma = (player: PlayerCache) => {
+        const playerNumberInt = parseInt(String(player.number), 10);
+        const updatePlayerPush: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.update,
+            data: {
+                where: { id: player.id },
+                data: {
+                    number: playerNumberInt,
+                    firstName: player.firstName,
+                    lastName: player.lastName,
+                    teamId: player.teamId,
+                    ageGroupId: player.ageGroupId,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, updatePlayerPush)
+            .then((data) => {
+                const updatedPlayer = data as PlayerDataResponse;
+                console.log(`Player updated in DB! -->`);
+                console.log(updatedPlayer);
+            });
+    };
 
     const createNewPlayerPrisma = (player: PlayerCache) => {
         // Converts player number as string to number/int as req. by Prisma
@@ -82,6 +113,7 @@ const Players = (playersProps: PlayerProps) => {
                 const newPlayer = data as PlayerDataResponse;
                 console.log(`New player added to DB! -->`);
                 console.log(newPlayer);
+                // setNewPlayerAddedDontRunCancelMrDataGrid(true);
 
                 // TODO on successful player creation:
                 // - Update blank table row to reflect new player entry
@@ -105,8 +137,10 @@ const Players = (playersProps: PlayerProps) => {
                     },
                 ];
 
-                // TODO: Prevent other function from readding cached player
+                // // TODO: Prevent other function from readding cached player
                 setTableRowsPlayerData((currentRows) => {
+                    console.log('current table rows:');
+                    console.log(currentRows);
                     const removeFirst = currentRows.slice(1);
                     const newRows = [...newPlayerRowData, ...removeFirst];
                     console.log('new table rows:');
@@ -116,7 +150,7 @@ const Players = (playersProps: PlayerProps) => {
             });
     };
 
-    const handleNewPlayer = () => {
+    const handleAddPlayerButtonPress = () => {
         if (!isCreatingNewPlayer) {
             setIsCreatingNewPlayer(true);
             const newPlayer: PlayerCache = {
@@ -237,7 +271,7 @@ const Players = (playersProps: PlayerProps) => {
                     teamDivision: player.team.division,
                     teamName: player.team.name,
                 }));
-
+                console.log('Setting table rows to:', rowData);
                 setTableRowsPlayerData(rowData);
             });
 
@@ -282,7 +316,7 @@ const Players = (playersProps: PlayerProps) => {
                     searchBoxInput={searchBoxInput}
                     setSearchBoxInput={setSearchBoxInput}
                     addPlayerDisabled={isCreatingNewPlayer}
-                    handleAddPlayer={handleNewPlayer}
+                    handleAddPlayerButtonPress={handleAddPlayerButtonPress}
                 />
                 <div className="flex flex-row 2xl:gap-24 gap-8 pb-12">
                     {/* Table */}
@@ -308,9 +342,28 @@ const Players = (playersProps: PlayerProps) => {
                             onRowSelectionModelChange={(
                                 newRowSelectionModel,
                             ) => {
-                                if (isCreatingNewPlayer) {
+                                console.log(
+                                    `oldRowSelectionModel:`,
+                                    rowSelectionModel,
+                                );
+                                console.log(
+                                    'newRowSelectionModel:',
+                                    newRowSelectionModel,
+                                );
+                                console.log(
+                                    `rowSelectionModel changed; isCreatingNewPlayer is ${isCreatingNewPlayer}`,
+                                ); // we only want to run this if cancel button is pressed, not if save button is pressed
+                                console.log(
+                                    `setNewPlayerAddedDontRunCancelMrDataGrid: ${newPlayerAddedDontRunCancelMrDataGrid}`,
+                                );
+                                if (
+                                    isCreatingNewPlayer &&
+                                    !newPlayerAddedDontRunCancelMrDataGrid
+                                ) {
                                     handleCancelNewPlayer();
                                 }
+                                setNewPlayerAddedDontRunCancelMrDataGrid(false);
+
                                 setRowSelectionModel(newRowSelectionModel);
                                 selectPlayerById(
                                     newRowSelectionModel[0] as string,
@@ -346,7 +399,10 @@ const Players = (playersProps: PlayerProps) => {
                         onValidSave={(player: PlayerCache) => {
                             if (isCreatingNewPlayer)
                                 createNewPlayerPrisma(player);
-                            else console.warn('player being created');
+                            else {
+                                console.warn('player being created');
+                                updateExistingPlayerPrisma(player);
+                            }
                         }}
                     />
                 </div>

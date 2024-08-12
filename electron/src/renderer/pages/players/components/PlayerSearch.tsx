@@ -2,13 +2,12 @@ import { TextField } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PlayerSearchProps } from './Types';
 
-
 export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
     const {
         searchBoxInput,
         setSearchBoxInput,
         addPlayerDisabled,
-        handleAddPlayer,
+        handleAddPlayerButtonPress,
     } = props;
 
     return (
@@ -28,7 +27,7 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
                 <button
                     type="button"
                     disabled={addPlayerDisabled}
-                    onClick={handleAddPlayer}
+                    onClick={handleAddPlayerButtonPress}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
                 >
                     New Player

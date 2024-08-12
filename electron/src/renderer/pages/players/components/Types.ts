@@ -32,5 +32,5 @@ export interface PlayerSearchProps {
     searchBoxInput: string;
     setSearchBoxInput: (val: string) => void;
     addPlayerDisabled: boolean;
-    handleAddPlayer: () => void;
+    handleAddPlayerButtonPress: () => void;
 }
