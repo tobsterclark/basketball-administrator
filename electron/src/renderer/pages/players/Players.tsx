@@ -60,6 +60,7 @@ const Players = (playersProps: PlayerProps) => {
     const [isCreatingNewPlayer, setIsCreatingNewPlayer] =
         useState<boolean>(false);
 
+    // i don't even know; i dont think it even does anything
     const [
         newPlayerAddedDontRunCancelMrDataGrid,
         setNewPlayerAddedDontRunCancelMrDataGrid,
@@ -147,6 +148,8 @@ const Players = (playersProps: PlayerProps) => {
                     console.log(newRows);
                     return newRows;
                 });
+
+                setTotalPlayers((currentTotal) => currentTotal + 1);
             });
     };
 
