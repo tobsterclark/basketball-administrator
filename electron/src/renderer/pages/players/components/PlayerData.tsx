@@ -8,6 +8,7 @@ import {
     TextField,
 } from '@mui/material';
 import { ChangeEvent } from 'react';
+import { toast } from 'react-toastify';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { PlayerDataProps } from './Types';
 
@@ -168,7 +169,10 @@ export const PlayerData = (props: PlayerDataProps) => {
                             // TODO: Error handling
                             if (newPlayerIsValid() && player !== null)
                                 onValidSave(player);
-                            else console.warn('new player not valid');
+                            else {
+                                console.warn('new player not valid');
+                                toast.warn('Please fill in all fields');
+                            }
                         }}
                     />
                 </div>

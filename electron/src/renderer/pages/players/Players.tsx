@@ -9,6 +9,7 @@ import {
     gridClasses,
 } from '@mui/x-data-grid';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { IpcChannels } from '../../../general/IpcChannels';
@@ -70,32 +71,6 @@ const Players = (playersProps: PlayerProps) => {
         null,
     );
 
-    const updateExistingPlayerPrisma = (player: PlayerCache) => {
-        const playerNumberInt = parseInt(String(player.number), 10);
-        const updatePlayerPush: PrismaCall = {
-            model: ModelName.player,
-            operation: CrudOperations.update,
-            data: {
-                where: { id: player.id },
-                data: {
-                    number: playerNumberInt,
-                    firstName: player.firstName,
-                    lastName: player.lastName,
-                    teamId: player.teamId,
-                    ageGroupId: player.ageGroupId,
-                },
-            },
-        };
-
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, updatePlayerPush)
-            .then((data) => {
-                const updatedPlayer = data as PlayerDataResponse;
-                console.log(`Player updated in DB! -->`);
-                console.log(updatedPlayer);
-            });
-    };
-
     const createNewPlayerPrisma = (player: PlayerCache) => {
         // Converts player number as string to number/int as req. by Prisma
         const playerNumberInt = parseInt(String(player.number), 10);
@@ -114,8 +89,13 @@ const Players = (playersProps: PlayerProps) => {
                 const newPlayer = data as PlayerDataResponse;
                 console.log(`New player added to DB! -->`);
                 console.log(newPlayer);
+
+                toast.success('Player added successfully!');
+
                 // setNewPlayerAddedDontRunCancelMrDataGrid(true);
 
+                // 30/08/2024 - this was the correct logic but the whole escrow player and table row changing was too hard
+                // so im just using toasts now and leaving here for future reference
                 // TODO on successful player creation:
                 // - Update blank table row to reflect new player entry
                 // - change add player button to a disabled save button
@@ -138,7 +118,7 @@ const Players = (playersProps: PlayerProps) => {
                     },
                 ];
 
-                // // TODO: Prevent other function from readding cached player
+                // TODO: Prevent other function from readding cached player
                 setTableRowsPlayerData((currentRows) => {
                     console.log('current table rows:');
                     console.log(currentRows);
@@ -194,6 +174,34 @@ const Players = (playersProps: PlayerProps) => {
         }
         setRowSelectionModel([]);
         setSelectedPlayer(null);
+    };
+
+    const updateExistingPlayerPrisma = (player: PlayerCache) => {
+        const playerNumberInt = parseInt(String(player.number), 10);
+        const updatePlayerPush: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.update,
+            data: {
+                where: { id: player.id },
+                data: {
+                    number: playerNumberInt,
+                    firstName: player.firstName,
+                    lastName: player.lastName,
+                    teamId: player.teamId,
+                    ageGroupId: player.ageGroupId,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, updatePlayerPush)
+            .then((data) => {
+                const updatedPlayer = data as PlayerDataResponse;
+                toast.success(
+                    `${updatedPlayer.firstName} updated successfully!`,
+                );
+            });
+        handleCancelNewPlayer();
     };
 
     // Selects player from cachedPlayers map
@@ -403,7 +411,6 @@ const Players = (playersProps: PlayerProps) => {
                             if (isCreatingNewPlayer)
                                 createNewPlayerPrisma(player);
                             else {
-                                console.warn('player being created');
                                 updateExistingPlayerPrisma(player);
                             }
                         }}

@@ -2,6 +2,8 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import 'tailwindcss/tailwind.css';
 import './App.css';
 import { useEffect, useState } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Inlet from './Inlet';
 import Dashboard from './pages/Dashboard';
 import Players from './pages/players/Players';
@@ -58,10 +60,16 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="players" element={<Players teams={teams} ageGroups={ageGroups} />} />
+                    <Route
+                        path="players"
+                        element={
+                            <Players teams={teams} ageGroups={ageGroups} />
+                        }
+                    />
                     <Route path="teams" element={<Teams />} />
                 </Route>
             </Routes>
+            <ToastContainer autoClose={3500} />
         </Router>
     );
 };
