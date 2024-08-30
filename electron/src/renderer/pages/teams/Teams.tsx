@@ -5,112 +5,46 @@ import {
     Select,
     TextField,
 } from '@mui/material';
-import { ArrowDownTrayIcon, PlusCircleIcon } from '@heroicons/react/24/solid';
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { DataGrid, GridColDef, gridClasses } from '@mui/x-data-grid';
+import { PlusCircleIcon } from '@heroicons/react/24/solid';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { DataGrid, gridClasses } from '@mui/x-data-grid';
+import { useEffect } from 'react';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import SectionTitle from '../../ui_components/SectionTitle';
-import FormCancelSave from '../../ui_components/FormCancelSave';
+import TeamMembers from './components/TeamMembers';
+import {
+    teamMemberRowsTEMP,
+    teamEditorColumns,
+    standingsRowsTEMP,
+    standingsColumns,
+    recentGamesRowsTEMP,
+    recentGamesColumns,
+} from './components/FakeData';
+import {
+    CrudOperations,
+    ModelName,
+    PrismaCall,
+} from '../../../general/prismaTypes';
+import { IpcChannels } from '../../../general/IpcChannels';
 
 const Teams = () => {
-    const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
-        id: i,
-        number: i + 1,
-        firstName: `John Doe ${i + 1}`,
-    }));
+    useEffect(() => {
+        const allTeamsRequest: PrismaCall = {
+            model: ModelName.team,
+            operation: CrudOperations.findMany,
+            data: {
+                orderBy: { name: 'asc' },
+                include: { ageGroup: true },
+            },
+        };
 
-    const standingsRowsTEMP = Array.from({ length: 10 }, (_, i) => ({
-        id: i,
-        position: `${i + 1}th`,
-        teamName: `Basketball!`,
-        points: 10 * (i + 1),
-    }));
-
-    const recentGamesRowsTEMP = Array.from({ length: 10 }, (_, i) => ({
-        id: i,
-        date: `21/3`,
-        venue: `Belrose`,
-        court: `CT1`,
-        teamA: `Sharks`,
-        teamB: `Bounce`,
-    }));
-
-    const teamEditorColumns: GridColDef[] = [
-        {
-            field: 'number',
-            flex: 0.1,
-            sortable: false,
-            filterable: false,
-        },
-        {
-            field: 'firstName',
-            flex: 1,
-            sortable: false,
-            filterable: false,
-        },
-        {
-            field: 'actions',
-            sortable: false,
-            align: 'right',
-            filterable: false,
-            renderCell: () => (
-                <TrashIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
-            ),
-        },
-    ];
-
-    const standingsColumns: GridColDef[] = [
-        {
-            field: 'position',
-            headerName: 'Pos',
-            width: 40,
-        },
-        {
-            field: 'teamName',
-            headerName: 'Team',
-            flex: 1,
-        },
-        {
-            field: 'points',
-            headerName: 'Points',
-            flex: 0.35,
-        },
-    ];
-
-    const recentGamesColumns: GridColDef[] = [
-        {
-            field: 'date',
-            headerName: 'Date',
-        },
-        {
-            field: 'venue',
-            headerName: 'Venue',
-        },
-        {
-            field: 'court',
-            headerName: 'Court',
-        },
-        {
-            field: 'teamA',
-            headerName: 'Team A',
-        },
-        {
-            field: 'teamB',
-            headerName: 'Team B',
-        },
-        {
-            field: 'download',
-            headerName: ``,
-            sortable: false,
-            align: 'right',
-            filterable: false,
-            renderCell: () => (
-                <ArrowDownTrayIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
-            ),
-            flex: 0.1,
-        },
-    ];
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, allTeamsRequest)
+            .then((data) => {
+                console.log(data);
+            });
+    }, []);
 
     return (
         <PageContainer>
@@ -191,40 +125,12 @@ const Teams = () => {
 
                     {/* Table for members */}
                     <div className="w-full">
-                        <h3 className="text-lg font-medium pt-6 pb-2">
-                            Members
-                        </h3>
-                        <div className="shadow-md">
-                            <DataGrid
-                                rows={teamMemberRowsTEMP}
-                                columns={teamEditorColumns}
-                                slots={{ columnHeaders: () => null }}
-                                autoHeight
-                                disableColumnMenu
-                                disableColumnSorting
-                                disableRowSelectionOnClick
-                                hideFooter
-                                disableColumnFilter
-                                disableColumnSelector
-                                disableDensitySelector
-                                sx={{
-                                    [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
-                                    [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
-                                }}
-                            />
-                        </div>
-                        <div className="pt-8 pb-4">
-                            <FormCancelSave
-                                saveButtonDisabled
-                                cancelButtonDisabled
-                            />
-                        </div>
+                        <TeamMembers
+                            teamMemberRows={teamMemberRowsTEMP}
+                            teamMemberColumns={teamEditorColumns}
+                            saveButtonDisabled
+                            cancelButtonDisabled
+                        />
                     </div>
                 </div>
 
@@ -244,18 +150,18 @@ const Teams = () => {
                             disableColumnMenu
                             sx={{
                                 [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                {
-                                    outline: 'none',
-                                },
+                                    {
+                                        outline: 'none',
+                                    },
                                 [`& .${gridClasses.columnSeparator}`]: {
                                     [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                    {
-                                        display: 'none',
-                                    },
+                                        {
+                                            display: 'none',
+                                        },
                                 },
                             }}
                         />
@@ -279,18 +185,18 @@ const Teams = () => {
                                 disableColumnMenu
                                 sx={{
                                     [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                        {
+                                            outline: 'none',
+                                        },
                                     [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
+                                        {
+                                            outline: 'none',
+                                        },
                                     [`& .${gridClasses.columnSeparator}`]: {
                                         [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                        {
-                                            display: 'none',
-                                        },
+                                            {
+                                                display: 'none',
+                                            },
                                     },
                                 }}
                             />
