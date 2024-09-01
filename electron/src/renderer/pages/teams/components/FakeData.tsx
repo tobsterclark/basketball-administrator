@@ -4,7 +4,7 @@ import { GridColDef } from '@mui/x-data-grid';
 export const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     number: i + 1,
-    name: `John Doe ${i + 1}`,
+    name: `Team Member`,
 }));
 
 export const standingsRowsTEMP = Array.from({ length: 10 }, (_, i) => ({

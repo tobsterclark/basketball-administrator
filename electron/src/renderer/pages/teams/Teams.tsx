@@ -8,7 +8,7 @@ import {
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import SectionTitle from '../../ui_components/SectionTitle';
@@ -27,8 +27,15 @@ import {
     PrismaCall,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
+import { TeamCache } from './components/Types';
+import { TeamSearch } from './components/TeamSearch';
 
 const Teams = () => {
+    const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
+        new Map(),
+    );
+
+    // Fetches all teams from DB and stores into the cachedTeams map
     useEffect(() => {
         const allTeamsRequest: PrismaCall = {
             model: ModelName.team,
@@ -42,33 +49,27 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allTeamsRequest)
             .then((data) => {
-                console.log(data);
+                const fetchedTeams = data as TeamCache[];
+                setCachedTeams((currentCache) => {
+                    const newCache = new Map(currentCache);
+                    fetchedTeams.forEach((team) => {
+                        newCache.set(team.id, team);
+                    });
+                    return newCache;
+                });
             });
     }, []);
 
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
-            <div className="flex flex-row pt-12 pb-6 gap-6">
-                <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
-                    <TextField
-                        id="teamSearchInput"
-                        label="Search teams"
-                        variant="filled"
-                        autoFocus
-                        fullWidth
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <button
-                        type="button"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
-                    >
-                        New Team
-                        <PlusCircleIcon className="h-6 w-6 inline-block ml-2" />
-                    </button>
-                </div>
-            </div>
+            <TeamSearch // TODO: ADD VARIABLES IMPLEMENT SEARCH BOX
+                searchBoxInput={searchBoxInput}
+                setSearchBoxInput={setSearchBoxInput}
+                addTeamDisabled={addTeamDisabled}
+                handleAddTeamButtonPress={handleAddTeamButtonPress}
+            />
+
             <div className="flex flex-row gap-12 justify-between pt-2">
                 {/* Team editor */}
                 <div className="w-1/4">
