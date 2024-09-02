@@ -34,6 +34,8 @@ const Teams = () => {
     const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
         new Map(),
     );
+    const [searchBoxInput, setSearchBoxInput] = useState<string>('');
+    const [addTeamDisabled, setAddTeamDisabled] = useState<boolean>(false);
 
     // Fetches all teams from DB and stores into the cachedTeams map
     useEffect(() => {
@@ -59,6 +61,10 @@ const Teams = () => {
                 });
             });
     }, []);
+
+    const handleAddTeamButtonPress = () => {
+        console.log('Add team button pressed');
+    };
 
     return (
         <PageContainer>
