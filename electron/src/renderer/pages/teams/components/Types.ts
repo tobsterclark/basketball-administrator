@@ -1,9 +1,14 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Prisma } from '@prisma/client';
+import { Dispatch, SetStateAction } from 'react';
 
 // See types.ts in players/components
 export type TeamDataResponse = Prisma.TeamGetPayload<{
     include: { ageGroup: true };
+}>;
+
+export type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
+    select: { id: true; displayName: true };
 }>;
 
 export type TeamCache = Omit<TeamDataResponse, 'ageGroup'>;
@@ -22,8 +27,9 @@ export interface TeamMembersProps {
 }
 
 export interface TeamSearchProps {
-    searchBoxInput: string;
-    setSearchBoxInput: (val: string) => void;
+    setSelectedTeam: Dispatch<SetStateAction<string>>; // dispatch needed for hooks
+    selectedTeam: string;
     addTeamDisabled: boolean;
     handleAddTeamButtonPress: () => void;
+    cachedTeams: Map<string, TeamCache>;
 }

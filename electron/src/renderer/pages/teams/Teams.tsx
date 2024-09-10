@@ -27,15 +27,37 @@ import {
     PrismaCall,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
-import { TeamCache } from './components/Types';
+import { AgeGroupDataResponse, TeamCache } from './components/Types';
 import { TeamSearch } from './components/TeamSearch';
 
 const Teams = () => {
     const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
         new Map(),
     );
-    const [searchBoxInput, setSearchBoxInput] = useState<string>('');
+
+    const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
+
+    const [selectedTeam, setSelectedTeam] = useState<string>('');
     const [addTeamDisabled, setAddTeamDisabled] = useState<boolean>(false);
+    const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
+
+    // Fetches all ageGroups from DB and stores into the ageGroups state
+    useEffect(() => {
+        const allAgeGroupsRequest: PrismaCall = {
+            model: ModelName.ageGroup,
+            operation: CrudOperations.findMany,
+            data: {
+                orderBy: { displayName: 'asc' },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, allAgeGroupsRequest)
+            .then((data) => {
+                const fetchedAgeGroups = data as AgeGroupDataResponse[];
+                setAgeGroups(fetchedAgeGroups);
+            });
+    }, []);
 
     // Fetches all teams from DB and stores into the cachedTeams map
     useEffect(() => {
@@ -66,14 +88,28 @@ const Teams = () => {
         console.log('Add team button pressed');
     };
 
+    useEffect(() => {
+        console.log(selectedTeam);
+    }, [selectedTeam]);
+
+    const selectedTeamName = cachedTeams.get(selectedTeam)?.name || 'teamName';
+    const selectedTeamAgeGroupId = cachedTeams.get(selectedTeam)?.ageGroupId;
+    const selectedTeamAgeGroup = ageGroups.find(
+        (ageGroup) => ageGroup.id === selectedTeamAgeGroupId,
+    )?.displayName;
+    console.log(
+        `selectedTeamName: ${selectedTeamName}; selectedTeamAgeGroup: ${selectedTeamAgeGroup}`,
+    );
+
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
             <TeamSearch // TODO: ADD VARIABLES IMPLEMENT SEARCH BOX
-                searchBoxInput={searchBoxInput}
-                setSearchBoxInput={setSearchBoxInput}
+                setSelectedTeam={setSelectedTeam}
+                selectedTeam={selectedTeam}
                 addTeamDisabled={addTeamDisabled}
                 handleAddTeamButtonPress={handleAddTeamButtonPress}
+                cachedTeams={cachedTeams}
             />
 
             <div className="flex flex-row gap-12 justify-between pt-2">
@@ -81,38 +117,47 @@ const Teams = () => {
                 <div className="w-1/4">
                     <button
                         type="button"
+                        disabled={editingDisabled}
                         className="flex flex-row gap-4 hover:bg-gray-100"
                     >
-                        <SectionTitle text="teamName" />
+                        <SectionTitle text={selectedTeamName} />
                         <PencilSquareIcon className="h-6 w-6 inline-block mt-1" />
                     </button>
 
                     {/* Age and Division drop-down */}
                     <div className="flex flex-row gap-4 pt-6">
-                        <div className="w-1/2">
+                        <div className="w-full">
                             <FormControl fullWidth>
-                                <InputLabel id="demo-simple-select-label">
+                                <InputLabel
+                                    id="demo-simple-select-label"
+                                    disabled={editingDisabled}
+                                >
                                     Age Group
                                 </InputLabel>
                                 <Select
                                     labelId="demo-simple-select-label"
                                     id="demo-simple-select"
-                                    value="Years 5-6"
+                                    disabled={editingDisabled}
+                                    value={
+                                        selectedTeamAgeGroup === undefined
+                                            ? ''
+                                            : selectedTeamAgeGroupId
+                                    }
                                     label="Age Group"
                                 >
-                                    <MenuItem value="Years 3-4">
-                                        Years 3-4
-                                    </MenuItem>
-                                    <MenuItem value="Years 5-6">
-                                        Years 5-6
-                                    </MenuItem>
-                                    <MenuItem value="Years 7-8">
-                                        Years 7-8
-                                    </MenuItem>
+                                    {ageGroups.map((ageGroup) => (
+                                        <MenuItem
+                                            key={ageGroup.id}
+                                            value={ageGroup.id}
+                                        >
+                                            {ageGroup.displayName}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </div>
-                        <div className="w-1/2">
+                        {/* Removing for now; unneeded */}
+                        {/* <div className="w-1/2">
                             <FormControl fullWidth>
                                 <InputLabel id="demo-simple-select-label">
                                     Division
@@ -127,7 +172,7 @@ const Teams = () => {
                                     <MenuItem value="N/A">N/A</MenuItem>
                                 </Select>
                             </FormControl>
-                        </div>
+                        </div> */}
                     </div>
 
                     {/* Table for members */}

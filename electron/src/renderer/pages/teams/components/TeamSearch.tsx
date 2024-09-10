@@ -1,26 +1,54 @@
-import { TextField } from '@mui/material';
+import { Autocomplete, TextField } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
-import { TeamSearchProps } from './Types';
+import { TeamCache, TeamSearchProps } from './Types';
+
+interface AutocompleteOption {
+    label: string;
+    id: string;
+}
 
 export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
     const {
-        searchBoxInput,
-        setSearchBoxInput,
         addTeamDisabled,
         handleAddTeamButtonPress,
+        cachedTeams,
+        setSelectedTeam,
+        selectedTeam,
     } = props;
+
+    const transformTeams = (
+        teams: Map<string, TeamCache>,
+    ): AutocompleteOption[] => {
+        const options: AutocompleteOption[] = [];
+        teams.forEach((team) => {
+            options.push({ id: team.id, label: team.name });
+        });
+        return options;
+    };
 
     return (
         <div className="flex flex-row pt-12 pb-6 gap-6">
             <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
-                <TextField
-                    id="teamSearchInput"
-                    label="Search teams"
-                    variant="filled"
-                    autoFocus
-                    value={searchBoxInput}
-                    onChange={(e) => setSearchBoxInput(e.target.value)}
-                    fullWidth
+                <Autocomplete
+                    disablePortal
+                    onChange={(_, value) => {
+                        setSelectedTeam(value?.id || '');
+                    }}
+                    blurOnSelect
+                    options={transformTeams(cachedTeams)}
+                    isOptionEqualToValue={(option, value) =>
+                        option.id === value.id
+                    }
+                    renderInput={(params) => (
+                        <TextField
+                            // eslint-disable-next-line react/jsx-props-no-spreading
+                            {...params}
+                            label="Select team"
+                            id="teamSearchInput"
+                            autoFocus
+                            variant="filled"
+                        />
+                    )}
                 />
             </div>
             <div>
