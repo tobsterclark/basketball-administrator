@@ -11,10 +11,15 @@ export type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
     select: { id: true; displayName: true };
 }>;
 
+export type PlayerDataResponse = Prisma.PlayerGetPayload<{
+    include: { team: false; ageGroup: false };
+}>;
+
 export type TeamCache = Omit<TeamDataResponse, 'ageGroup'>;
 
 export interface TeamMemberRow {
     id: number;
+    playerId: string;
     name: string;
     number: number;
 }

@@ -27,7 +27,12 @@ import {
     PrismaCall,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
-import { AgeGroupDataResponse, TeamCache } from './components/Types';
+import {
+    AgeGroupDataResponse,
+    PlayerDataResponse,
+    TeamCache,
+    TeamMemberRow,
+} from './components/Types';
 import { TeamSearch } from './components/TeamSearch';
 
 const Teams = () => {
@@ -36,10 +41,41 @@ const Teams = () => {
     );
 
     const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
-
     const [selectedTeam, setSelectedTeam] = useState<string>('');
+    const [selectedTeamPlayers, setSelectedTeamPlayers] =
+        useState<TeamMemberRow[]>();
+
     const [addTeamDisabled, setAddTeamDisabled] = useState<boolean>(false);
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
+
+    // Fetches all players from a given team
+    useEffect(() => {
+        const teamMembersRequest: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.findMany,
+            data: {
+                include: { team: false, ageGroup: false },
+                where: {
+                    teamId: selectedTeam,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, teamMembersRequest)
+            .then((data) => {
+                const fetchedPlayers = data as PlayerDataResponse[];
+                const teamMembers: TeamMemberRow[] = fetchedPlayers.map(
+                    (player) => ({
+                        id: 1,
+                        playerId: player.id,
+                        name: player.firstName + player.lastName,
+                        number: player.number ?? 0,
+                    }),
+                );
+                setSelectedTeamPlayers(teamMembers);
+            });
+    });
 
     // Fetches all ageGroups from DB and stores into the ageGroups state
     useEffect(() => {
@@ -89,7 +125,7 @@ const Teams = () => {
     };
 
     useEffect(() => {
-        console.log(selectedTeam);
+        // console.log(cachedTeams.get(selectedTeam));
     }, [selectedTeam]);
 
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || 'teamName';
@@ -97,9 +133,6 @@ const Teams = () => {
     const selectedTeamAgeGroup = ageGroups.find(
         (ageGroup) => ageGroup.id === selectedTeamAgeGroupId,
     )?.displayName;
-    console.log(
-        `selectedTeamName: ${selectedTeamName}; selectedTeamAgeGroup: ${selectedTeamAgeGroup}`,
-    );
 
     return (
         <PageContainer>
@@ -177,8 +210,10 @@ const Teams = () => {
 
                     {/* Table for members */}
                     <div className="w-full">
-                        <TeamMembers
-                            teamMemberRows={teamMemberRowsTEMP}
+                        <TeamMembers 
+                            teamMemberRows={
+                                selectedTeamPlayers ? teamMemberRowsTEMP
+                            }
                             teamMemberColumns={teamEditorColumns}
                             saveButtonDisabled
                             cancelButtonDisabled

@@ -1,5 +1,4 @@
-import { gridClasses } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { gridClasses, DataGrid } from '@mui/x-data-grid';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { TeamMembersProps } from './Types';
 
