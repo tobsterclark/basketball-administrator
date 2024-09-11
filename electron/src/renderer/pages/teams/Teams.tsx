@@ -5,7 +5,6 @@ import {
     Select,
     TextField,
 } from '@mui/material';
-import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
@@ -15,7 +14,6 @@ import SectionTitle from '../../ui_components/SectionTitle';
 import TeamMembers from './components/TeamMembers';
 import {
     teamMemberRowsTEMP,
-    teamEditorColumns,
     standingsRowsTEMP,
     standingsColumns,
     recentGamesRowsTEMP,
@@ -50,6 +48,10 @@ const Teams = () => {
 
     // Fetches all players from a given team
     useEffect(() => {
+        if (selectedTeam === '') {
+            setEditingDisabled(true);
+            return;
+        }
         const teamMembersRequest: PrismaCall = {
             model: ModelName.player,
             operation: CrudOperations.findMany,
@@ -64,18 +66,20 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, teamMembersRequest)
             .then((data) => {
+                console.warn('teamMembersRequest invoked');
                 const fetchedPlayers = data as PlayerDataResponse[];
                 const teamMembers: TeamMemberRow[] = fetchedPlayers.map(
-                    (player) => ({
-                        id: 1,
+                    (player, index) => ({
+                        id: index,
                         playerId: player.id,
                         name: player.firstName + player.lastName,
                         number: player.number ?? 0,
                     }),
                 );
                 setSelectedTeamPlayers(teamMembers);
+                setEditingDisabled(false);
             });
-    });
+    }, [selectedTeam]);
 
     // Fetches all ageGroups from DB and stores into the ageGroups state
     useEffect(() => {
@@ -90,6 +94,7 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allAgeGroupsRequest)
             .then((data) => {
+                console.warn('allAgeGroupsRequest invoked');
                 const fetchedAgeGroups = data as AgeGroupDataResponse[];
                 setAgeGroups(fetchedAgeGroups);
             });
@@ -109,6 +114,7 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allTeamsRequest)
             .then((data) => {
+                console.warn('allTeamsRequest invoked');
                 const fetchedTeams = data as TeamCache[];
                 setCachedTeams((currentCache) => {
                     const newCache = new Map(currentCache);
@@ -137,7 +143,7 @@ const Teams = () => {
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
-            <TeamSearch // TODO: ADD VARIABLES IMPLEMENT SEARCH BOX
+            <TeamSearch
                 setSelectedTeam={setSelectedTeam}
                 selectedTeam={selectedTeam}
                 addTeamDisabled={addTeamDisabled}
@@ -177,6 +183,11 @@ const Teams = () => {
                                             : selectedTeamAgeGroupId
                                     }
                                     label="Age Group"
+                                    sx={{
+                                        background: `${
+                                            editingDisabled ? '#e2e8f0' : ''
+                                        }`,
+                                    }}
                                 >
                                     {ageGroups.map((ageGroup) => (
                                         <MenuItem
@@ -210,13 +221,13 @@ const Teams = () => {
 
                     {/* Table for members */}
                     <div className="w-full">
-                        <TeamMembers 
+                        <TeamMembers
                             teamMemberRows={
-                                selectedTeamPlayers ? teamMemberRowsTEMP
+                                selectedTeamPlayers ?? teamMemberRowsTEMP
                             }
-                            teamMemberColumns={teamEditorColumns}
                             saveButtonDisabled
                             cancelButtonDisabled
+                            editingDisabled={editingDisabled}
                         />
                     </div>
                 </div>
@@ -227,7 +238,7 @@ const Teams = () => {
                         <DataGrid
                             rows={standingsRowsTEMP}
                             columns={standingsColumns}
-                            pageSizeOptions={[10]}
+                            pageSizeOptions={[100]}
                             disableRowSelectionOnClick
                             disableColumnResize
                             disableColumnFilter
@@ -262,7 +273,7 @@ const Teams = () => {
                             <DataGrid
                                 rows={recentGamesRowsTEMP}
                                 columns={recentGamesColumns}
-                                pageSizeOptions={[10]}
+                                pageSizeOptions={[100]}
                                 disableRowSelectionOnClick
                                 disableColumnResize
                                 disableColumnFilter

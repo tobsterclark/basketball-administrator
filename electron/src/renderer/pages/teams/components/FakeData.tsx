@@ -1,4 +1,7 @@
-import { TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid';
+import {
+    ArrowDownTrayIcon,
+    ArrowLeftStartOnRectangleIcon,
+} from '@heroicons/react/24/solid';
 import { GridColDef } from '@mui/x-data-grid';
 
 export const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
@@ -23,30 +26,6 @@ export const recentGamesRowsTEMP = Array.from({ length: 10 }, (_, i) => ({
     teamA: `Sharks`,
     teamB: `Bounce`,
 }));
-
-export const teamEditorColumns: GridColDef[] = [
-    {
-        field: 'number',
-        flex: 0.1,
-        sortable: false,
-        filterable: false,
-    },
-    {
-        field: 'name',
-        flex: 1,
-        sortable: false,
-        filterable: false,
-    },
-    {
-        field: 'actions',
-        sortable: false,
-        align: 'right',
-        filterable: false,
-        renderCell: () => (
-            <TrashIcon className="h-4 w-4 mr-4 inline-block text-red-600" />
-        ),
-    },
-];
 
 export const standingsColumns: GridColDef[] = [
     {

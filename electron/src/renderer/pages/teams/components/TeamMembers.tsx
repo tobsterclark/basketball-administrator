@@ -1,14 +1,43 @@
-import { gridClasses, DataGrid } from '@mui/x-data-grid';
+import { gridClasses, DataGrid, GridColDef } from '@mui/x-data-grid';
+import { ArrowLeftStartOnRectangleIcon } from '@heroicons/react/24/solid';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { TeamMembersProps } from './Types';
 
 const TeamMembers = (props: TeamMembersProps) => {
     const {
         teamMemberRows,
-        teamMemberColumns,
         saveButtonDisabled,
         cancelButtonDisabled,
+        editingDisabled,
     } = props;
+
+    const teamEditorColumns: GridColDef[] = [
+        {
+            field: 'number',
+            flex: 0.1,
+            sortable: false,
+            filterable: false,
+        },
+        {
+            field: 'name',
+            flex: 1,
+            sortable: false,
+            filterable: false,
+        },
+        {
+            field: 'actions',
+            sortable: false,
+            align: 'right',
+            filterable: false,
+            renderCell: () => (
+                <ArrowLeftStartOnRectangleIcon
+                    className={`h-4 w-4 mr-4 inline-block ${
+                        editingDisabled ? 'text-red-300 ' : 'text-red-600 '
+                    }`}
+                />
+            ),
+        },
+    ];
 
     return (
         <div>
@@ -16,7 +45,7 @@ const TeamMembers = (props: TeamMembersProps) => {
             <div className="shadow-md">
                 <DataGrid
                     rows={teamMemberRows}
-                    columns={teamMemberColumns}
+                    columns={teamEditorColumns}
                     slots={{ columnHeaders: () => null }}
                     autoHeight
                     disableColumnMenu
@@ -35,6 +64,10 @@ const TeamMembers = (props: TeamMembersProps) => {
                             {
                                 outline: 'none',
                             },
+                        [`& .${gridClasses.cell}`]: {
+                            background: `${editingDisabled ? '#e2e8f0' : ''}`,
+                            color: `${editingDisabled ? '#94a3b8' : ''}`,
+                        },
                     }}
                 />
             </div>

@@ -26,9 +26,9 @@ export interface TeamMemberRow {
 
 export interface TeamMembersProps {
     teamMemberRows: TeamMemberRow[];
-    teamMemberColumns: GridColDef[];
     saveButtonDisabled: boolean;
     cancelButtonDisabled: boolean;
+    editingDisabled: boolean;
 }
 
 export interface TeamSearchProps {
