@@ -46,12 +46,24 @@ const Teams = () => {
     const [addTeamDisabled, setAddTeamDisabled] = useState<boolean>(false);
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
 
+    const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
+    const selectedTeamAgeGroupId = cachedTeams.get(selectedTeam)?.ageGroupId;
+    const selectedTeamAgeGroup = ageGroups.find(
+        (ageGroup) => ageGroup.id === selectedTeamAgeGroupId,
+    )?.displayName;
+
+    const [editedTeamName, setEditedTeamName] =
+        useState<string>(selectedTeamName);
+    const [editedTeamAgeGroupDisplayName, setEditedTeamAgeGroupDisplayName] =
+        useState<string>(selectedTeamAgeGroup || '');
+
     // Fetches all players from a given team
     useEffect(() => {
         if (selectedTeam === '') {
             setEditingDisabled(true);
             return;
         }
+
         const teamMembersRequest: PrismaCall = {
             model: ModelName.player,
             operation: CrudOperations.findMany,
@@ -78,6 +90,7 @@ const Teams = () => {
                 );
                 setSelectedTeamPlayers(teamMembers);
                 setEditingDisabled(false);
+                setEditedTeamName(selectedTeamName);
             });
     }, [selectedTeam]);
 
@@ -134,12 +147,6 @@ const Teams = () => {
         // console.log(cachedTeams.get(selectedTeam));
     }, [selectedTeam]);
 
-    const selectedTeamName = cachedTeams.get(selectedTeam)?.name || 'teamName';
-    const selectedTeamAgeGroupId = cachedTeams.get(selectedTeam)?.ageGroupId;
-    const selectedTeamAgeGroup = ageGroups.find(
-        (ageGroup) => ageGroup.id === selectedTeamAgeGroupId,
-    )?.displayName;
-
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
@@ -151,17 +158,24 @@ const Teams = () => {
                 cachedTeams={cachedTeams}
             />
 
-            <div className="flex flex-row gap-12 justify-between pt-2">
+            <hr className="w-full pb-2" />
+
+            <div className="flex flex-row gap-12 justify-between pt-4">
                 {/* Team editor */}
-                <div className="w-1/4">
-                    <button
-                        type="button"
-                        disabled={editingDisabled}
-                        className="flex flex-row gap-4 hover:bg-gray-100"
-                    >
+                <div className="w-1/3">
+                    {/* <div className="flex flex-row hover:bg-gray-100">
                         <SectionTitle text={selectedTeamName} />
                         <PencilSquareIcon className="h-6 w-6 inline-block mt-1" />
-                    </button>
+                    </div> */}
+                    <TextField
+                        fullWidth
+                        id="teamNameTextField"
+                        label="Team Name"
+                        variant="filled"
+                        disabled={editingDisabled}
+                        value={editedTeamName}
+                        onChange={(e) => setEditedTeamName(e.target.value)}
+                    />
 
                     {/* Age and Division drop-down */}
                     <div className="flex flex-row gap-4 pt-6">
@@ -232,52 +246,25 @@ const Teams = () => {
                     </div>
                 </div>
 
-                <div className="w-1/4">
-                    <h3 className="text-lg font-medium pt-6 pb-2">Standings</h3>
-                    <div className="w-full">
-                        <DataGrid
-                            rows={standingsRowsTEMP}
-                            columns={standingsColumns}
-                            pageSizeOptions={[100]}
-                            disableRowSelectionOnClick
-                            disableColumnResize
-                            disableColumnFilter
-                            disableColumnSelector
-                            disableColumnSorting
-                            disableDensitySelector
-                            disableColumnMenu
-                            sx={{
-                                [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
-                                [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                    {
-                                        outline: 'none',
-                                    },
-                                [`& .${gridClasses.columnSeparator}`]: {
-                                    [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                        {
-                                            display: 'none',
-                                        },
-                                },
-                            }}
-                        />
-                    </div>
-                </div>
-
-                <div className="w-2/5">
-                    <h3 className="text-lg font-medium pt-6 pb-2">
-                        Recent Games
-                        <div className="">
+                <div className="w-2/3 flex flex-col">
+                    <div className="">
+                        <h3 className="text-lg font-medium pt-6 pb-2">
+                            Standings
+                        </h3>
+                        <div className="w-full">
                             <DataGrid
-                                rows={recentGamesRowsTEMP}
-                                columns={recentGamesColumns}
+                                rows={standingsRowsTEMP}
+                                columns={standingsColumns}
                                 pageSizeOptions={[100]}
                                 disableRowSelectionOnClick
                                 disableColumnResize
                                 disableColumnFilter
                                 disableColumnSelector
+                                initialState={{
+                                    pagination: {
+                                        paginationModel: { pageSize: 5 },
+                                    },
+                                }}
                                 disableColumnSorting
                                 disableDensitySelector
                                 disableColumnMenu
@@ -299,7 +286,47 @@ const Teams = () => {
                                 }}
                             />
                         </div>
-                    </h3>
+                    </div>
+                    <div className="">
+                        <h3 className="text-lg font-medium pt-6 pb-2">
+                            Recent Games
+                            <div className="">
+                                <DataGrid
+                                    rows={recentGamesRowsTEMP}
+                                    columns={recentGamesColumns}
+                                    pageSizeOptions={[100]}
+                                    disableRowSelectionOnClick
+                                    disableColumnResize
+                                    initialState={{
+                                        pagination: {
+                                            paginationModel: { pageSize: 5 },
+                                        },
+                                    }}
+                                    disableColumnFilter
+                                    disableColumnSelector
+                                    disableColumnSorting
+                                    disableDensitySelector
+                                    disableColumnMenu
+                                    sx={{
+                                        [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
+                                            {
+                                                outline: 'none',
+                                            },
+                                        [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
+                                            {
+                                                outline: 'none',
+                                            },
+                                        [`& .${gridClasses.columnSeparator}`]: {
+                                            [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
+                                                {
+                                                    display: 'none',
+                                                },
+                                        },
+                                    }}
+                                />
+                            </div>
+                        </h3>
+                    </div>
                 </div>
             </div>
         </PageContainer>

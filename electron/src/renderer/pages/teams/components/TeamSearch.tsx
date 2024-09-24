@@ -46,7 +46,7 @@ export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
                             label="Select team"
                             id="teamSearchInput"
                             autoFocus
-                            variant="filled"
+                            variant="outlined"
                         />
                     )}
                 />
