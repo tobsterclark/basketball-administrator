@@ -8,13 +8,7 @@ interface AutocompleteOption {
 }
 
 export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
-    const {
-        addTeamDisabled,
-        handleAddTeamButtonPress,
-        cachedTeams,
-        setSelectedTeam,
-        selectedTeam,
-    } = props;
+    const { handleAddTeamButtonPress, cachedTeams, setSelectedTeam } = props;
 
     const transformTeams = (
         teams: Map<string, TeamCache>,
@@ -54,7 +48,6 @@ export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
             <div>
                 <button
                     type="button"
-                    disabled={addTeamDisabled}
                     onClick={handleAddTeamButtonPress}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
                 >

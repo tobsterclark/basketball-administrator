@@ -5,12 +5,10 @@ import {
     Select,
     TextField,
 } from '@mui/material';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import SectionTitle from '../../ui_components/SectionTitle';
 import TeamMembers from './components/TeamMembers';
 import {
     teamMemberRowsTEMP,
@@ -43,19 +41,25 @@ const Teams = () => {
     const [selectedTeamPlayers, setSelectedTeamPlayers] =
         useState<TeamMemberRow[]>();
 
-    const [addTeamDisabled, setAddTeamDisabled] = useState<boolean>(false);
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
 
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
-    const selectedTeamAgeGroupId = cachedTeams.get(selectedTeam)?.ageGroupId;
-    const selectedTeamAgeGroup = ageGroups.find(
-        (ageGroup) => ageGroup.id === selectedTeamAgeGroupId,
-    )?.displayName;
-
     const [editedTeamName, setEditedTeamName] =
         useState<string>(selectedTeamName);
-    const [editedTeamAgeGroupDisplayName, setEditedTeamAgeGroupDisplayName] =
-        useState<string>(selectedTeamAgeGroup || '');
+
+    const selectedAgeGroup: AgeGroupDataResponse | undefined = ageGroups.find(
+        (ageGroup) => ageGroup.id === cachedTeams.get(selectedTeam)?.ageGroupId,
+    );
+    const [editedAgeGroup, setEditedAgeGroup] = useState<
+        AgeGroupDataResponse | undefined
+    >(selectedAgeGroup);
+
+    // i fucking hate react!!!
+    useEffect(() => {
+        if (selectedTeam !== '') {
+            setEditedAgeGroup(selectedAgeGroup);
+        }
+    }, [selectedTeam, selectedAgeGroup]);
 
     // Fetches all players from a given team
     useEffect(() => {
@@ -92,6 +96,7 @@ const Teams = () => {
                 setEditingDisabled(false);
                 setEditedTeamName(selectedTeamName);
             });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTeam]);
 
     // Fetches all ageGroups from DB and stores into the ageGroups state
@@ -140,20 +145,17 @@ const Teams = () => {
     }, []);
 
     const handleAddTeamButtonPress = () => {
-        console.log('Add team button pressed');
+        // console.log('Add team button pressed');
     };
 
-    useEffect(() => {
-        // console.log(cachedTeams.get(selectedTeam));
-    }, [selectedTeam]);
+    // console.log(`selectedTeam: ${selectedTeam}`);
+    // console.log(`selectedAgeGroup: ${selectedAgeGroup}`);
 
     return (
         <PageContainer>
             <PageTitle text="Team Management" />
             <TeamSearch
                 setSelectedTeam={setSelectedTeam}
-                selectedTeam={selectedTeam}
-                addTeamDisabled={addTeamDisabled}
                 handleAddTeamButtonPress={handleAddTeamButtonPress}
                 cachedTeams={cachedTeams}
             />
@@ -191,16 +193,19 @@ const Teams = () => {
                                     labelId="demo-simple-select-label"
                                     id="demo-simple-select"
                                     disabled={editingDisabled}
-                                    value={
-                                        selectedTeamAgeGroup === undefined
-                                            ? ''
-                                            : selectedTeamAgeGroupId
-                                    }
+                                    value={editedAgeGroup?.id ?? ''}
                                     label="Age Group"
                                     sx={{
                                         background: `${
                                             editingDisabled ? '#e2e8f0' : ''
                                         }`,
+                                    }}
+                                    onChange={(e) => {
+                                        const newAgeGroup = ageGroups.find(
+                                            (ageGroup) =>
+                                                ageGroup.id === e.target.value,
+                                        );
+                                        setEditedAgeGroup(newAgeGroup);
                                     }}
                                 >
                                     {ageGroups.map((ageGroup) => (

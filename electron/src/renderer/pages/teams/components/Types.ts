@@ -1,4 +1,3 @@
-import { GridColDef } from '@mui/x-data-grid';
 import { Prisma } from '@prisma/client';
 import { Dispatch, SetStateAction } from 'react';
 
@@ -33,8 +32,6 @@ export interface TeamMembersProps {
 
 export interface TeamSearchProps {
     setSelectedTeam: Dispatch<SetStateAction<string>>; // dispatch needed for hooks
-    selectedTeam: string;
-    addTeamDisabled: boolean;
     handleAddTeamButtonPress: () => void;
     cachedTeams: Map<string, TeamCache>;
 }
