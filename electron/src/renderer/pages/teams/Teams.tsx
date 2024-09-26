@@ -40,8 +40,12 @@ const Teams = () => {
     const [selectedTeam, setSelectedTeam] = useState<string>('');
     const [selectedTeamPlayers, setSelectedTeamPlayers] =
         useState<TeamMemberRow[]>();
+    const [editedPlayersToRemove, setEditedPlayersToRemove] = useState<
+        string[]
+    >([]);
 
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
+    const [unsavedEdits, setUnsavedEdits] = useState<boolean>(false);
 
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
     const [editedTeamName, setEditedTeamName] =
@@ -60,6 +64,19 @@ const Teams = () => {
             setEditedAgeGroup(selectedAgeGroup);
         }
     }, [selectedTeam, selectedAgeGroup]);
+
+    useEffect(() => {
+        console.log(editedTeamName, selectedTeamName);
+        console.log(editedAgeGroup, selectedAgeGroup);
+        if (
+            editedTeamName !== selectedTeamName ||
+            editedAgeGroup !== selectedAgeGroup
+        ) {
+            setUnsavedEdits(true);
+        } else {
+            setUnsavedEdits(false);
+        }
+    }, [editedTeamName, editedAgeGroup, selectedTeamName, selectedAgeGroup]);
 
     // Fetches all players from a given team
     useEffect(() => {
@@ -244,9 +261,10 @@ const Teams = () => {
                             teamMemberRows={
                                 selectedTeamPlayers ?? teamMemberRowsTEMP
                             }
-                            saveButtonDisabled
-                            cancelButtonDisabled
+                            saveButtonDisabled={!unsavedEdits}
+                            cancelButtonDisabled={!unsavedEdits}
                             editingDisabled={editingDisabled}
+                            editedPlayersToRemove={editedPlayersToRemove}
                         />
                     </div>
                 </div>

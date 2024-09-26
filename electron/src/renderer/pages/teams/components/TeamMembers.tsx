@@ -1,5 +1,11 @@
-import { gridClasses, DataGrid, GridColDef } from '@mui/x-data-grid';
+import {
+    gridClasses,
+    DataGrid,
+    GridColDef,
+    GridRowSelectionModel,
+} from '@mui/x-data-grid';
 import { ArrowLeftStartOnRectangleIcon } from '@heroicons/react/24/solid';
+import { useEffect, useState } from 'react';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { TeamMembersProps } from './Types';
 
@@ -9,6 +15,7 @@ const TeamMembers = (props: TeamMembersProps) => {
         saveButtonDisabled,
         cancelButtonDisabled,
         editingDisabled,
+        editedPlayersToRemove,
     } = props;
 
     const teamEditorColumns: GridColDef[] = [
@@ -39,6 +46,38 @@ const TeamMembers = (props: TeamMembersProps) => {
         },
     ];
 
+    const [rowSelectionMode, setRowSelectionModel] =
+        useState<GridRowSelectionModel>([]);
+
+    const removePlayer = (rowIndex: number) => {
+        const { playerId } = teamMemberRows[rowIndex];
+        if (!editedPlayersToRemove.includes(playerId)) {
+            editedPlayersToRemove.push(playerId);
+        }
+    };
+
+    const reAddPlayer = (rowIndex: number) => {
+        const { playerId } = teamMemberRows[rowIndex];
+        const index = editedPlayersToRemove.indexOf(playerId);
+        if (index > -1) {
+            editedPlayersToRemove.splice(index, 1);
+        }
+    };
+
+    const checkForSelection = (newSelection: GridRowSelectionModel) => {
+        if (newSelection.length === 0) {
+            return;
+        }
+
+        const rowIndex = newSelection[0] as number;
+        const { playerId } = teamMemberRows[rowIndex];
+        if (editedPlayersToRemove.includes(playerId)) {
+            reAddPlayer(rowIndex);
+        } else {
+            removePlayer(rowIndex);
+        }
+    };
+
     return (
         <div>
             <h3 className="text-lg font-medium pt-6 pb-2">Members</h3>
@@ -47,14 +86,30 @@ const TeamMembers = (props: TeamMembersProps) => {
                     rows={teamMemberRows}
                     columns={teamEditorColumns}
                     slots={{ columnHeaders: () => null }}
+                    onRowSelectionModelChange={(newSelection) => {
+                        setRowSelectionModel(newSelection);
+                        checkForSelection(newSelection);
+                        console.log(newSelection);
+                    }}
+                    rowSelectionModel={rowSelectionMode}
                     autoHeight
                     disableColumnMenu
                     disableColumnSorting
-                    disableRowSelectionOnClick
                     hideFooter
                     disableColumnFilter
                     disableColumnSelector
                     disableDensitySelector
+                    getRowClassName={(params) => {
+                        if (editingDisabled) {
+                            return 'bg-[#e2e8f0]';
+                        }
+                        if (
+                            editedPlayersToRemove.includes(params.row.playerId)
+                        ) {
+                            return 'bg-red-200 line-through';
+                        }
+                        return 'bg-white';
+                    }}
                     sx={{
                         [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
                             {

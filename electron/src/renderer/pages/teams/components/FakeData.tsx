@@ -9,6 +9,7 @@ export const teamMemberRowsTEMP = Array.from({ length: 8 }, (_, i) => ({
     playerId: '',
     number: i + 1,
     name: `Team Member`,
+    toBeRemoved: false,
 }));
 
 export const standingsRowsTEMP = Array.from({ length: 10 }, (_, i) => ({

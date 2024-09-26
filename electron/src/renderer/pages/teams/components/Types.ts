@@ -21,6 +21,7 @@ export interface TeamMemberRow {
     playerId: string;
     name: string;
     number: number;
+    toBeRemoved: boolean;
 }
 
 export interface TeamMembersProps {
@@ -28,6 +29,7 @@ export interface TeamMembersProps {
     saveButtonDisabled: boolean;
     cancelButtonDisabled: boolean;
     editingDisabled: boolean;
+    editedPlayersToRemove: string[];
 }
 
 export interface TeamSearchProps {
