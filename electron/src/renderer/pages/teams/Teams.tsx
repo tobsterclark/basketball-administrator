@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import TeamMembers from './components/TeamMembers';
@@ -35,17 +36,19 @@ const Teams = () => {
     const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
         new Map(),
     );
-
     const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
+
     const [selectedTeam, setSelectedTeam] = useState<string>('');
     const [selectedTeamPlayers, setSelectedTeamPlayers] =
         useState<TeamMemberRow[]>();
+
     const [editedPlayersToRemove, setEditedPlayersToRemove] = useState<
         string[]
     >([]);
 
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
     const [unsavedEdits, setUnsavedEdits] = useState<boolean>(false);
+    const [pullNewData, setPullNewData] = useState<boolean>(false);
 
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
     const [editedTeamName, setEditedTeamName] =
@@ -66,17 +69,103 @@ const Teams = () => {
     }, [selectedTeam, selectedAgeGroup]);
 
     useEffect(() => {
-        console.log(editedTeamName, selectedTeamName);
-        console.log(editedAgeGroup, selectedAgeGroup);
         if (
             editedTeamName !== selectedTeamName ||
-            editedAgeGroup !== selectedAgeGroup
+            editedAgeGroup !== selectedAgeGroup ||
+            editedPlayersToRemove.length !== 0
         ) {
             setUnsavedEdits(true);
         } else {
             setUnsavedEdits(false);
         }
-    }, [editedTeamName, editedAgeGroup, selectedTeamName, selectedAgeGroup]);
+    }, [
+        editedTeamName,
+        editedAgeGroup,
+        selectedTeamName,
+        selectedAgeGroup,
+        editedPlayersToRemove.length,
+    ]);
+
+    const handleSave = () => {
+        // check if edited variables haven't been initialised
+        if (
+            editedAgeGroup === undefined ||
+            editedTeamName === undefined ||
+            editedTeamName === '' ||
+            unsavedEdits === false
+        ) {
+            return;
+        }
+
+        const updateTeamPush: PrismaCall = {
+            model: ModelName.team,
+            operation: CrudOperations.update,
+            data: {
+                where: { id: selectedTeam },
+                data: {
+                    name: editedTeamName,
+                    // ageGroup: editedAgeGroup,
+                    ageGroupId: editedAgeGroup?.id,
+                },
+            },
+        };
+
+        // const updatePlayersPush: PrismaCall[] = editedPlayersToRemove.map(
+        //     (playerId) => ({
+        //         model: ModelName.player,
+        //         operation: CrudOperations.update,
+        //         data: {
+        //             where: { id: playerId },
+        //             data: { teamId: null },
+        //         },
+        //     }),
+        // );
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, updateTeamPush)
+            .then((data) => {
+                const updatedTeam = data as TeamCache;
+                toast.success(`Updated team: ${updatedTeam.name}`);
+            });
+
+        // updatePlayersPush.forEach((updatePlayerPush) => {
+        //     window.electron.ipcRenderer
+        //         .invoke(IpcChannels.PrismaClient, updatePlayerPush)
+        //         .then((data) => {
+        //             const updatedPlayer = data as PlayerDataResponse;
+        //             toast.success(
+        //                 `Removed player: ${updatedPlayer.firstName} from team ${selectedTeamName}`,
+        //             );
+        //         });
+        // });
+
+        // Update local copies of team and players once saved
+        // update team name and age group in cachedTeams
+        const updatedTeam = cachedTeams.get(selectedTeam);
+        updatedTeam!.name = editedTeamName;
+        updatedTeam!.ageGroupId = editedAgeGroup?.id;
+        setCachedTeams((currentCache) => {
+            const newCache = new Map(currentCache);
+            newCache.set(selectedTeam, updatedTeam!);
+            return newCache;
+        });
+
+        // update players in selectedTeamPlayers
+        // const updatedPlayers = selectedTeamPlayers?.filter(
+        //     (player) => !editedPlayersToRemove.includes(player.playerId),
+        // );
+        // setSelectedTeamPlayers(updatedPlayers);
+
+        setPullNewData(true);
+        setUnsavedEdits(false);
+    };
+
+    const handleCancel = () => {
+        setEditedTeamName(selectedTeamName);
+        setEditedAgeGroup(selectedAgeGroup);
+        setEditedPlayersToRemove([]);
+        setUnsavedEdits(false);
+    };
 
     // Fetches all players from a given team
     useEffect(() => {
@@ -84,6 +173,8 @@ const Teams = () => {
             setEditingDisabled(true);
             return;
         }
+
+        handleCancel();
 
         const teamMembersRequest: PrismaCall = {
             model: ModelName.player,
@@ -107,14 +198,20 @@ const Teams = () => {
                         playerId: player.id,
                         name: player.firstName + player.lastName,
                         number: player.number ?? 0,
+                        toBeRemoved: false,
                     }),
                 );
+                console.log(teamMembers);
                 setSelectedTeamPlayers(teamMembers);
                 setEditingDisabled(false);
                 setEditedTeamName(selectedTeamName);
             });
+
+        // Used to recall the useEffect hook when updating a team
+        setPullNewData(false);
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedTeam]);
+    }, [selectedTeam, pullNewData]);
 
     // Fetches all ageGroups from DB and stores into the ageGroups state
     useEffect(() => {
@@ -151,6 +248,7 @@ const Teams = () => {
             .then((data) => {
                 console.warn('allTeamsRequest invoked');
                 const fetchedTeams = data as TeamCache[];
+                console.log(fetchedTeams);
                 setCachedTeams((currentCache) => {
                     const newCache = new Map(currentCache);
                     fetchedTeams.forEach((team) => {
@@ -159,7 +257,7 @@ const Teams = () => {
                     return newCache;
                 });
             });
-    }, []);
+    }, [pullNewData]);
 
     const handleAddTeamButtonPress = () => {
         // console.log('Add team button pressed');
@@ -263,8 +361,11 @@ const Teams = () => {
                             }
                             saveButtonDisabled={!unsavedEdits}
                             cancelButtonDisabled={!unsavedEdits}
+                            onCancelClick={handleCancel}
+                            onSaveClick={handleSave}
                             editingDisabled={editingDisabled}
                             editedPlayersToRemove={editedPlayersToRemove}
+                            setEditedPlayersToRemove={setEditedPlayersToRemove}
                         />
                     </div>
                 </div>

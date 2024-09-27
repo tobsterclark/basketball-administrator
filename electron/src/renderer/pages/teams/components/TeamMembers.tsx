@@ -5,7 +5,7 @@ import {
     GridRowSelectionModel,
 } from '@mui/x-data-grid';
 import { ArrowLeftStartOnRectangleIcon } from '@heroicons/react/24/solid';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { TeamMembersProps } from './Types';
 
@@ -16,6 +16,9 @@ const TeamMembers = (props: TeamMembersProps) => {
         cancelButtonDisabled,
         editingDisabled,
         editedPlayersToRemove,
+        setEditedPlayersToRemove,
+        onCancelClick,
+        onSaveClick,
     } = props;
 
     const teamEditorColumns: GridColDef[] = [
@@ -31,19 +34,19 @@ const TeamMembers = (props: TeamMembersProps) => {
             sortable: false,
             filterable: false,
         },
-        {
-            field: 'actions',
-            sortable: false,
-            align: 'right',
-            filterable: false,
-            renderCell: () => (
-                <ArrowLeftStartOnRectangleIcon
-                    className={`h-4 w-4 mr-4 inline-block ${
-                        editingDisabled ? 'text-red-300 ' : 'text-red-600 '
-                    }`}
-                />
-            ),
-        },
+        // {
+        //     field: 'actions',
+        //     sortable: false,
+        //     align: 'right',
+        //     filterable: false,
+        //     renderCell: () => (
+        //         <ArrowLeftStartOnRectangleIcon
+        //             className={`h-4 w-4 mr-4 inline-block ${
+        //                 editingDisabled ? 'text-red-300 ' : 'text-red-600 '
+        //             }`}
+        //         />
+        //     ),
+        // },
     ];
 
     const [rowSelectionMode, setRowSelectionModel] =
@@ -52,7 +55,8 @@ const TeamMembers = (props: TeamMembersProps) => {
     const removePlayer = (rowIndex: number) => {
         const { playerId } = teamMemberRows[rowIndex];
         if (!editedPlayersToRemove.includes(playerId)) {
-            editedPlayersToRemove.push(playerId);
+            // editedPlayersToRemove.push(playerId);
+            setEditedPlayersToRemove([...editedPlayersToRemove, playerId]);
         }
     };
 
@@ -60,7 +64,9 @@ const TeamMembers = (props: TeamMembersProps) => {
         const { playerId } = teamMemberRows[rowIndex];
         const index = editedPlayersToRemove.indexOf(playerId);
         if (index > -1) {
-            editedPlayersToRemove.splice(index, 1);
+            const updatedPlayers = [...editedPlayersToRemove];
+            updatedPlayers.splice(index, 1);
+            setEditedPlayersToRemove(updatedPlayers);
         }
     };
 
@@ -86,12 +92,12 @@ const TeamMembers = (props: TeamMembersProps) => {
                     rows={teamMemberRows}
                     columns={teamEditorColumns}
                     slots={{ columnHeaders: () => null }}
-                    onRowSelectionModelChange={(newSelection) => {
-                        setRowSelectionModel(newSelection);
-                        checkForSelection(newSelection);
-                        console.log(newSelection);
-                    }}
-                    rowSelectionModel={rowSelectionMode}
+                    // onRowSelectionModelChange={(newSelection) => {
+                    //     setRowSelectionModel([]);
+                    //     checkForSelection(newSelection);
+                    // }}
+                    // rowSelectionModel={rowSelectionMode}
+                    disableRowSelectionOnClick
                     autoHeight
                     disableColumnMenu
                     disableColumnSorting
@@ -106,11 +112,17 @@ const TeamMembers = (props: TeamMembersProps) => {
                         if (
                             editedPlayersToRemove.includes(params.row.playerId)
                         ) {
-                            return 'bg-red-200 line-through';
+                            return 'bg-red-400 line-through';
                         }
                         return 'bg-white';
                     }}
                     sx={{
+                        // '& .MuiDataGrid-row': {
+                        //     '&:hover': {
+                        //         bgcolor: 'rgb(254 202 202)',
+                        //     },
+                        // },
+                        // '& .Mui-selected': { bgcolor: 'white' },
                         [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
                             {
                                 outline: 'none',
@@ -130,6 +142,8 @@ const TeamMembers = (props: TeamMembersProps) => {
                 <FormCancelSave
                     saveButtonDisabled={saveButtonDisabled}
                     cancelButtonDisabled={cancelButtonDisabled}
+                    onCancelClick={onCancelClick}
+                    onSaveClick={onSaveClick}
                 />
             </div>
         </div>

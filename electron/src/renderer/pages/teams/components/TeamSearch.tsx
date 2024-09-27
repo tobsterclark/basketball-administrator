@@ -1,5 +1,6 @@
 import { Autocomplete, TextField } from '@mui/material';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
+import { useEffect, useState } from 'react';
 import { TeamCache, TeamSearchProps } from './Types';
 
 interface AutocompleteOption {
@@ -9,6 +10,8 @@ interface AutocompleteOption {
 
 export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
     const { handleAddTeamButtonPress, cachedTeams, setSelectedTeam } = props;
+    const [selectedOption, setSelectedOption] =
+        useState<AutocompleteOption | null>(null);
 
     const transformTeams = (
         teams: Map<string, TeamCache>,
@@ -20,12 +23,24 @@ export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
         return options;
     };
 
+    useEffect(() => {
+        if (selectedOption) {
+            const updatedOption = transformTeams(cachedTeams).find(
+                (option) => option.id === selectedOption.id,
+            );
+            setSelectedOption(updatedOption || null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cachedTeams]);
+
     return (
         <div className="flex flex-row pt-12 pb-6 gap-6">
             <div className="md:w-1/2 xl:w-1/3 2xl:w-1/4">
                 <Autocomplete
                     disablePortal
+                    value={selectedOption}
                     onChange={(_, value) => {
+                        setSelectedOption(value);
                         setSelectedTeam(value?.id || '');
                     }}
                     blurOnSelect

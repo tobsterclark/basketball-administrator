@@ -30,6 +30,9 @@ export interface TeamMembersProps {
     cancelButtonDisabled: boolean;
     editingDisabled: boolean;
     editedPlayersToRemove: string[];
+    setEditedPlayersToRemove: Dispatch<SetStateAction<string[]>>;
+    onCancelClick?: () => void;
+    onSaveClick?: () => void;
 }
 
 export interface TeamSearchProps {
