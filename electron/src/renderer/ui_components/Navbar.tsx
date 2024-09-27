@@ -30,10 +30,8 @@ const Navbar = () => {
                 icon: <Squares2X2Icon className={iconStyle} />,
             },
             {
-                name: 'Results',
-                // TODO: replace with proper link once page exists
-                // link: '/results',
-                link: '/',
+                name: 'Roster',
+                link: '/roster',
                 icon: <CalendarDaysIcon className={iconStyle} />,
             },
             {

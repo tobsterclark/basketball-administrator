@@ -14,6 +14,7 @@ import {
     TeamDataResponse,
 } from './pages/players/components/Types';
 import { IpcChannels } from '../general/IpcChannels';
+import Roster from './pages/roster/Roster';
 
 const App = () => {
     // TODO: get players here as well
@@ -60,6 +61,7 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="roster" element={<Roster />} />
                     <Route
                         path="players"
                         element={
