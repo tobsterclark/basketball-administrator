@@ -63,7 +63,10 @@ const App = () => {
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
                     <Route path="roster" element={<Roster />} />
-                    <Route path="term-setup" element={<TermSetup />} />
+                    <Route
+                        path="term-setup"
+                        element={<TermSetup ageGroups={ageGroups} />}
+                    />
                     <Route
                         path="players"
                         element={

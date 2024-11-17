@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import {
     ArrowLeftCircleIcon,
     ArrowRightCircleIcon,
@@ -18,37 +17,20 @@ import {
 } from '@mui/material';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { IpcChannels } from '../../../general/IpcChannels';
-import {
-    PrismaCall,
-    ModelName,
-    CrudOperations,
-} from '../../../general/prismaTypes';
+import { PlayerDataProps } from '../players/components/Types';
 
-const TermSetup = () => {
-    const [locations, setLocations] = React.useState<string[]>([]);
+export const TermSetup = (props: PlayerDataProps) => {
+    const toTitleCase = (str: string) => {
+        return str
+            .toLowerCase()
+            .split(' ')
+            .map((word: string) => {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            })
+            .join(' ');
+    };
+    const { ageGroups } = props;
 
-    useEffect(() => {
-        const locationsCall: PrismaCall = {
-            model: ModelName.location,
-            operation: CrudOperations.findMany,
-        };
-
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, locationsCall)
-            .then((data) => {
-                setLocations(data as string[]);
-                console.log(data);
-            });
-    }, [locations]);
-
-    const ageGroups = [
-        'Years 3-4',
-        'Years 5-6',
-        'Years 7-8',
-        'Years 9-10',
-        'Years 11-12',
-    ];
     const hourSlots = [
         {
             slot: 0,
@@ -106,7 +88,7 @@ const TermSetup = () => {
     };
 
     const dropDown = (
-        <div className="w-full flex-grow">
+        <div className="w-4/5 py-2 flex-grow">
             <FormControl fullWidth>
                 <InputLabel id="demo-simple-select-label">Years</InputLabel>
                 <Select
@@ -117,9 +99,9 @@ const TermSetup = () => {
                     name="teamId"
                     onChange={handleSelectInput}
                 >
-                    {ageGroups.map((ageGroup, index) => (
-                        <MenuItem key={ageGroup} value={index}>
-                            {ageGroup}
+                    {ageGroups.map((ageGroup) => (
+                        <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                            {toTitleCase(ageGroup.displayName)}
                         </MenuItem>
                     ))}
                 </Select>
@@ -144,38 +126,11 @@ const TermSetup = () => {
                     <h2 className="text-xl font-bold pt-6">St Ives</h2>
 
                     <TableContainer>
-                        <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell />
-                                    {hourSlots.map((hourSlot) => (
-                                        <TableCell>{hourSlot.time}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) => (
-                                    <TableRow key={row.name}>
-                                        <TableCell
-                                            component="th"
-                                            scope="row"
-                                            align="left"
-                                            padding="none"
-                                        >
-                                            {row.name}
-                                        </TableCell>
-                                        {row.hourSlots.map((hourSlot) => (
-                                            <TableCell>{dropDown}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                    <h2 className="text-xl font-bold pt-12">Belrose</h2>
-
-                    <TableContainer>
-                        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                        <Table
+                            sx={{ minWidth: 650 }}
+                            aria-label="simple table"
+                            padding="checkbox"
+                        >
                             <TableHead>
                                 <TableRow>
                                     <TableCell />
