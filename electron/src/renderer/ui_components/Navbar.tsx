@@ -8,6 +8,7 @@ import {
     Cog6ToothIcon,
     GlobeAsiaAustraliaIcon,
     Squares2X2Icon,
+    WrenchIcon,
 } from '@heroicons/react/24/solid';
 
 const Navbar = () => {
@@ -33,6 +34,11 @@ const Navbar = () => {
                 name: 'Roster',
                 link: '/roster',
                 icon: <CalendarDaysIcon className={iconStyle} />,
+            },
+            {
+                name: 'Term Setup',
+                link: '/term-setup',
+                icon: <WrenchIcon className={iconStyle} />,
             },
             {
                 name: 'Players',

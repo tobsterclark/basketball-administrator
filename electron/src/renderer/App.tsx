@@ -15,6 +15,7 @@ import {
 } from './pages/players/components/Types';
 import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
+import TermSetup from './pages/termsetup/TermSetup';
 
 const App = () => {
     // TODO: get players here as well
@@ -62,6 +63,7 @@ const App = () => {
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
                     <Route path="roster" element={<Roster />} />
+                    <Route path="term-setup" element={<TermSetup />} />
                     <Route
                         path="players"
                         element={
