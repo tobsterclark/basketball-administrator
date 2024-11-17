@@ -15,11 +15,18 @@ import {
     TableHead,
     TableRow,
 } from '@mui/material';
+import { useState } from 'react';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { PlayerDataProps } from '../players/components/Types';
 
 export const TermSetup = (props: PlayerDataProps) => {
+    type CourtSelections = {
+        [courtName: string]: {
+            [timeSlot: number]: string;
+        };
+    };
+
     const toTitleCase = (str: string) => {
         return str
             .toLowerCase()
@@ -29,7 +36,6 @@ export const TermSetup = (props: PlayerDataProps) => {
             })
             .join(' ');
     };
-    const { ageGroups } = props;
 
     const hourSlots = [
         {
@@ -81,23 +87,38 @@ export const TermSetup = (props: PlayerDataProps) => {
         },
     ];
 
-    const handleSelectInput = (e: SelectChangeEvent<string>) => {
-        const { name, value } = e.target;
+    const { ageGroups } = props;
+    const [courtSelections, setCourtSelections] = useState<CourtSelections>({});
 
-        console.log(name, value);
+    const handleSelectInput = (
+        e: SelectChangeEvent<string>,
+        court: string,
+        slot: number,
+    ) => {
+        const selectedAgeGroupId = e.target.value;
+
+        setCourtSelections((prevSelections) => ({
+            ...prevSelections,
+            [court]: {
+                ...prevSelections[court],
+                [slot]: selectedAgeGroupId,
+            },
+        }));
+        console.log(courtSelections);
     };
 
-    const dropDown = (
+    const dropDown = (court: string, slot: number) => (
         <div className="w-4/5 py-2 flex-grow">
             <FormControl fullWidth>
-                <InputLabel id="demo-simple-select-label">Years</InputLabel>
+                <InputLabel id={`select-label-${court}-${slot}`}>
+                    Age Group
+                </InputLabel>
                 <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value=""
+                    labelId={`select-label-${court}-${slot}`}
+                    id={`select-${court}-${slot}`}
+                    value={courtSelections[court]?.[slot] || ''}
                     label="Age Group"
-                    name="teamId"
-                    onChange={handleSelectInput}
+                    onChange={(e) => handleSelectInput(e, court, slot)}
                 >
                     {ageGroups.map((ageGroup) => (
                         <MenuItem key={ageGroup.id} value={ageGroup.id}>
@@ -151,7 +172,11 @@ export const TermSetup = (props: PlayerDataProps) => {
                                             {row.name}
                                         </TableCell>
                                         {row.hourSlots.map((hourSlot) => (
-                                            <TableCell>{dropDown}</TableCell>
+                                            <TableCell
+                                                key={`${row.name}-${hourSlot}`}
+                                            >
+                                                {dropDown(row.name, hourSlot)}
+                                            </TableCell>
                                         ))}
                                     </TableRow>
                                 ))}
