@@ -22,76 +22,41 @@ import { PlayerDataProps } from '../players/components/Types';
 
 export const TermSetup = (props: PlayerDataProps) => {
     type CourtSelections = {
-        [courtName: string]: {
-            [timeSlot: number]: string;
+        [week: number]: {
+            [venue: string]: {
+                [court: string]: {
+                    [timeSlot: number]: string; // 'ageGroupId' or 'noEvent'
+                };
+            };
         };
     };
 
-    const toTitleCase = (str: string) => {
-        return str
-            .toLowerCase()
-            .split(' ')
-            .map((word: string) => {
-                return word.charAt(0).toUpperCase() + word.slice(1);
-            })
-            .join(' ');
+    const { ageGroups } = props;
+
+    const venues: { [key: string]: string[] } = {
+        'St Ives': ['Court 1', 'Court 2', 'Court 3'],
+        Belrose: ['Court 1', 'Court 2'],
     };
 
     const hourSlots = [
-        {
-            slot: 0,
-            time: '8-9am',
-        },
-        {
-            slot: 1,
-            time: '9-10am',
-        },
-        {
-            slot: 2,
-            time: '10-11am',
-        },
-        {
-            slot: 3,
-            time: '11-12pm',
-        },
-        {
-            slot: 4,
-            time: '12-1pm',
-        },
-        {
-            slot: 5,
-            time: '1-2pm',
-        },
-        {
-            slot: 6,
-            time: '2-3pm',
-        },
-        {
-            slot: 7,
-            time: '3-4pm',
-        },
-        {
-            slot: 8,
-            time: '4-5pm',
-        },
+        { slot: 0, time: '9-10am' },
+        { slot: 1, time: '10-11am' },
+        { slot: 2, time: '11-12pm' },
+        { slot: 3, time: '12-1pm' },
+        { slot: 4, time: '1-2pm' },
+        { slot: 5, time: '2-3pm' },
+        { slot: 6, time: '3-4pm' },
+        { slot: 7, time: '4-5pm' },
     ];
 
-    const rows = [
-        {
-            name: 'Court 1',
-            hourSlots: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        },
-        {
-            name: 'Court 2',
-            hourSlots: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-        },
-    ];
+    const totalWeeks = 10;
 
-    const { ageGroups } = props;
     const [courtSelections, setCourtSelections] = useState<CourtSelections>({});
 
     const handleSelectInput = (
         e: SelectChangeEvent<string>,
+        week: number,
+        venue: string,
         court: string,
         slot: number,
     ) => {
@@ -99,35 +64,87 @@ export const TermSetup = (props: PlayerDataProps) => {
 
         setCourtSelections((prevSelections) => ({
             ...prevSelections,
-            [court]: {
-                ...prevSelections[court],
-                [slot]: selectedAgeGroupId,
+            [week]: {
+                ...prevSelections[week],
+                [venue]: {
+                    ...prevSelections[week]?.[venue],
+                    [court]: {
+                        ...prevSelections[week]?.[venue]?.[court],
+                        [slot]: selectedAgeGroupId,
+                    },
+                },
             },
         }));
-        console.log(courtSelections);
     };
 
-    const dropDown = (court: string, slot: number) => (
-        <div className="w-4/5 py-2 flex-grow">
-            <FormControl fullWidth>
-                <InputLabel id={`select-label-${court}-${slot}`}>
-                    Age Group
-                </InputLabel>
-                <Select
-                    labelId={`select-label-${court}-${slot}`}
-                    id={`select-${court}-${slot}`}
-                    value={courtSelections[court]?.[slot] || ''}
-                    label="Age Group"
-                    onChange={(e) => handleSelectInput(e, court, slot)}
-                >
-                    {ageGroups.map((ageGroup) => (
-                        <MenuItem key={ageGroup.id} value={ageGroup.id}>
-                            {toTitleCase(ageGroup.displayName)}
-                        </MenuItem>
+    const renderDropDown = (
+        week: number,
+        venue: string,
+        court: string,
+        slot: number,
+    ) => (
+        <FormControl variant="standard" fullWidth>
+            <InputLabel id={`select-label-${week}-${venue}-${court}-${slot}`}>
+                Event
+            </InputLabel>
+            <Select
+                labelId={`select-label-${week}-${venue}-${court}-${slot}`}
+                id={`select-${week}-${venue}-${court}-${slot}`}
+                value={courtSelections[week]?.[venue]?.[court]?.[slot] || ''}
+                onChange={(e) => handleSelectInput(e, week, venue, court, slot)}
+            >
+                {ageGroups.map((ageGroup) => (
+                    <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                        {ageGroup.displayName}
+                    </MenuItem>
+                ))}
+                <MenuItem value="noEvent">No Event</MenuItem>
+            </Select>
+        </FormControl>
+    );
+
+    const renderTable = (week: number, venue: string) => (
+        <TableContainer>
+            <Table aria-label={`${venue} table`}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Court</TableCell>
+                        {hourSlots.map((slot) => (
+                            <TableCell key={slot.slot}>{slot.time}</TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {venues[venue].map((court) => (
+                        <TableRow key={court}>
+                            <TableCell>{court}</TableCell>
+                            {hourSlots.map((slot) => (
+                                <TableCell key={`${court}-${slot.slot}`}>
+                                    {renderDropDown(
+                                        week,
+                                        venue,
+                                        court,
+                                        slot.slot,
+                                    )}
+                                </TableCell>
+                            ))}
+                        </TableRow>
                     ))}
-                </Select>
-            </FormControl>
-        </div>
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+
+    const renderWeek = (week: number) => (
+        <section key={week} className="pt-6">
+            <h2 className="text-2xl font-bold">Week {week}</h2>
+            {Object.keys(venues).map((venue) => (
+                <div key={venue} className="pt-4">
+                    <h3 className="text-xl font-bold">{venue}</h3>
+                    {renderTable(week, venue)}
+                </div>
+            ))}
+        </section>
     );
 
     return (
@@ -138,53 +155,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                 <p>Term 1 2025</p>
                 <ArrowRightCircleIcon className="h-8 w-8" />
             </div>
-            <section className="pt-12">
-                <div>
-                    <h1 className="text-2xl font-bold">Week 1</h1>
-                    <h2 className="text-md font-medium">
-                        Sunday 16th January, 2025
-                    </h2>
-                    <h2 className="text-xl font-bold pt-6">St Ives</h2>
-
-                    <TableContainer>
-                        <Table
-                            sx={{ minWidth: 650 }}
-                            aria-label="simple table"
-                            padding="checkbox"
-                        >
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell />
-                                    {hourSlots.map((hourSlot) => (
-                                        <TableCell>{hourSlot.time}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) => (
-                                    <TableRow key={row.name}>
-                                        <TableCell
-                                            component="th"
-                                            scope="row"
-                                            align="left"
-                                            padding="none"
-                                        >
-                                            {row.name}
-                                        </TableCell>
-                                        {row.hourSlots.map((hourSlot) => (
-                                            <TableCell
-                                                key={`${row.name}-${hourSlot}`}
-                                            >
-                                                {dropDown(row.name, hourSlot)}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </div>
-            </section>
+            {[...Array(totalWeeks)].map((_, week) => renderWeek(week + 1))}
         </PageContainer>
     );
 };
