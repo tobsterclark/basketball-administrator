@@ -20,6 +20,7 @@ export enum CrudOperations {
     findMany = 'findMany',
     count = 'count',
     create = 'create',
+    createManyAndReturn = 'createManyAndReturn',
     update = 'update',
 }
 

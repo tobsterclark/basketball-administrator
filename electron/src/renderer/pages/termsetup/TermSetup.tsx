@@ -32,6 +32,13 @@ type WeekTabPanelProps = {
     term: number;
 };
 
+type timeSlotParams = {
+    date: Date;
+    location: string;
+    court: number;
+    ageGroupId: string;
+};
+
 const hourSlots = [
     { slot: 0, time: '9am' },
     { slot: 1, time: '10am' },
@@ -67,7 +74,10 @@ const venueCourts = {
     Belrose: 2,
 };
 
-const checkIfTimeSlotExists = (date: Date, location: string, court: number) => {
+const generatedTimeSlots: timeSlotParams[] = [];
+
+const checkIfTimeSlotExists = (timeSlotParams: timeSlotParams) => {
+    const { date, location, court } = timeSlotParams;
     const timeSlotRequest: PrismaCall = {
         model: ModelName.timeslot,
         operation: CrudOperations.findUnique,
@@ -80,6 +90,22 @@ const checkIfTimeSlotExists = (date: Date, location: string, court: number) => {
                 },
             },
         },
+    };
+
+    // window.electron.ipcRenderer
+    //     .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+    //     .then((data: unknown) => {
+    //         // console.log(data);
+    //     });
+    generatedTimeSlots.push(timeSlotParams);
+};
+
+const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
+    console.log(timeSlotParams);
+    const timeSlotRequest: PrismaCall = {
+        model: ModelName.timeslot,
+        operation: CrudOperations.createManyAndReturn,
+        data: { data: timeSlotParams },
     };
 
     window.electron.ipcRenderer
@@ -102,8 +128,15 @@ const getTimeSlotId = (
         minute: time.minutes(),
         second: 0,
     });
+
     const dbLocation = location === 'St Ives' ? 'ST_IVES' : 'BELROSE';
-    checkIfTimeSlotExists(finalMoment.toDate(), dbLocation, court);
+    const finalTimeSlot: timeSlotParams = {
+        date: finalMoment.toDate(),
+        location: dbLocation,
+        court,
+    };
+
+    checkIfTimeSlotExists(finalTimeSlot);
     // console.log(finalMoment.toDate(), location, court);
     // need to get into a datetime formate YYYY-MM-DDTHH:MM:SS
     //                                e.g. 2024-02-09T09:00:00
@@ -133,38 +166,72 @@ const renderWeekTable = (
     term: number,
     week: number,
     venue: keyof typeof venueCourts,
-) => (
-    <TableContainer>
-        <Table aria-label={`${venue} table`}>
-            <TableHead>
-                <TableRow>
-                    <TableCell>Court</TableCell>
-                    {hourSlots.map((hour) => (
-                        <TableCell key={hour.slot}>{hour.time}</TableCell>
-                    ))}
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {Array.from({ length: venueCourts[venue] }, (_, i) => (
-                    <TableRow key={i}>
-                        <TableCell>{i + 1}</TableCell>
+) => {
+    const tempTimeSlots: timeSlotParams[] = [];
+
+    const handleTimeSlot = (
+        timeSlot: number,
+        date: Date,
+        location: string,
+        court: number,
+    ) => {
+        const time = moment(hourSlots[timeSlot].time, 'hha');
+        let finalMoment = moment(date);
+        finalMoment = finalMoment.set({
+            hour: time.hours(),
+            minute: time.minutes(),
+            second: 0,
+        });
+
+        const dbLocation = location === 'St Ives' ? 'ST_IVES' : 'BELROSE';
+        const finalTimeSlot: timeSlotParams = {
+            date: finalMoment.toDate(),
+            location: dbLocation,
+            court,
+            ageGroupId: 'null',
+        };
+
+        tempTimeSlots.push(finalTimeSlot);
+        return null;
+    };
+
+    const table = (
+        <TableContainer>
+            <Table aria-label={`${venue} table`}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Court</TableCell>
                         {hourSlots.map((hour) => (
-                            <TableCell key={hour.slot}>
-                                {renderDropDown()}
-                                {getTimeSlotId(
-                                    hour.slot,
-                                    Terms2025[term].date,
-                                    venue,
-                                    i + 1,
-                                )}
-                            </TableCell>
+                            <TableCell key={hour.slot}>{hour.time}</TableCell>
                         ))}
                     </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </TableContainer>
-);
+                </TableHead>
+                <TableBody>
+                    {Array.from({ length: venueCourts[venue] }, (_, i) => (
+                        <TableRow key={i}>
+                            <TableCell>{i + 1}</TableCell>
+                            {hourSlots.map((hour) => (
+                                <TableCell key={hour.slot}>
+                                    {renderDropDown()}
+                                    {handleTimeSlot(
+                                        hour.slot,
+                                        Terms2025[term].date,
+                                        venue,
+                                        i + 1,
+                                    )}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+
+    uploadTimeSlots(tempTimeSlots);
+
+    return table;
+};
 
 const WeekTabPanel = (props: WeekTabPanelProps) => {
     const { value, index, term } = props;
