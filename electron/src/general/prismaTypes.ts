@@ -21,6 +21,7 @@ export enum CrudOperations {
     count = 'count',
     create = 'create',
     createManyAndReturn = 'createManyAndReturn',
+    upsert = 'upsert',
     update = 'update',
 }
 

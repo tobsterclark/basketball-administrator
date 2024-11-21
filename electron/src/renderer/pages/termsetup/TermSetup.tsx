@@ -36,7 +36,6 @@ type timeSlotParams = {
     date: Date;
     location: string;
     court: number;
-    ageGroupId: string;
 };
 
 const hourSlots = [
@@ -69,78 +68,71 @@ const Terms2025 = [
     },
 ];
 
+const getWeekDateFromTerm = (term: number, week: number) => {
+    const termDate = Terms2025[term].date;
+    const newDate = new Date(
+        termDate.getFullYear(),
+        termDate.getMonth(),
+        termDate.getDate() + week * 7,
+    );
+    return newDate;
+};
+
 const venueCourts = {
     'St Ives': 3,
     Belrose: 2,
 };
 
-const generatedTimeSlots: timeSlotParams[] = [];
-
-const checkIfTimeSlotExists = (timeSlotParams: timeSlotParams) => {
-    const { date, location, court } = timeSlotParams;
-    const timeSlotRequest: PrismaCall = {
+const printAllTimeSlots = () => {
+    const req: PrismaCall = {
         model: ModelName.timeslot,
-        operation: CrudOperations.findUnique,
-        data: {
-            where: {
-                location_date_court: {
-                    location,
-                    date,
-                    court,
-                },
-            },
-        },
+        operation: CrudOperations.findMany,
+        data: {},
     };
-
-    // window.electron.ipcRenderer
-    //     .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-    //     .then((data: unknown) => {
-    //         // console.log(data);
-    //     });
-    generatedTimeSlots.push(timeSlotParams);
-};
-
-const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
-    console.log(timeSlotParams);
-    const timeSlotRequest: PrismaCall = {
-        model: ModelName.timeslot,
-        operation: CrudOperations.createManyAndReturn,
-        data: { data: timeSlotParams },
-    };
-
     window.electron.ipcRenderer
-        .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+        .invoke(IpcChannels.PrismaClient, req)
         .then((data: unknown) => {
             console.log(data);
         });
 };
 
-const getTimeSlotId = (
-    timeSlot: number,
-    date: Date,
-    location: string,
-    court: number,
-) => {
-    const time = moment(hourSlots[timeSlot].time, 'hha');
-    let finalMoment = moment(date);
-    finalMoment = finalMoment.set({
-        hour: time.hours(),
-        minute: time.minutes(),
-        second: 0,
+const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
+    timeSlotParams.forEach((timeSlot) => {
+        const timeSlotRequest: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.upsert,
+            data: {
+                where: {
+                    location_date_court: {
+                        location: timeSlot.location,
+                        date: timeSlot.date,
+                        court: timeSlot.court,
+                    },
+                },
+                update: {},
+                create: {
+                    location: timeSlot.location,
+                    date: timeSlot.date,
+                    court: timeSlot.court,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+            .then((data: unknown) => {
+                console.log(
+                    `Upserted time slot for court ${timeSlot.court}:`,
+                    data,
+                );
+            })
+            .catch((error: Error) => {
+                console.error(
+                    `Error upserting time slot for court ${timeSlot.court}:`,
+                    error,
+                );
+            });
     });
-
-    const dbLocation = location === 'St Ives' ? 'ST_IVES' : 'BELROSE';
-    const finalTimeSlot: timeSlotParams = {
-        date: finalMoment.toDate(),
-        location: dbLocation,
-        court,
-    };
-
-    checkIfTimeSlotExists(finalTimeSlot);
-    // console.log(finalMoment.toDate(), location, court);
-    // need to get into a datetime formate YYYY-MM-DDTHH:MM:SS
-    //                                e.g. 2024-02-09T09:00:00
-    return <p />;
 };
 
 const renderDropDown = () => (
@@ -188,7 +180,6 @@ const renderWeekTable = (
             date: finalMoment.toDate(),
             location: dbLocation,
             court,
-            ageGroupId: 'null',
         };
 
         tempTimeSlots.push(finalTimeSlot);
@@ -215,7 +206,7 @@ const renderWeekTable = (
                                     {renderDropDown()}
                                     {handleTimeSlot(
                                         hour.slot,
-                                        Terms2025[term].date,
+                                        getWeekDateFromTerm(term, week),
                                         venue,
                                         i + 1,
                                     )}
@@ -314,6 +305,9 @@ export const TermSetup = (props: PlayerDataProps) => {
                     </div>
                 </Box>
             </div>
+            <button type="button" onClick={printAllTimeSlots}>
+                Print All Time Slots
+            </button>
         </PageContainer>
     );
 };
