@@ -36,6 +36,7 @@ type timeSlotParams = {
     date: Date;
     location: string;
     court: number;
+    id?: string;
 };
 
 const hourSlots = [
@@ -97,6 +98,10 @@ const printAllTimeSlots = () => {
 };
 
 const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
+    // Takes in timeSlotParams, uploads them to the database,
+    // appends the id to the timeSlotParams and returns the updated timeSlotParams.
+    const timeSlotsWithIds: timeSlotParams[] = [];
+
     timeSlotParams.forEach((timeSlot) => {
         const timeSlotRequest: PrismaCall = {
             model: ModelName.timeslot,
@@ -121,10 +126,10 @@ const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
             .then((data: unknown) => {
-                console.log(
-                    `Upserted time slot for court ${timeSlot.court}:`,
-                    data,
-                );
+                timeSlotsWithIds.push({
+                    ...timeSlot,
+                    id: (data as { id: string }).id,
+                });
             })
             .catch((error: Error) => {
                 console.error(
@@ -133,6 +138,8 @@ const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
                 );
             });
     });
+
+    return timeSlotsWithIds;
 };
 
 const renderDropDown = () => (
@@ -253,9 +260,53 @@ const WeekTabPanel = (props: WeekTabPanelProps) => {
 
 export const TermSetup = (props: PlayerDataProps) => {
     // const { ageGroups } = props;
+    const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
+    const [currentTerm, setCurrentTerm] = useState(0); // 0-3
 
-    const [currentWeekTab, setCurrentWeekTab] = useState(0);
-    const [currentTerm, setCurrentTerm] = useState(0);
+    const [dbTimeSlots, setDbTimeSlots] = useState<timeSlotParams[]>([]); // For storing fetched time slots
+
+    const upsert = () => {
+        const dateForRequest = getWeekDateFromTerm(currentTerm, currentWeekTab);
+        const weekRequestData: timeSlotParams[] = [];
+        // loop through each venue, and then iterate through each court
+        Object.keys(venueCourts).forEach((venue) => {
+            for (
+                let i = 1;
+                i <= venueCourts[venue as keyof typeof venueCourts];
+                i += 1
+            ) {
+                // Loop through each hour slot and append the hour to the dateForRequest,
+                // create a new timeSlot and append to requestData.
+                hourSlots.forEach((hour) => {
+                    const time = moment(hour.time, 'hha');
+                    let finalMoment = moment(dateForRequest);
+                    finalMoment = finalMoment.set({
+                        hour: time.hours(),
+                        minute: time.minutes(),
+                        second: 0,
+                    });
+
+                    const dbLocation =
+                        venue === 'St Ives' ? 'ST_IVES' : 'BELROSE';
+                    const finalTimeSlot: timeSlotParams = {
+                        date: finalMoment.toDate(),
+                        location: dbLocation,
+                        court: i,
+                    };
+
+                    weekRequestData.push(finalTimeSlot);
+                });
+            }
+        });
+        console.log('Request Data:');
+        console.log(weekRequestData);
+        console.log('Data with IDs:');
+        const dataWithIds = uploadTimeSlots(weekRequestData);
+        setDbTimeSlots(dataWithIds);
+        console.log(dataWithIds);
+    };
+
+    upsert();
 
     return (
         <PageContainer>
