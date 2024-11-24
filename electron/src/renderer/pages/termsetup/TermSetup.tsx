@@ -4,6 +4,10 @@ import {
 } from '@heroicons/react/24/solid';
 import {
     Box,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
     Tab,
     Table,
     TableBody,
@@ -18,7 +22,10 @@ import Moment from 'react-moment';
 import moment from 'moment';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { PlayerDataProps } from '../players/components/Types';
+import {
+    AgeGroupDataResponse,
+    PlayerDataProps,
+} from '../players/components/Types';
 import {
     CrudOperations,
     ModelName,
@@ -30,6 +37,7 @@ type WeekTabPanelProps = {
     index: number;
     value: number;
     term: number;
+    ageGroups: AgeGroupDataResponse[];
 };
 
 type timeSlotParams = {
@@ -139,15 +147,33 @@ const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
             });
     });
 
+    console.log(timeSlotsWithIds);
+
     return timeSlotsWithIds;
 };
 
-const renderDropDown = () => (
-    <select name="venue" id="venue">
-        <option value="St Ives">St Ives</option>
-        <option value="Belrose">Belrose</option>
-    </select>
-);
+const renderSelectInput = (
+    timeSlotId: string,
+    ageGroups: AgeGroupDataResponse[],
+) => {
+    return (
+        <FormControl variant="standard" fullWidth>
+            <InputLabel id={`select-label-${timeSlotId}`}>Event</InputLabel>
+            <Select
+                labelId={`select-label-${timeSlotId}`}
+                id={`select-${timeSlotId}`}
+                value=""
+            >
+                {ageGroups.map((ageGroup) => (
+                    <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                        {ageGroup.displayName}
+                    </MenuItem>
+                ))}
+                <MenuItem value="noEvent">No Event</MenuItem>
+            </Select>
+        </FormControl>
+    );
+};
 
 const getWeekDate = (term: number, week: number) => {
     const termDate = Terms2025[term].date;
@@ -156,15 +182,14 @@ const getWeekDate = (term: number, week: number) => {
         termDate.getMonth(),
         termDate.getDate() + week * 7,
     );
-    // return 'x;';
     return <Moment format="dddd[,] MMMM Do YYYY">{newDate}</Moment>;
-    // return moment(newDate).format('dddd[,] MMMM Do YYYY');
 };
 
 const renderWeekTable = (
     term: number,
     week: number,
     venue: keyof typeof venueCourts,
+    ageGroups: AgeGroupDataResponse[],
 ) => {
     const tempTimeSlots: timeSlotParams[] = [];
 
@@ -210,7 +235,7 @@ const renderWeekTable = (
                             <TableCell>{i + 1}</TableCell>
                             {hourSlots.map((hour) => (
                                 <TableCell key={hour.slot}>
-                                    {renderDropDown()}
+                                    {renderSelectInput('e', ageGroups)}
                                     {handleTimeSlot(
                                         hour.slot,
                                         getWeekDateFromTerm(term, week),
@@ -232,7 +257,7 @@ const renderWeekTable = (
 };
 
 const WeekTabPanel = (props: WeekTabPanelProps) => {
-    const { value, index, term } = props;
+    const { value, index, term, ageGroups } = props;
 
     return (
         <div
@@ -246,11 +271,11 @@ const WeekTabPanel = (props: WeekTabPanelProps) => {
                     <h2>{getWeekDate(term, index)}</h2>
                     <div className="">
                         <h3 className="text-xl font-bold">St Ives</h3>
-                        {renderWeekTable(term, index, 'St Ives')}
+                        {renderWeekTable(term, index, 'St Ives', ageGroups)}
                     </div>
                     <div className="pt-8">
                         <h3 className="text-xl font-bold">Belrose</h3>
-                        {renderWeekTable(term, index, 'Belrose')}
+                        {renderWeekTable(term, index, 'Belrose', ageGroups)}
                     </div>
                 </div>
             )}
@@ -259,7 +284,7 @@ const WeekTabPanel = (props: WeekTabPanelProps) => {
 };
 
 export const TermSetup = (props: PlayerDataProps) => {
-    // const { ageGroups } = props;
+    const { ageGroups } = props;
     const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
 
@@ -343,21 +368,25 @@ export const TermSetup = (props: PlayerDataProps) => {
                             term={0}
                             value={currentWeekTab}
                             index={0}
+                            ageGroups={ageGroups}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={1}
+                            ageGroups={ageGroups}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={2}
+                            ageGroups={ageGroups}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={3}
+                            ageGroups={ageGroups}
                         />
                     </div>
                 </Box>
