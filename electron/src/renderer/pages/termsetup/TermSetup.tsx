@@ -13,7 +13,7 @@ import {
     TableRow,
     Tabs,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Moment from 'react-moment';
 import moment from 'moment';
 import PageContainer from '../../ui_components/PageContainer';
@@ -265,48 +265,54 @@ export const TermSetup = (props: PlayerDataProps) => {
 
     const [dbTimeSlots, setDbTimeSlots] = useState<timeSlotParams[]>([]); // For storing fetched time slots
 
-    const upsert = () => {
-        const dateForRequest = getWeekDateFromTerm(currentTerm, currentWeekTab);
-        const weekRequestData: timeSlotParams[] = [];
-        // loop through each venue, and then iterate through each court
-        Object.keys(venueCourts).forEach((venue) => {
-            for (
-                let i = 1;
-                i <= venueCourts[venue as keyof typeof venueCourts];
-                i += 1
-            ) {
-                // Loop through each hour slot and append the hour to the dateForRequest,
-                // create a new timeSlot and append to requestData.
-                hourSlots.forEach((hour) => {
-                    const time = moment(hour.time, 'hha');
-                    let finalMoment = moment(dateForRequest);
-                    finalMoment = finalMoment.set({
-                        hour: time.hours(),
-                        minute: time.minutes(),
-                        second: 0,
+    useEffect(() => {
+        // Fetches or creates all time slots for the current week and term.
+        // Stores into dbTimeSlots.
+        // https://github.com/prisma/docs/issues/640
+        // https://www.prisma.io/docs/concepts/components/prisma-client/crud#upsert
+
+        const upsert = () => {
+            const dateForRequest = getWeekDateFromTerm(
+                currentTerm,
+                currentWeekTab,
+            );
+            const weekRequestData: timeSlotParams[] = [];
+            // loop through each venue, and then iterate through each court
+            Object.keys(venueCourts).forEach((venue) => {
+                for (
+                    let i = 1;
+                    i <= venueCourts[venue as keyof typeof venueCourts];
+                    i += 1
+                ) {
+                    // Loop through each hour slot and append the hour to the dateForRequest,
+                    // create a new timeSlot and append to requestData.
+                    hourSlots.forEach((hour) => {
+                        const time = moment(hour.time, 'hha');
+                        let finalMoment = moment(dateForRequest);
+                        finalMoment = finalMoment.set({
+                            hour: time.hours(),
+                            minute: time.minutes(),
+                            second: 0,
+                        });
+
+                        const dbLocation =
+                            venue === 'St Ives' ? 'ST_IVES' : 'BELROSE';
+                        const finalTimeSlot: timeSlotParams = {
+                            date: finalMoment.toDate(),
+                            location: dbLocation,
+                            court: i,
+                        };
+
+                        weekRequestData.push(finalTimeSlot);
                     });
+                }
+            });
+            const dataWithIds = uploadTimeSlots(weekRequestData);
+            setDbTimeSlots(dataWithIds);
+        };
 
-                    const dbLocation =
-                        venue === 'St Ives' ? 'ST_IVES' : 'BELROSE';
-                    const finalTimeSlot: timeSlotParams = {
-                        date: finalMoment.toDate(),
-                        location: dbLocation,
-                        court: i,
-                    };
-
-                    weekRequestData.push(finalTimeSlot);
-                });
-            }
-        });
-        console.log('Request Data:');
-        console.log(weekRequestData);
-        console.log('Data with IDs:');
-        const dataWithIds = uploadTimeSlots(weekRequestData);
-        setDbTimeSlots(dataWithIds);
-        console.log(dataWithIds);
-    };
-
-    upsert();
+        upsert();
+    }, [currentTerm, currentWeekTab]);
 
     return (
         <PageContainer>
