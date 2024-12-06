@@ -8,6 +8,7 @@ import {
     InputLabel,
     MenuItem,
     Select,
+    SelectChangeEvent,
     Tab,
     Table,
     TableBody,
@@ -33,18 +34,20 @@ import {
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
 
+type timeSlotParams = {
+    id?: string;
+    date: Date;
+    location: string;
+    court: number;
+    ageGroupId?: string;
+};
+
 type WeekTabPanelProps = {
     index: number;
     value: number;
     term: number;
     ageGroups: AgeGroupDataResponse[];
-};
-
-type timeSlotParams = {
-    date: Date;
-    location: string;
-    court: number;
-    id?: string;
+    dbTimeSlots: timeSlotParams[];
 };
 
 const hourSlots = [
@@ -105,12 +108,10 @@ const printAllTimeSlots = () => {
         });
 };
 
-const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
-    // Takes in timeSlotParams, uploads them to the database,
-    // appends the id to the timeSlotParams and returns the updated timeSlotParams.
+const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
     const timeSlotsWithIds: timeSlotParams[] = [];
 
-    timeSlotParams.forEach((timeSlot) => {
+    const promises = timeSlotParams.map((timeSlot) => {
         const timeSlotRequest: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.upsert,
@@ -128,10 +129,17 @@ const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
                     date: timeSlot.date,
                     court: timeSlot.court,
                 },
+                select: {
+                    id: true,
+                    location: true,
+                    date: true,
+                    court: true,
+                    ageGroupId: true,
+                },
             },
         };
 
-        window.electron.ipcRenderer
+        return window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
             .then((data: unknown) => {
                 timeSlotsWithIds.push({
@@ -147,14 +155,39 @@ const uploadTimeSlots = (timeSlotParams: timeSlotParams[]) => {
             });
     });
 
+    await Promise.all(promises);
+
     console.log(timeSlotsWithIds);
 
     return timeSlotsWithIds;
 };
 
+const handleSelectInput = (
+    e: SelectChangeEvent<string>,
+    timeSlotId: string,
+    setModifiedTimeSlots: React.Dispatch<
+        React.SetStateAction<timeSlotParams[]>
+    >,
+) => {
+    const selectedValue = e.target.value;
+    console.log(selectedValue);
+    console.log(timeSlotId);
+
+    setModifiedTimeSlots((prev) =>
+        prev.map((timeSlot) =>
+            timeSlot.id === timeSlotId
+                ? { ...timeSlot, ageGroupId: selectedValue }
+                : timeSlot,
+        ),
+    );
+};
+
 const renderSelectInput = (
     timeSlotId: string,
     ageGroups: AgeGroupDataResponse[],
+    setModifiedTimeSlots: React.Dispatch<
+        React.SetStateAction<timeSlotParams[]>
+    >,
 ) => {
     return (
         <FormControl variant="standard" fullWidth>
@@ -163,6 +196,9 @@ const renderSelectInput = (
                 labelId={`select-label-${timeSlotId}`}
                 id={`select-${timeSlotId}`}
                 value=""
+                onChange={(e) =>
+                    handleSelectInput(e, timeSlotId, setModifiedTimeSlots)
+                }
             >
                 {ageGroups.map((ageGroup) => (
                     <MenuItem key={ageGroup.id} value={ageGroup.id}>
@@ -190,32 +226,33 @@ const renderWeekTable = (
     week: number,
     venue: keyof typeof venueCourts,
     ageGroups: AgeGroupDataResponse[],
+    venueTimeSlots: timeSlotParams[],
+    setModifiedTimeSlots: React.Dispatch<
+        React.SetStateAction<timeSlotParams[]>
+    >,
 ) => {
-    const tempTimeSlots: timeSlotParams[] = [];
+    const currentDate = getWeekDateFromTerm(term, week);
 
-    const handleTimeSlot = (
-        timeSlot: number,
-        date: Date,
-        location: string,
-        court: number,
-    ) => {
+    const findEntryByDateTime = (courtIndex: number, timeSlot: number) => {
         const time = moment(hourSlots[timeSlot].time, 'hha');
-        let finalMoment = moment(date);
+        let finalMoment = moment(currentDate);
         finalMoment = finalMoment.set({
             hour: time.hours(),
             minute: time.minutes(),
             second: 0,
         });
 
-        const dbLocation = location === 'St Ives' ? 'ST_IVES' : 'BELROSE';
-        const finalTimeSlot: timeSlotParams = {
-            date: finalMoment.toDate(),
-            location: dbLocation,
-            court,
-        };
+        const dbLocation = venue === 'St Ives' ? 'ST_IVES' : 'BELROSE';
 
-        tempTimeSlots.push(finalTimeSlot);
-        return null;
+        const entry = venueTimeSlots.find(
+            (timeSlotEntry) =>
+                timeSlotEntry.date.getTime() ===
+                    finalMoment.toDate().getTime() &&
+                timeSlotEntry.location === dbLocation &&
+                timeSlotEntry.court === courtIndex,
+        );
+
+        return entry;
     };
 
     const table = (
@@ -235,13 +272,18 @@ const renderWeekTable = (
                             <TableCell>{i + 1}</TableCell>
                             {hourSlots.map((hour) => (
                                 <TableCell key={hour.slot}>
-                                    {renderSelectInput('e', ageGroups)}
-                                    {handleTimeSlot(
+                                    {renderSelectInput(
+                                        findEntryByDateTime(i + 1, hour.slot)
+                                            ?.id || '',
+                                        ageGroups,
+                                        setModifiedTimeSlots,
+                                    )}
+                                    {/* {handleTimeSlot(
                                         hour.slot,
                                         getWeekDateFromTerm(term, week),
                                         venue,
                                         i + 1,
-                                    )}
+                                    )} */}
                                 </TableCell>
                             ))}
                         </TableRow>
@@ -251,13 +293,33 @@ const renderWeekTable = (
         </TableContainer>
     );
 
-    uploadTimeSlots(tempTimeSlots);
+    // uploadTimeSlots(tempTimeSlots);
 
     return table;
 };
 
-const WeekTabPanel = (props: WeekTabPanelProps) => {
-    const { value, index, term, ageGroups } = props;
+const WeekTabPanel = (
+    props: WeekTabPanelProps & {
+        setModifiedTimeSlots: React.Dispatch<
+            React.SetStateAction<timeSlotParams[]>
+        >;
+    },
+) => {
+    const { value, index, term, ageGroups, dbTimeSlots, setModifiedTimeSlots } =
+        props;
+
+    const stIvesTimeSlots = dbTimeSlots.filter(
+        (timeSlot) => timeSlot.location === 'ST_IVES',
+    );
+
+    const belroseTimeSlots = dbTimeSlots.filter(
+        (timeSlot) => timeSlot.location === 'BELROSE',
+    );
+
+    console.log('stIvesTimeSlots:');
+    console.log(stIvesTimeSlots);
+    console.log('belroseTimeSlots:');
+    console.log(belroseTimeSlots);
 
     return (
         <div
@@ -271,11 +333,25 @@ const WeekTabPanel = (props: WeekTabPanelProps) => {
                     <h2>{getWeekDate(term, index)}</h2>
                     <div className="">
                         <h3 className="text-xl font-bold">St Ives</h3>
-                        {renderWeekTable(term, index, 'St Ives', ageGroups)}
+                        {renderWeekTable(
+                            term,
+                            index,
+                            'St Ives',
+                            ageGroups,
+                            stIvesTimeSlots,
+                            setModifiedTimeSlots,
+                        )}
                     </div>
                     <div className="pt-8">
                         <h3 className="text-xl font-bold">Belrose</h3>
-                        {renderWeekTable(term, index, 'Belrose', ageGroups)}
+                        {renderWeekTable(
+                            term,
+                            index,
+                            'Belrose',
+                            ageGroups,
+                            belroseTimeSlots,
+                            setModifiedTimeSlots,
+                        )}
                     </div>
                 </div>
             )}
@@ -287,8 +363,29 @@ export const TermSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
+    const [loading, setLoading] = useState(true);
 
     const [dbTimeSlots, setDbTimeSlots] = useState<timeSlotParams[]>([]); // For storing fetched time slots
+    const [modifiedTimeSlots, setModifiedTimeSlots] = useState<
+        timeSlotParams[]
+    >([]);
+
+    const checkIfTimeSlotsEqual = () => {
+        if (dbTimeSlots.length !== modifiedTimeSlots.length) {
+            console.log('Lengths not equal');
+            return false;
+        }
+
+        for (let i = 0; i < dbTimeSlots.length; i += 1) {
+            if (dbTimeSlots[i].ageGroupId !== modifiedTimeSlots[i].ageGroupId) {
+                console.log('Lengths not equal');
+                return false;
+            }
+        }
+
+        console.log('Lengths equal');
+        return true;
+    };
 
     useEffect(() => {
         // Fetches or creates all time slots for the current week and term.
@@ -296,7 +393,7 @@ export const TermSetup = (props: PlayerDataProps) => {
         // https://github.com/prisma/docs/issues/640
         // https://www.prisma.io/docs/concepts/components/prisma-client/crud#upsert
 
-        const upsert = () => {
+        const upsert = async () => {
             const dateForRequest = getWeekDateFromTerm(
                 currentTerm,
                 currentWeekTab,
@@ -332,12 +429,21 @@ export const TermSetup = (props: PlayerDataProps) => {
                     });
                 }
             });
-            const dataWithIds = uploadTimeSlots(weekRequestData);
+            const dataWithIds = await uploadTimeSlots(weekRequestData);
             setDbTimeSlots(dataWithIds);
+            setModifiedTimeSlots(dataWithIds);
+            if (dataWithIds.length > 0) {
+                setLoading(false);
+            }
+            console.log(dataWithIds);
         };
 
         upsert();
     }, [currentTerm, currentWeekTab]);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <PageContainer>
@@ -369,30 +475,41 @@ export const TermSetup = (props: PlayerDataProps) => {
                             value={currentWeekTab}
                             index={0}
                             ageGroups={ageGroups}
+                            dbTimeSlots={dbTimeSlots}
+                            setModifiedTimeSlots={setModifiedTimeSlots}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={1}
                             ageGroups={ageGroups}
+                            dbTimeSlots={dbTimeSlots}
+                            setModifiedTimeSlots={setModifiedTimeSlots}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={2}
                             ageGroups={ageGroups}
+                            dbTimeSlots={dbTimeSlots}
+                            setModifiedTimeSlots={setModifiedTimeSlots}
                         />
                         <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={3}
                             ageGroups={ageGroups}
+                            dbTimeSlots={dbTimeSlots}
+                            setModifiedTimeSlots={setModifiedTimeSlots}
                         />
                     </div>
                 </Box>
             </div>
             <button type="button" onClick={printAllTimeSlots}>
                 Print All Time Slots
+            </button>
+            <button type="button" onClick={checkIfTimeSlotsEqual}>
+                check if time slots equal
             </button>
         </PageContainer>
     );
