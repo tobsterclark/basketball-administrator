@@ -287,7 +287,14 @@ const renderWeekTable = (
                         <TableRow key={i}>
                             <TableCell>{i + 1}</TableCell>
                             {hourSlots.map((hour) => (
-                                <TableCell key={hour.slot}>
+                                <TableCell
+                                    key={hour.slot}
+                                    // TODO: Change colours based on event
+                                    sx={{
+                                        backgroundColor:
+                                            'rgba(209, 75, 75, 0.5)',
+                                    }}
+                                >
                                     {renderSelectInput(
                                         findEntryByDateTime(i + 1, hour.slot)
                                             ?.id || '',
