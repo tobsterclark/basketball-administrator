@@ -33,7 +33,6 @@ import {
     PrismaCall,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
-import SaveChanges from './components/SaveChanges';
 import FormCancelSave from '../../ui_components/FormCancelSave';
 
 type timeSlotParams = {
@@ -143,10 +142,11 @@ const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
 
         return window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-            .then((data: unknown) => {
+            .then((data: { id: string; ageGroupId?: string | null }) => {
                 timeSlotsWithIds.push({
                     ...timeSlot,
-                    id: (data as { id: string }).id,
+                    id: data.id,
+                    ageGroupId: data.ageGroupId ?? 'noEvent', // Include ageGroupId if present
                 });
             })
             .catch((error: Error) => {
@@ -188,7 +188,19 @@ const renderSelectInput = (
     modifiedTimeSlots: timeSlotParams[],
 ) => {
     return (
-        <FormControl variant="standard" fullWidth>
+        <FormControl
+            variant="standard"
+            fullWidth
+            sx={{
+                width: {
+                    xs: '50%',
+                    sm: '60%',
+                    md: '80%',
+                    lg: '100%',
+                    xl: '100%',
+                },
+            }}
+        >
             <InputLabel id={`select-label-${timeSlotId}`}>Event</InputLabel>
             <Select
                 labelId={`select-label-${timeSlotId}`}
@@ -201,6 +213,7 @@ const renderSelectInput = (
                 onChange={(e) =>
                     handleSelectInput(e, timeSlotId, setModifiedTimeSlots)
                 }
+                sx={{ fontSize: '1em' }}
             >
                 {ageGroups.map((ageGroup) => (
                     <MenuItem key={ageGroup.id} value={ageGroup.id}>
@@ -263,7 +276,7 @@ const renderWeekTable = (
             <Table aria-label={`${venue} table`}>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Court</TableCell>
+                        <TableCell padding="none">Court</TableCell>
                         {hourSlots.map((hour) => (
                             <TableCell key={hour.slot}>{hour.time}</TableCell>
                         ))}
@@ -329,7 +342,7 @@ const WeekTabPanel = (
             {value === index && (
                 <div>
                     <h2>{getWeekDate(term, index)}</h2>
-                    <div className="">
+                    <div className="pt-4">
                         <h3 className="text-xl font-bold">St Ives</h3>
                         {renderWeekTable(
                             term,
@@ -370,6 +383,11 @@ export const TermSetup = (props: PlayerDataProps) => {
         timeSlotParams[]
     >([]);
 
+    const printDbTimeSlots = () => {
+        console.log('DB Time Slots:');
+        console.log(dbTimeSlots);
+    };
+
     const uploadChanges = () => {
         const timeSlotsToUpdate = modifiedTimeSlots.filter(
             (timeSlot) =>
@@ -392,7 +410,10 @@ export const TermSetup = (props: PlayerDataProps) => {
                         id: timeSlot.id,
                     },
                     data: {
-                        ageGroupId: timeSlot.ageGroupId,
+                        ageGroupId:
+                            timeSlot.ageGroupId === 'noEvent'
+                                ? null
+                                : timeSlot.ageGroupId,
                     },
                 },
             };
@@ -408,6 +429,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                         `Error updating time slot for ${timeSlot}:`,
                         error,
                     );
+                    console.error(timeSlot);
                 });
         });
 
@@ -475,6 +497,9 @@ export const TermSetup = (props: PlayerDataProps) => {
                     });
                 }
             });
+            console.log('Week Request Data:');
+            console.log(weekRequestData);
+
             const dataWithIds = await uploadTimeSlots(weekRequestData);
             setDbTimeSlots(dataWithIds);
             setModifiedTimeSlots(dataWithIds);
@@ -566,6 +591,9 @@ export const TermSetup = (props: PlayerDataProps) => {
             </div>
             <button type="button" onClick={printAllTimeSlots}>
                 Print All Time Slots
+            </button>
+            <button type="button" onClick={printDbTimeSlots}>
+                Print DB Time Slots
             </button>
             <button type="button" onClick={checkIfTimeSlotsEqual}>
                 check if time slots equal
