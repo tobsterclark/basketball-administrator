@@ -517,15 +517,41 @@ export const TermSetup = (props: PlayerDataProps) => {
 
     const { weeks } = Terms2025[currentTerm];
 
+    const navigateTerm = (fowards: boolean) => {
+        if (currentTerm === 0 && !fowards) {
+            setCurrentTerm(3);
+        } else if (currentTerm === 3 && fowards) {
+            setCurrentTerm(0);
+        } else if (fowards) {
+            setCurrentTerm(currentTerm + 1);
+        } else {
+            setCurrentTerm(currentTerm - 1);
+        }
+    };
+
     return (
         <PageContainer>
             <PageTitle text="Term Setup" />
             <div className="text-xl font-bold float-right flex gap-2">
-                <ArrowLeftCircleIcon className="h-8 w-8" />
-                <p>Term 1 2025</p>
-                <ArrowRightCircleIcon className="h-8 w-8" />
+                <button
+                    type="button"
+                    onClick={() => {
+                        navigateTerm(false);
+                    }}
+                >
+                    <ArrowLeftCircleIcon className="h-8 w-8 hover:text-red-400" />
+                </button>
+                <p>Term {currentTerm + 1} 2025</p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        navigateTerm(true);
+                    }}
+                >
+                    <ArrowRightCircleIcon className="h-8 w-8 hover:text-red-400" />
+                </button>
             </div>
-            <div className="pt-6">
+            <div className="pt-12">
                 <Box sx={{ width: '100%' }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs
