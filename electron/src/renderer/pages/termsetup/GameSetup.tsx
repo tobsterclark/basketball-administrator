@@ -32,7 +32,13 @@ import { IpcChannels } from '../../../general/IpcChannels';
 
 type Game = [string, string];
 type Schedule = Record<string, Game[]>;
-
+type timeSlotParams = {
+    id?: string;
+    date: Date;
+    location: string;
+    court: number;
+    ageGroupId?: string;
+};
 /**
  * Generates a round-robin tournament schedule.
  * @param teams - List of team names.
@@ -105,6 +111,8 @@ export const GameSetup = (props: PlayerDataProps) => {
         '40bed308-a36e-4e20-8f5e-2c3e1aa02e9f',
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
+    const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
+        useState<timeSlotParams[]>();
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -116,6 +124,20 @@ export const GameSetup = (props: PlayerDataProps) => {
         } else {
             setCurrentTerm(currentTerm - 1);
         }
+    };
+
+    const getTimesFromSlots = (timeSlots: timeSlotParams[]) => {
+        const timesCount: { [key: number]: number } = {};
+        for (let i = 0; i < timeSlots.length; i += 1) {
+            const timeSlot = timeSlots[i];
+            const hour = timeSlot.date.getHours();
+            if (timesCount[hour]) {
+                timesCount[hour] += 1;
+            } else {
+                timesCount[hour] = 1;
+            }
+        }
+        return timesCount;
     };
 
     const getTimeSlots = () => {
@@ -137,6 +159,7 @@ export const GameSetup = (props: PlayerDataProps) => {
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
                 console.log(data);
+                setAgeGroupsTimeSlots(data as timeSlotParams[]);
             });
     };
 
@@ -228,7 +251,19 @@ export const GameSetup = (props: PlayerDataProps) => {
                             <TableHead>
                                 <TableRow>
                                     <NormalTableCell padding="none" />
-                                    <TimeTableCell
+                                    {Object.entries(
+                                        getTimesFromSlots(
+                                            ageGroupsTimeSlots || [],
+                                        ),
+                                    ).map(([time, count]) => (
+                                        <TimeTableCell
+                                            colSpan={2}
+                                            aria-label={`${time} games`}
+                                        >
+                                            {time} ({count})
+                                        </TimeTableCell>
+                                    ))}
+                                    {/* <TimeTableCell
                                         colSpan={2}
                                         aria-label="11am games"
                                     >
@@ -239,7 +274,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                         aria-label="12pm games"
                                     >
                                         12:00 PM
-                                    </TimeTableCell>
+                                    </TimeTableCell> */}
                                 </TableRow>
                                 <TableRow>
                                     <WeekTableCell />
