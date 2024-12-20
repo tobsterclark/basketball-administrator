@@ -7,6 +7,7 @@ import {
     CalendarDaysIcon,
     Cog6ToothIcon,
     GlobeAsiaAustraliaIcon,
+    LifebuoyIcon,
     Squares2X2Icon,
     WrenchIcon,
 } from '@heroicons/react/24/solid';
@@ -39,6 +40,11 @@ const Navbar = () => {
                 name: 'Term Setup',
                 link: '/term-setup',
                 icon: <WrenchIcon className={iconStyle} />,
+            },
+            {
+                name: 'Game Setup',
+                link: '/game-setup',
+                icon: <LifebuoyIcon className={iconStyle} />,
             },
             {
                 name: 'Players',
