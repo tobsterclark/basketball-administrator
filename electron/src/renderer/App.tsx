@@ -69,7 +69,10 @@ const App = () => {
                         path="term-setup"
                         element={<TermSetup ageGroups={ageGroups} />}
                     />
-                    <Route path="game-setup" element={<GameSetup />} />
+                    <Route
+                        path="game-setup"
+                        element={<GameSetup ageGroups={ageGroups} />}
+                    />
                     <Route
                         path="players"
                         element={
