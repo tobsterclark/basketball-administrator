@@ -287,14 +287,7 @@ const renderWeekTable = (
                         <TableRow key={i}>
                             <TableCell>{i + 1}</TableCell>
                             {hourSlots.map((hour) => (
-                                <TableCell
-                                    key={hour.slot}
-                                    // TODO: Change colours based on event
-                                    sx={{
-                                        backgroundColor:
-                                            'rgba(209, 75, 75, 0.5)',
-                                    }}
-                                >
+                                <TableCell key={hour.slot}>
                                     {renderSelectInput(
                                         findEntryByDateTime(i + 1, hour.slot)
                                             ?.id || '',
@@ -522,6 +515,8 @@ export const TermSetup = (props: PlayerDataProps) => {
         return <div>Loading...</div>;
     }
 
+    const { weeks } = Terms2025[currentTerm];
+
     return (
         <PageContainer>
             <PageTitle text="Term Setup" />
@@ -540,14 +535,17 @@ export const TermSetup = (props: PlayerDataProps) => {
                             }
                             aria-label="Week Tabs"
                         >
-                            <Tab label="Week 1" />
+                            {/* <Tab label="Week 1" />
                             <Tab label="Week 2" />
                             <Tab label="Week 3" />
-                            <Tab label="Week 4" />
+                            <Tab label="Week 4" /> */}
+                            {Array.from({ length: weeks }, (_, i) => (
+                                <Tab key={i} label={`Week ${i + 1}`} />
+                            ))}
                         </Tabs>
                     </Box>
                     <div className="pt-4">
-                        <WeekTabPanel
+                        {/* <WeekTabPanel
                             term={0}
                             value={currentWeekTab}
                             index={0}
@@ -555,38 +553,31 @@ export const TermSetup = (props: PlayerDataProps) => {
                             dbTimeSlots={dbTimeSlots}
                             setModifiedTimeSlots={setModifiedTimeSlots}
                             modifiedTimeSlots={modifiedTimeSlots}
-                        />
-                        <WeekTabPanel
-                            term={0}
-                            value={currentWeekTab}
-                            index={1}
-                            ageGroups={ageGroups}
-                            dbTimeSlots={dbTimeSlots}
-                            setModifiedTimeSlots={setModifiedTimeSlots}
-                            modifiedTimeSlots={modifiedTimeSlots}
-                        />
-                        <WeekTabPanel
-                            term={0}
-                            value={currentWeekTab}
-                            index={2}
-                            ageGroups={ageGroups}
-                            dbTimeSlots={dbTimeSlots}
-                            setModifiedTimeSlots={setModifiedTimeSlots}
-                            modifiedTimeSlots={modifiedTimeSlots}
-                        />
-                        <WeekTabPanel
-                            term={0}
-                            value={currentWeekTab}
-                            index={3}
-                            ageGroups={ageGroups}
-                            dbTimeSlots={dbTimeSlots}
-                            setModifiedTimeSlots={setModifiedTimeSlots}
-                            modifiedTimeSlots={modifiedTimeSlots}
-                        />
+                        /> */}
+                        {Array.from({ length: weeks }, (_, i) => (
+                            <WeekTabPanel
+                                key={i}
+                                term={currentTerm}
+                                value={currentWeekTab}
+                                index={i}
+                                ageGroups={ageGroups}
+                                dbTimeSlots={dbTimeSlots}
+                                setModifiedTimeSlots={setModifiedTimeSlots}
+                                modifiedTimeSlots={modifiedTimeSlots}
+                            />
+                        ))}
                     </div>
                 </Box>
             </div>
-            <div className="w-1/3 pt-8">
+            <div className="w-1/3 pt-4">
+                <div className="w-1/2 flex flex-col pb-8">
+                    {/* <button
+                        type="button"
+                        className="bg-red-400 hover:bg-red-500 text-slate-600 font-semibold py-2 px-4 rounded disabled:text-slate-400 disabled:hover:bg-slate-200 disabled:cursor-not-allowed"
+                    >
+                        Copy to all weeks
+                    </button> */}
+                </div>
                 <FormCancelSave
                     cancelButtonDisabled={checkIfTimeSlotsEqual()}
                     saveButtonDisabled={checkIfTimeSlotsEqual()}
@@ -596,7 +587,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                     onSaveClick={uploadChanges}
                 />
             </div>
-            <button type="button" onClick={printAllTimeSlots}>
+            {/* <button type="button" onClick={printAllTimeSlots}>
                 Print All Time Slots
             </button>
             <button type="button" onClick={printDbTimeSlots}>
@@ -604,7 +595,7 @@ export const TermSetup = (props: PlayerDataProps) => {
             </button>
             <button type="button" onClick={checkIfTimeSlotsEqual}>
                 check if time slots equal
-            </button>
+            </button> */}
         </PageContainer>
     );
 };
