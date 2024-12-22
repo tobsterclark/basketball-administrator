@@ -330,7 +330,7 @@ export const GameSetup = (props: PlayerDataProps) => {
 
         return (
             <div>
-                <FormControl variant="outlined" fullWidth>
+                <FormControl variant="outlined" fullWidth sx={{ pb: 2 }}>
                     <InputLabel id="select-label-light">Light</InputLabel>
                     <Select
                         labelId="select-label-light"
@@ -442,7 +442,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                             colSpan={3}
                                             aria-label={`${time} games`}
                                         >
-                                            {formatTime(time)} ({count})
+                                            {formatTime(time)}
                                         </TimeTableCell>
                                     ))}
                                 </TableRow>
@@ -491,9 +491,19 @@ export const GameSetup = (props: PlayerDataProps) => {
                                                     )}
                                                 </BRTableCell>
                                                 <BRTableCell>
-                                                    {weekIndex} {time}
+                                                    {renderVersusDropdowns(
+                                                        weekIndex,
+                                                        parseInt(time, 10),
+                                                        2,
+                                                    )}
                                                 </BRTableCell>
-                                                <BRTableCell>blah</BRTableCell>
+                                                <BRTableCell>
+                                                    {renderVersusDropdowns(
+                                                        weekIndex,
+                                                        parseInt(time, 10),
+                                                        3,
+                                                    )}
+                                                </BRTableCell>
                                             </>
                                         ))}
                                     </TableRow>
