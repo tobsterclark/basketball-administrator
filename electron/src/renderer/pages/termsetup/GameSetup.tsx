@@ -21,7 +21,7 @@ import {
 import { styled } from '@mui/material/styles';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { PlayerDataProps } from '../players/components/Types';
+import { PlayerDataProps, TeamDataResponse } from '../players/components/Types';
 import {
     CrudOperations,
     ModelName,
@@ -30,14 +30,19 @@ import {
 import Terms2025 from '../data/Terms';
 import { IpcChannels } from '../../../general/IpcChannels';
 
-type Game = [string, string];
-type Schedule = Record<string, Game[]>;
+type RR_Game = [string, string];
+type RR_Schedule = Record<string, RR_Game[]>;
 type timeSlotParams = {
     id?: string;
     date: Date;
     location: string;
     court: number;
     ageGroupId?: string;
+};
+type Game = {
+    lightTeam: TeamDataResponse;
+    darkTeam: TeamDataResponse;
+    timeSlot: timeSlotParams;
 };
 /**
  * Generates a round-robin tournament schedule.
@@ -50,7 +55,7 @@ function generateRoundRobinSchedule(
     teams: string[],
     numWeeks: number,
     gamesPerTeam: number,
-): Schedule {
+): RR_Schedule {
     if (teams.length < 2) {
         throw new Error('At least 2 teams are required to create a schedule.');
     }
@@ -60,7 +65,7 @@ function generateRoundRobinSchedule(
     const totalWeeks = Math.ceil(totalGames / gamesPerWeek);
     const effectiveWeeks = Math.min(numWeeks, totalWeeks);
 
-    const schedule: Schedule = {};
+    const schedule: RR_Schedule = {};
     const adjustedTeams = [...teams];
 
     // If odd number of teams, add a dummy team for bye
@@ -71,7 +76,7 @@ function generateRoundRobinSchedule(
 
     // Generate a round-robin schedule for all weeks
     for (let week = 1; week <= effectiveWeeks; week += 1) {
-        const games: Game[] = [];
+        const games: RR_Game[] = [];
 
         for (let i = 0; i < numTeams / 2; i += 1) {
             const home = adjustedTeams[i];
@@ -113,6 +118,8 @@ export const GameSetup = (props: PlayerDataProps) => {
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
         useState<timeSlotParams[]>();
+    const [ageGroupTeams, setAgeGroupTeams] = useState<TeamDataResponse[]>();
+    const [createdGames, setCreatedGames] = useState<Game[]>([]);
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -158,9 +165,37 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
+                console.log(
+                    `Getting timeslots between ${
+                        Terms2025[currentTerm].date
+                    } and ${Terms2025[currentTerm + 1].date}`,
+                );
                 console.log(data);
+                console.log('times from slots:');
+                console.log(getTimesFromSlots(data as timeSlotParams[]));
                 setAgeGroupsTimeSlots(data as timeSlotParams[]);
             });
+    };
+
+    const getTeamsFromAgeGroup = (ageGroupId: string) => {
+        const req: PrismaCall = {
+            model: ModelName.team,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    ageGroupId,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data) => {
+                console.log(`All teams for age group ${ageGroupId}`);
+                console.log(data);
+                setAgeGroupTeams(data as TeamDataResponse[]);
+            });
+        return null;
     };
 
     const tournamentSchedule = generateRoundRobinSchedule(
@@ -192,6 +227,87 @@ export const GameSetup = (props: PlayerDataProps) => {
         textAlign: 'center',
         borderRight: '1px solid rgba(224, 224, 224, 1)',
     });
+
+    const formatTime = (time: string) => {
+        const hour = parseInt(time, 10);
+        if (hour > 12 && hour <= 23) {
+            return `${hour - 12}pm`;
+        }
+        if (hour === 12) {
+            return `${hour}pm`;
+        }
+        return `${hour}am`;
+    };
+
+    const getTimeSlotFromWeekTimeCourt = (
+        week: number,
+        time: number,
+        court: number,
+    ) => {
+        if (!ageGroupsTimeSlots) return null;
+        const dateToFind = new Date(Terms2025[currentTerm].date);
+        dateToFind.setDate(dateToFind.getDate() + week * 7);
+        for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
+            const timeSlot = ageGroupsTimeSlots[i];
+            if (timeSlot.date.getHours() === time) {
+                if (timeSlot.court === court) {
+                    if (timeSlot.date.getDate() === dateToFind.getDate()) {
+                        console.log(
+                            'Found a timeslot with matching time, court, and date:',
+                        );
+                        console.log(timeSlot);
+                        return timeSlot;
+                    }
+                }
+            }
+        }
+        return null;
+    };
+
+    const renderVersusDropdowns = (
+        week: number,
+        time: number,
+        court: number,
+    ) => {
+        return (
+            <div>
+                <FormControl variant="outlined" fullWidth>
+                    <InputLabel id="select-label">Light</InputLabel>
+                    <Select
+                        labelId="select-label"
+                        value=""
+                        onChange={(event: { target: { value: string } }) => {
+                            console.log(event.target.value);
+                            getTimeSlotFromWeekTimeCourt(week, time, court);
+                        }}
+                    >
+                        {ageGroupTeams?.map((team) => (
+                            <MenuItem key={team.id} value={team.id}>
+                                {team.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Divider />
+                <FormControl variant="outlined" fullWidth>
+                    <InputLabel id="select-label">Dark</InputLabel>
+                    <Select
+                        labelId="select-label"
+                        value=""
+                        onChange={(event: { target: { value: string } }) => {
+                            console.log(event.target.value);
+                        }}
+                    >
+                        {ageGroupTeams?.map((team) => (
+                            <MenuItem key={team.id} value={team.id}>
+                                {team.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </div>
+        );
+    };
 
     return (
         <PageContainer>
@@ -257,35 +373,66 @@ export const GameSetup = (props: PlayerDataProps) => {
                                         ),
                                     ).map(([time, count]) => (
                                         <TimeTableCell
-                                            colSpan={2}
+                                            colSpan={3}
                                             aria-label={`${time} games`}
                                         >
-                                            {time} ({count})
+                                            {formatTime(time)} ({count})
                                         </TimeTableCell>
                                     ))}
-                                    {/* <TimeTableCell
-                                        colSpan={2}
-                                        aria-label="11am games"
-                                    >
-                                        11:00 AM
-                                    </TimeTableCell>
-                                    <TimeTableCell
-                                        colSpan={2}
-                                        aria-label="12pm games"
-                                    >
-                                        12:00 PM
-                                    </TimeTableCell> */}
                                 </TableRow>
                                 <TableRow>
                                     <WeekTableCell />
-                                    <BRTableCell>Court 1</BRTableCell>
-                                    <BRTableCell>Court 2</BRTableCell>
-                                    <BRTableCell>Court 1</BRTableCell>
-                                    <BRTableCell>Court 2</BRTableCell>
+                                    {Object.entries(
+                                        getTimesFromSlots(
+                                            ageGroupsTimeSlots || [],
+                                        ),
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                    ).map(([time, count]) => (
+                                        <>
+                                            <BRTableCell>Court 1</BRTableCell>
+                                            <BRTableCell>Court 2</BRTableCell>
+                                            <BRTableCell>Court 3</BRTableCell>
+                                        </>
+                                    ))}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                <TableRow>
+                                {Array.from({
+                                    length: Terms2025[currentTerm].weeks,
+                                }).map((_, weekIndex) => (
+                                    // eslint-disable-next-line react/no-array-index-key
+                                    <TableRow key={weekIndex}>
+                                        <WeekTableCell
+                                            component="th"
+                                            scope="row"
+                                            sx={{ fontWeight: 'bold' }}
+                                            padding="none"
+                                        >
+                                            Week {weekIndex + 1}
+                                        </WeekTableCell>
+                                        {Object.entries(
+                                            getTimesFromSlots(
+                                                ageGroupsTimeSlots || [],
+                                            ),
+                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        ).map(([time, count]) => (
+                                            <>
+                                                <BRTableCell>
+                                                    {renderVersusDropdowns(
+                                                        weekIndex,
+                                                        parseInt(time, 10),
+                                                        1,
+                                                    )}
+                                                </BRTableCell>
+                                                <BRTableCell>
+                                                    {weekIndex} {time}
+                                                </BRTableCell>
+                                                <BRTableCell>blah</BRTableCell>
+                                            </>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                                {/* <TableRow>
                                     <WeekTableCell
                                         component="th"
                                         scope="row"
@@ -312,7 +459,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                     <BRTableCell>blah</BRTableCell>
                                     <BRTableCell>blah</BRTableCell>
                                     <BRTableCell>blah</BRTableCell>
-                                </TableRow>
+                                </TableRow> */}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -320,6 +467,12 @@ export const GameSetup = (props: PlayerDataProps) => {
             </div>
             <button type="button" onClick={getTimeSlots}>
                 Get Timeslots
+            </button>
+            <button
+                type="button"
+                onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
+            >
+                getTeamsFromAgeGroup
             </button>
         </PageContainer>
     );
