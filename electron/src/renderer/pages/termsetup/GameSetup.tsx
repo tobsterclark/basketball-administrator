@@ -40,9 +40,9 @@ type timeSlotParams = {
     ageGroupId?: string;
 };
 type Game = {
-    lightTeam: TeamDataResponse;
-    darkTeam: TeamDataResponse;
-    timeSlot: timeSlotParams;
+    lightTeamId: string | null;
+    darkTeamId: string | null;
+    timeSlotId: string;
 };
 /**
  * Generates a round-robin tournament schedule.
@@ -247,21 +247,62 @@ export const GameSetup = (props: PlayerDataProps) => {
         if (!ageGroupsTimeSlots) return null;
         const dateToFind = new Date(Terms2025[currentTerm].date);
         dateToFind.setDate(dateToFind.getDate() + week * 7);
+        dateToFind.setHours(time, 0, 0, 0); // Set the time component
+
         for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
             const timeSlot = ageGroupsTimeSlots[i];
-            if (timeSlot.date.getHours() === time) {
-                if (timeSlot.court === court) {
-                    if (timeSlot.date.getDate() === dateToFind.getDate()) {
-                        console.log(
-                            'Found a timeslot with matching time, court, and date:',
-                        );
-                        console.log(timeSlot);
-                        return timeSlot;
-                    }
+            const slotDate = new Date(timeSlot.date);
+
+            if (
+                slotDate.getTime() === dateToFind.getTime() &&
+                timeSlot.court === court
+            ) {
+                if (week === 4 && time === 11 && court === 1) {
+                    console.log('Timeslot FOUND for week 4, time 11, court 1');
+                    console.log(timeSlot);
+                    console.log('dateToFind for WEEK 4 TIME 11 COURT 1:');
+                    console.log(dateToFind);
                 }
+                return timeSlot;
             }
         }
+        // console.log(
+        //     `no timeslot found for week ${week}, time ${time}, court ${court}`,
+        // );
         return null;
+    };
+
+    const updateGame = (
+        week: number,
+        time: number,
+        court: number,
+        teamId: string,
+        isLightTeam: boolean,
+    ) => {
+        setCreatedGames((prevGames) => {
+            const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court);
+            if (!timeSlot) return prevGames;
+
+            const gameIndex = prevGames.findIndex(
+                (game) => game.timeSlotId === timeSlot.id,
+            );
+
+            if (gameIndex !== -1) {
+                const updatedGames = [...prevGames];
+                if (isLightTeam) {
+                    updatedGames[gameIndex].lightTeamId = teamId;
+                } else {
+                    updatedGames[gameIndex].darkTeamId = teamId;
+                }
+                return updatedGames;
+            }
+            const newGame: Game = {
+                lightTeamId: isLightTeam ? teamId : null,
+                darkTeamId: isLightTeam ? null : teamId,
+                timeSlotId: timeSlot.id ? timeSlot.id : '',
+            };
+            return [...prevGames, newGame];
+        });
     };
 
     const renderVersusDropdowns = (
@@ -269,16 +310,34 @@ export const GameSetup = (props: PlayerDataProps) => {
         time: number,
         court: number,
     ) => {
+        const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court);
+        if (!timeSlot) {
+            return <div />;
+        }
+        const game = createdGames.find(
+            (gamee) => gamee.timeSlotId === timeSlot?.id,
+        );
+
+        if (week === 4 && court === 1 && time === 11) {
+            console.log('week 4 court 1 timeslot:');
+            console.log(timeSlot);
+            console.log('week 4 court 1 game:');
+            console.log(game);
+        }
+
+        const lightTeamId = game?.lightTeamId || '';
+        const darkTeamId = game?.darkTeamId || '';
+
         return (
             <div>
                 <FormControl variant="outlined" fullWidth>
-                    <InputLabel id="select-label">Light</InputLabel>
+                    <InputLabel id="select-label-light">Light</InputLabel>
                     <Select
-                        labelId="select-label"
-                        value=""
+                        labelId="select-label-light"
+                        value={lightTeamId}
                         onChange={(event: { target: { value: string } }) => {
-                            console.log(event.target.value);
-                            getTimeSlotFromWeekTimeCourt(week, time, court);
+                            const selectedTeamId = event.target.value;
+                            updateGame(week, time, court, selectedTeamId, true);
                         }}
                     >
                         {ageGroupTeams?.map((team) => (
@@ -290,12 +349,19 @@ export const GameSetup = (props: PlayerDataProps) => {
                 </FormControl>
                 <Divider />
                 <FormControl variant="outlined" fullWidth>
-                    <InputLabel id="select-label">Dark</InputLabel>
+                    <InputLabel id="select-label-dark">Dark</InputLabel>
                     <Select
-                        labelId="select-label"
-                        value=""
+                        labelId="select-label-dark"
+                        value={darkTeamId}
                         onChange={(event: { target: { value: string } }) => {
-                            console.log(event.target.value);
+                            const selectedTeamId = event.target.value;
+                            updateGame(
+                                week,
+                                time,
+                                court,
+                                selectedTeamId,
+                                false,
+                            );
                         }}
                     >
                         {ageGroupTeams?.map((team) => (
@@ -473,6 +539,16 @@ export const GameSetup = (props: PlayerDataProps) => {
                 onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
             >
                 getTeamsFromAgeGroup
+            </button>
+
+            <button
+                type="button"
+                onClick={() => {
+                    console.log('created games:');
+                    console.log(createdGames);
+                }}
+            >
+                Log created games
             </button>
         </PageContainer>
     );
