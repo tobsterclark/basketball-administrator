@@ -2,7 +2,7 @@ import {
     ArrowLeftCircleIcon,
     ArrowRightCircleIcon,
 } from '@heroicons/react/24/solid';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Box,
     Divider,
@@ -107,8 +107,8 @@ const teams = [
     'Kobe',
     'Blazers',
 ];
-const numWeeks = 8;
-const gamesPerTeam = 8;
+const numWeeks = 10;
+const gamesPerTeam = 10;
 
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
@@ -198,11 +198,24 @@ export const GameSetup = (props: PlayerDataProps) => {
         return null;
     };
 
-    const tournamentSchedule = generateRoundRobinSchedule(
-        teams,
-        numWeeks,
-        gamesPerTeam,
-    );
+    useEffect(() => {
+        getTimeSlots();
+        getTeamsFromAgeGroup(selectedAgeGroupId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAgeGroupId]);
+
+    const doTourney = () => {
+        // create a list of strings from the teams
+        const teamNames = ageGroupTeams?.map((team) => team.name) || [];
+        const torney = generateRoundRobinSchedule(teamNames, 10, 10);
+        console.log(torney);
+    };
+
+    // const tournamentSchedule = generateRoundRobinSchedule(
+    //     teams,
+    //     numWeeks,
+    //     gamesPerTeam,
+    // );
 
     // console.log(tournamentSchedule);
 
@@ -541,25 +554,31 @@ export const GameSetup = (props: PlayerDataProps) => {
                     </TableContainer>
                 </Box>
             </div>
-            <button type="button" onClick={getTimeSlots}>
-                Get Timeslots
-            </button>
-            <button
-                type="button"
-                onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
-            >
-                getTeamsFromAgeGroup
-            </button>
+            <div className="flex gap-8">
+                <button type="button" onClick={getTimeSlots}>
+                    Get Timeslots
+                </button>
+                <button
+                    type="button"
+                    onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
+                >
+                    getTeamsFromAgeGroup
+                </button>
 
-            <button
-                type="button"
-                onClick={() => {
-                    console.log('created games:');
-                    console.log(createdGames);
-                }}
-            >
-                Log created games
-            </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        console.log('created games:');
+                        console.log(createdGames);
+                    }}
+                >
+                    Log created games
+                </button>
+
+                <button type="button" onClick={doTourney}>
+                    Generate Tournament
+                </button>
+            </div>
         </PageContainer>
     );
 };
