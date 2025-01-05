@@ -1,5 +1,5 @@
-import { Scheduler } from '@aldabil/react-scheduler';
 import { useEffect, useState } from 'react';
+import { Button } from '@mui/material';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import {
@@ -9,22 +9,49 @@ import {
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
 
-type timeSlotParams = {
-    id?: string;
-    date: Date;
-    location: string;
-    court: number;
-    ageGroupId?: string;
+enum Location {
+    ST_IVES = 'ST_IVES',
+    BELROSE = 'BELROSE',
+}
+
+type Team = {
+    id: string;
+    name: string;
+    ageGroupId: string;
+    division: number | null;
 };
+
+type Timeslot = {
+    id: string;
+    location: Location;
+    court: number;
+    ageGroupId: string;
+    date: string; // ISO date string
+};
+
 type Game = {
-    lightTeamId: string | null;
-    darkTeamId: string | null;
-    timeSlotId: string;
+    id: string;
+    lightTeamId: string;
+    darkTeamId: string;
+    lightScore: number;
+    darkScore: number;
+    timeslotId: string;
+    lightTeam: Team;
+    darkTeam: Team;
+    timeslot: Timeslot;
+};
+
+type Event = {
+    title: string;
+    startDate: Date;
+    endDate: Date;
+    id: string;
+    location: string;
 };
 
 const Roster = () => {
-    const [games, setGames] = useState([]);
-    const [events, setEvents] = useState([]);
+    const [allGames, setAllGames] = useState<Game[]>([]);
+    const [allEvents, setAllEvents] = useState<Event[]>([]);
 
     useEffect(() => {
         const gamesRequest: PrismaCall = {
@@ -59,39 +86,40 @@ const Roster = () => {
             .invoke(IpcChannels.PrismaClient, gamesRequest)
             .then((data) => {
                 console.log(data);
-                setGames(data);
+                setAllGames(data);
             })
             .catch((err) => {
                 console.error(err);
             });
     }, []);
 
-    const transformGamesToEvents = (games: any) => {};
+    const transformGamesToEvents = (games: Game[]) => {
+        const events: Event[] = games.map((game: Game) => {
+            const startDate = new Date(game.timeslot.date);
+            const endDate = new Date(startDate);
+            endDate.setHours(startDate.getHours() + 1);
+
+            return {
+                title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
+                startDate,
+                endDate,
+                id: game.id,
+                location: game.timeslot.location,
+            };
+        });
+
+        setAllEvents(events);
+        console.log('events:');
+        console.log(events);
+    };
 
     return (
         <PageContainer>
             <PageTitle text="Roster" />
-            <div className="pt-4">
-                <Scheduler
-                    view="week"
-                    events={[
-                        {
-                            event_id: 1,
-                            title: 'AND1 v Sharks',
-                            subtitle: 'Court 1',
-                            start: new Date('2024/10/2 09:30'),
-                            end: new Date('2024/10/2 10:30'),
-                        },
-                        {
-                            event_id: 2,
-                            title: 'Ballerz v Boomers',
-                            subtitle: 'Court 4',
-                            start: new Date('2024/10/4 10:00'),
-                            end: new Date('2024/10/4 11:00'),
-                        },
-                    ]}
-                />
-            </div>
+            <Button onClick={() => transformGamesToEvents(allGames)}>
+                Transform
+            </Button>
+            <div className="pt-4">{/* <Scheduler data={allEvents} /> */}</div>
         </PageContainer>
     );
 };
