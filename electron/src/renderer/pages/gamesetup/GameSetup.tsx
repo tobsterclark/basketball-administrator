@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from 'react';
 import {
     Box,
+    Button,
     Divider,
     FormControl,
     InputLabel,
@@ -361,7 +362,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     <ArrowRightCircleIcon className="h-8 w-8 hover:text-red-400" />
                 </button>
             </div>
-            <div className="flex pt-16 items-center justify-center">
+            <div className="flex pt-16 items-center justify-center gap-8">
                 <div className="w-1/3">
                     <FormControl variant="outlined" fullWidth>
                         <InputLabel id={`select-label-${selectedAgeGroupId}`}>
@@ -386,6 +387,16 @@ export const GameSetup = (props: PlayerDataProps) => {
                         </Select>
                     </FormControl>
                 </div>
+                <div className="w-1/4">
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={doTourney}
+                    >
+                        Generate Schedule
+                    </Button>
+                </div>
             </div>
             <div className="pt-8">
                 {belroseGames ? (
@@ -396,7 +407,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
                     <TableContainer
                         component={Paper}
-                        sx={{ maxWidth: 1200, margin: 'auto' }}
+                        sx={{ maxWidth: 1500, margin: 'auto' }}
                     >
                         <Table aria-label="game schedule table">
                             <TableHead>
@@ -494,7 +505,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     <Box sx={{ width: '100%', overflowX: 'auto' }}>
                         <TableContainer
                             component={Paper}
-                            sx={{ maxWidth: 1200, margin: 'auto' }}
+                            sx={{ maxWidth: 1500, margin: 'auto' }}
                         >
                             <Table aria-label="game schedule table">
                                 <TableHead>
