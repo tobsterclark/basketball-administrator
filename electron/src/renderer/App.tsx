@@ -17,7 +17,7 @@ import {
 import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
 import TermSetup from './pages/termsetup/TermSetup';
-import GameSetup from './pages/termsetup/GameSetup';
+import GameSetup from './pages/gamesetup/GameSetup';
 
 const App = () => {
     // TODO: get players here as well

@@ -29,86 +29,8 @@ import {
 } from '../../../general/prismaTypes';
 import Terms2025 from '../data/Terms';
 import { IpcChannels } from '../../../general/IpcChannels';
-
-type RR_Game = [string, string];
-type RR_Schedule = Record<string, RR_Game[]>;
-type timeSlotParams = {
-    id?: string;
-    date: Date;
-    location: string;
-    court: number;
-    ageGroupId?: string;
-};
-type Game = {
-    lightTeamId: string | null;
-    darkTeamId: string | null;
-    timeSlotId: string;
-};
-/**
- * Generates a round-robin tournament schedule.
- * @param teams - List of team names.
- * @param numWeeks - Total number of weeks.
- * @param gamesPerTeam - Total games each team should play.
- * @returns Schedule for each week.
- */
-function generateRoundRobinSchedule(
-    teams: string[],
-    numWeeks: number,
-    gamesPerTeam: number,
-): RR_Schedule {
-    if (teams.length < 2) {
-        throw new Error('At least 2 teams are required to create a schedule.');
-    }
-
-    const totalGames = (gamesPerTeam * teams.length) / 2;
-    const gamesPerWeek = Math.floor(teams.length / 2);
-    const totalWeeks = Math.ceil(totalGames / gamesPerWeek);
-    const effectiveWeeks = Math.min(numWeeks, totalWeeks);
-
-    const schedule: RR_Schedule = {};
-    const adjustedTeams = [...teams];
-
-    // If odd number of teams, add a dummy team for bye
-    const hasBye = teams.length % 2 !== 0;
-    if (hasBye) adjustedTeams.push('BYE');
-
-    const numTeams = adjustedTeams.length;
-
-    // Generate a round-robin schedule for all weeks
-    for (let week = 1; week <= effectiveWeeks; week += 1) {
-        const games: RR_Game[] = [];
-
-        for (let i = 0; i < numTeams / 2; i += 1) {
-            const home = adjustedTeams[i];
-            const away = adjustedTeams[numTeams - 1 - i];
-            if (home !== 'BYE' && away !== 'BYE') {
-                games.push([home, away]);
-            }
-        }
-        // Rotate the teams for next week's matches (except the first team)
-        adjustedTeams.splice(1, 0, adjustedTeams.pop()!);
-
-        schedule[`Week ${week}`] = games;
-    }
-
-    return schedule;
-}
-
-// Example usage
-const teams = [
-    'Phoenix',
-    'NBA2K',
-    'Defenders',
-    'Travellers',
-    'Bucks',
-    'Bulls',
-    'Monkeys',
-    'Boomers',
-    'Kobe',
-    'Blazers',
-];
-const numWeeks = 10;
-const gamesPerTeam = 10;
+import { Game, timeSlotParams } from './types';
+import { generateRoundRobinSchedule } from './RoundRobinGen';
 
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
@@ -120,6 +42,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         useState<timeSlotParams[]>();
     const [ageGroupTeams, setAgeGroupTeams] = useState<TeamDataResponse[]>();
     const [createdGames, setCreatedGames] = useState<Game[]>([]);
+    const [belroseGames, setBelroseGames] = useState<boolean>(false);
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -133,15 +56,20 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
     };
 
-    const getTimesFromSlots = (timeSlots: timeSlotParams[]) => {
+    const getTimesFromSlots = (
+        timeSlots: timeSlotParams[],
+        venue: string = 'ST_IVES',
+    ) => {
         const timesCount: { [key: number]: number } = {};
         for (let i = 0; i < timeSlots.length; i += 1) {
             const timeSlot = timeSlots[i];
-            const hour = timeSlot.date.getHours();
-            if (timesCount[hour]) {
-                timesCount[hour] += 1;
-            } else {
-                timesCount[hour] = 1;
+            if (timeSlot.location === venue) {
+                const hour = timeSlot.date.getHours();
+                if (timesCount[hour]) {
+                    timesCount[hour] += 1;
+                } else {
+                    timesCount[hour] = 1;
+                }
             }
         }
         return timesCount;
@@ -172,8 +100,17 @@ export const GameSetup = (props: PlayerDataProps) => {
                 );
                 console.log(data);
                 console.log('times from slots:');
-                console.log(getTimesFromSlots(data as timeSlotParams[]));
+                console.log(
+                    getTimesFromSlots(data as timeSlotParams[], 'ST_IVES'),
+                );
+                console.log(
+                    getTimesFromSlots(data as timeSlotParams[], 'BELROSE'),
+                );
                 setAgeGroupsTimeSlots(data as timeSlotParams[]);
+                const belrose = data.find(
+                    (slot: { location: string }) => slot.location === 'BELROSE',
+                );
+                setBelroseGames(!!belrose);
             });
     };
 
@@ -191,8 +128,8 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                console.log(`All teams for age group ${ageGroupId}`);
-                console.log(data);
+                // console.log(`All teams for age group ${ageGroupId}`);
+                // console.log(data);
                 setAgeGroupTeams(data as TeamDataResponse[]);
             });
         return null;
@@ -203,21 +140,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         getTeamsFromAgeGroup(selectedAgeGroupId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAgeGroupId]);
-
-    const doTourney = () => {
-        // create a list of strings from the teams
-        const teamNames = ageGroupTeams?.map((team) => team.name) || [];
-        const torney = generateRoundRobinSchedule(teamNames, 10, 10);
-        console.log(torney);
-    };
-
-    // const tournamentSchedule = generateRoundRobinSchedule(
-    //     teams,
-    //     numWeeks,
-    //     gamesPerTeam,
-    // );
-
-    // console.log(tournamentSchedule);
 
     const TimeTableCell = styled(TableCell)({
         textAlign: 'center',
@@ -256,6 +178,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         week: number,
         time: number,
         court: number,
+        venue: string = 'ST_IVES',
     ) => {
         if (!ageGroupsTimeSlots) return null;
         const dateToFind = new Date(Terms2025[currentTerm].date);
@@ -268,14 +191,9 @@ export const GameSetup = (props: PlayerDataProps) => {
 
             if (
                 slotDate.getTime() === dateToFind.getTime() &&
-                timeSlot.court === court
+                timeSlot.court === court &&
+                timeSlot.location === venue
             ) {
-                if (week === 4 && time === 11 && court === 1) {
-                    console.log('Timeslot FOUND for week 4, time 11, court 1');
-                    console.log(timeSlot);
-                    console.log('dateToFind for WEEK 4 TIME 11 COURT 1:');
-                    console.log(dateToFind);
-                }
                 return timeSlot;
             }
         }
@@ -285,15 +203,27 @@ export const GameSetup = (props: PlayerDataProps) => {
         return null;
     };
 
+    const getTeamIdFromName = (teamName: string) => {
+        if (!ageGroupTeams) return '';
+        const theTeam = ageGroupTeams.find((tean) => tean.name === teamName);
+        return theTeam?.id || '';
+    };
+
     const updateGame = (
         week: number,
         time: number,
         court: number,
         teamId: string,
         isLightTeam: boolean,
+        venue: string = 'ST_IVES',
     ) => {
         setCreatedGames((prevGames) => {
-            const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court);
+            const timeSlot = getTimeSlotFromWeekTimeCourt(
+                week,
+                time,
+                court,
+                venue,
+            );
             if (!timeSlot) return prevGames;
 
             const gameIndex = prevGames.findIndex(
@@ -318,25 +248,38 @@ export const GameSetup = (props: PlayerDataProps) => {
         });
     };
 
+    const doTourney = () => {
+        // create a list of strings from the teams
+        const teamNames = ageGroupTeams?.map((team) => team.name) || [];
+        console.log(
+            `Generating tournament for 10 weeks, with 10 games per team. Team names: ${teamNames}`,
+        );
+        if (ageGroupsTimeSlots) {
+            const torney = generateRoundRobinSchedule(
+                teamNames,
+                ageGroupsTimeSlots,
+                updateGame,
+                getTeamIdFromName,
+                currentTerm,
+            );
+
+            console.log(torney);
+        }
+    };
+
     const renderVersusDropdowns = (
         week: number,
         time: number,
         court: number,
+        venue: string = 'ST_IVES',
     ) => {
-        const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court);
+        const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court, venue);
         if (!timeSlot) {
             return <div />;
         }
         const game = createdGames.find(
             (gamee) => gamee.timeSlotId === timeSlot?.id,
         );
-
-        if (week === 4 && court === 1 && time === 11) {
-            console.log('week 4 court 1 timeslot:');
-            console.log(timeSlot);
-            console.log('week 4 court 1 game:');
-            console.log(game);
-        }
 
         const lightTeamId = game?.lightTeamId || '';
         const darkTeamId = game?.darkTeamId || '';
@@ -350,7 +293,14 @@ export const GameSetup = (props: PlayerDataProps) => {
                         value={lightTeamId}
                         onChange={(event: { target: { value: string } }) => {
                             const selectedTeamId = event.target.value;
-                            updateGame(week, time, court, selectedTeamId, true);
+                            updateGame(
+                                week,
+                                time,
+                                court,
+                                selectedTeamId,
+                                true,
+                                venue,
+                            );
                         }}
                     >
                         {ageGroupTeams?.map((team) => (
@@ -374,6 +324,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                 court,
                                 selectedTeamId,
                                 false,
+                                venue,
                             );
                         }}
                     >
@@ -437,6 +388,11 @@ export const GameSetup = (props: PlayerDataProps) => {
                 </div>
             </div>
             <div className="pt-8">
+                {belroseGames ? (
+                    <h3 className="text-xl font-bold pb-4">St Ives</h3>
+                ) : (
+                    <div />
+                )}
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
                     <TableContainer
                         component={Paper}
@@ -449,6 +405,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                     {Object.entries(
                                         getTimesFromSlots(
                                             ageGroupsTimeSlots || [],
+                                            'ST_IVES',
                                         ),
                                     ).map(([time, count]) => (
                                         <TimeTableCell
@@ -464,6 +421,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                     {Object.entries(
                                         getTimesFromSlots(
                                             ageGroupsTimeSlots || [],
+                                            'ST_IVES',
                                         ),
                                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                     ).map(([time, count]) => (
@@ -492,6 +450,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                         {Object.entries(
                                             getTimesFromSlots(
                                                 ageGroupsTimeSlots || [],
+                                                'ST_IVES',
                                             ),
                                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                         ).map(([time, count]) => (
@@ -501,6 +460,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                                         weekIndex,
                                                         parseInt(time, 10),
                                                         1,
+                                                        'ST_IVES',
                                                     )}
                                                 </BRTableCell>
                                                 <BRTableCell>
@@ -508,6 +468,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                                         weekIndex,
                                                         parseInt(time, 10),
                                                         2,
+                                                        'ST_IVES',
                                                     )}
                                                 </BRTableCell>
                                                 <BRTableCell>
@@ -515,45 +476,125 @@ export const GameSetup = (props: PlayerDataProps) => {
                                                         weekIndex,
                                                         parseInt(time, 10),
                                                         3,
+                                                        'ST_IVES',
                                                     )}
                                                 </BRTableCell>
                                             </>
                                         ))}
                                     </TableRow>
                                 ))}
-                                {/* <TableRow>
-                                    <WeekTableCell
-                                        component="th"
-                                        scope="row"
-                                        sx={{ fontWeight: 'bold' }}
-                                        padding="none"
-                                    >
-                                        Week 1
-                                    </WeekTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <WeekTableCell
-                                        component="th"
-                                        scope="row"
-                                        sx={{ fontWeight: 'bold' }}
-                                        padding="none"
-                                    >
-                                        Week 2
-                                    </WeekTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                    <BRTableCell>blah</BRTableCell>
-                                </TableRow> */}
                             </TableBody>
                         </Table>
                     </TableContainer>
                 </Box>
             </div>
+            {belroseGames ? (
+                <div className="pt-8">
+                    <h3 className="text-xl font-bold pt-8 pb-4">Belrose</h3>
+                    <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                        <TableContainer
+                            component={Paper}
+                            sx={{ maxWidth: 1200, margin: 'auto' }}
+                        >
+                            <Table aria-label="game schedule table">
+                                <TableHead>
+                                    <TableRow>
+                                        <NormalTableCell padding="none" />
+                                        {Object.entries(
+                                            getTimesFromSlots(
+                                                ageGroupsTimeSlots || [],
+                                                'BELROSE',
+                                            ),
+                                        ).map(([time, count]) => (
+                                            <TimeTableCell
+                                                colSpan={3}
+                                                aria-label={`${time} games`}
+                                            >
+                                                {formatTime(time)}
+                                            </TimeTableCell>
+                                        ))}
+                                    </TableRow>
+                                    <TableRow>
+                                        <WeekTableCell />
+                                        {Object.entries(
+                                            getTimesFromSlots(
+                                                ageGroupsTimeSlots || [],
+                                                'BELROSE',
+                                            ),
+                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        ).map(([time, count]) => (
+                                            <>
+                                                <BRTableCell>
+                                                    Court 1
+                                                </BRTableCell>
+                                                <BRTableCell>
+                                                    Court 2
+                                                </BRTableCell>
+                                                <BRTableCell>
+                                                    Court 3
+                                                </BRTableCell>
+                                            </>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {Array.from({
+                                        length: Terms2025[currentTerm].weeks,
+                                    }).map((_, weekIndex) => (
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        <TableRow key={weekIndex}>
+                                            <WeekTableCell
+                                                component="th"
+                                                scope="row"
+                                                sx={{ fontWeight: 'bold' }}
+                                                padding="none"
+                                            >
+                                                Week {weekIndex + 1}
+                                            </WeekTableCell>
+                                            {Object.entries(
+                                                getTimesFromSlots(
+                                                    ageGroupsTimeSlots || [],
+                                                    'BELROSE',
+                                                ),
+                                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                            ).map(([time, count]) => (
+                                                <>
+                                                    <BRTableCell>
+                                                        {renderVersusDropdowns(
+                                                            weekIndex,
+                                                            parseInt(time, 10),
+                                                            1,
+                                                            'BELROSE',
+                                                        )}
+                                                    </BRTableCell>
+                                                    <BRTableCell>
+                                                        {renderVersusDropdowns(
+                                                            weekIndex,
+                                                            parseInt(time, 10),
+                                                            2,
+                                                            'BELROSE',
+                                                        )}
+                                                    </BRTableCell>
+                                                    <BRTableCell>
+                                                        {renderVersusDropdowns(
+                                                            weekIndex,
+                                                            parseInt(time, 10),
+                                                            3,
+                                                            'BELROSE',
+                                                        )}
+                                                    </BRTableCell>
+                                                </>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                </div>
+            ) : (
+                <div />
+            )}
             <div className="flex gap-8">
                 <button type="button" onClick={getTimeSlots}>
                     Get Timeslots
@@ -577,6 +618,16 @@ export const GameSetup = (props: PlayerDataProps) => {
 
                 <button type="button" onClick={doTourney}>
                     Generate Tournament
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        console.log('Teams:');
+                        console.log(ageGroupTeams);
+                    }}
+                >
+                    Print teams
                 </button>
             </div>
         </PageContainer>
