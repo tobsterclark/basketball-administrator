@@ -9,19 +9,49 @@ import {
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
 
+type timeSlotParams = {
+    id?: string;
+    date: Date;
+    location: string;
+    court: number;
+    ageGroupId?: string;
+};
+type Game = {
+    lightTeamId: string | null;
+    darkTeamId: string | null;
+    timeSlotId: string;
+};
+
 const Roster = () => {
     const [games, setGames] = useState([]);
+    const [events, setEvents] = useState([]);
 
     useEffect(() => {
         const gamesRequest: PrismaCall = {
-            model: ModelName.timeslot,
+            model: ModelName.game,
             operation: CrudOperations.findMany,
             data: {
-                // include: {
-                //     lightTeam: true,
-                //     darkTeam: true,
-                //     timeslot: true,
-                // },
+                where: {
+                    OR: [
+                        {
+                            lightTeam: {
+                                ageGroupId:
+                                    '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
+                            },
+                        },
+                        {
+                            darkTeam: {
+                                ageGroupId:
+                                    '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
+                            },
+                        },
+                    ],
+                },
+                include: {
+                    lightTeam: true,
+                    darkTeam: true,
+                    timeslot: true,
+                },
             },
         };
 
@@ -29,8 +59,14 @@ const Roster = () => {
             .invoke(IpcChannels.PrismaClient, gamesRequest)
             .then((data) => {
                 console.log(data);
+                setGames(data);
+            })
+            .catch((err) => {
+                console.error(err);
             });
     }, []);
+
+    const transformGamesToEvents = (games: any) => {};
 
     return (
         <PageContainer>

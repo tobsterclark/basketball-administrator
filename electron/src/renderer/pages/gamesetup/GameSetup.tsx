@@ -210,6 +210,47 @@ export const GameSetup = (props: PlayerDataProps) => {
         return theTeam?.id || '';
     };
 
+    const uploadGames = () => {
+        createdGames.forEach((game) => {
+            const req: PrismaCall = {
+                model: ModelName.game,
+                operation: CrudOperations.create,
+                data: {
+                    data: {
+                        lightTeamId: game.lightTeamId,
+                        darkTeamId: game.darkTeamId,
+                        timeslotId: game.timeSlotId,
+                        lightScore: 0,
+                        darkScore: 0,
+                    },
+                },
+            };
+            window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, req)
+                .then((data) => {
+                    console.log(data);
+                });
+        });
+        // const req: PrismaCall = {
+        //     model: ModelName.team,
+        //     operation: CrudOperations.findMany,
+        //     data: {
+        //         where: {
+        //             ageGroupId,
+        //         },
+        //     },
+        // };
+
+        // window.electron.ipcRenderer
+        //     .invoke(IpcChannels.PrismaClient, req)
+        //     .then((data) => {
+        //         // console.log(`All teams for age group ${ageGroupId}`);
+        //         // console.log(data);
+        //         setAgeGroupTeams(data as TeamDataResponse[]);
+        //     });
+        // return null;
+    };
+
     const updateGame = (
         week: number,
         time: number,
@@ -395,6 +436,16 @@ export const GameSetup = (props: PlayerDataProps) => {
                         onClick={doTourney}
                     >
                         Generate Schedule
+                    </Button>
+                </div>
+                <div className="w-1/4">
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={uploadGames}
+                    >
+                        UPLOAD
                     </Button>
                 </div>
             </div>
