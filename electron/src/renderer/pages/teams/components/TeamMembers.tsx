@@ -4,10 +4,16 @@ import {
     GridColDef,
     GridRowSelectionModel,
 } from '@mui/x-data-grid';
-import { ArrowLeftStartOnRectangleIcon } from '@heroicons/react/24/solid';
+import {
+    ArrowLeftStartOnRectangleIcon,
+    UserPlusIcon,
+} from '@heroicons/react/24/solid';
 import { useState } from 'react';
+import { PlusOneOutlined } from '@mui/icons-material';
+import { TextField } from '@mui/material';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { TeamMembersProps } from './Types';
+import { PlayerSearch } from '../../players/components/PlayerSearch';
 
 const TeamMembers = (props: TeamMembersProps) => {
     const {
@@ -19,6 +25,10 @@ const TeamMembers = (props: TeamMembersProps) => {
         setEditedPlayersToRemove,
         onCancelClick,
         onSaveClick,
+        newPlayerSearchBoxInput,
+        newPlayerSetSearchBoxInput,
+        newPlayerAddPlayerDisabled,
+        newPlayerHandleAddPlayerButtonPress,
     } = props;
 
     const teamEditorColumns: GridColDef[] = [
@@ -84,6 +94,8 @@ const TeamMembers = (props: TeamMembersProps) => {
         }
     };
 
+    console.log(teamMemberRows);
+
     return (
         <div>
             <h3 className="text-lg font-medium pt-6 pb-2">Members</h3>
@@ -137,6 +149,27 @@ const TeamMembers = (props: TeamMembersProps) => {
                         },
                     }}
                 />
+                <div className="flex justify-center items-center py-4 px-2 gap-2 bg-blue-200 hover:cursor-pointer hover:bg-blue-300">
+                    <p className="font-bold">Add player</p>
+                    <UserPlusIcon className="h-6 w-6 text-black" />
+                </div>
+                <div>
+                    {/* <div className="flex flex-row pt-12 pb-6 gap-6">
+                        <div className="w-full">
+                            <TextField
+                                id="playerSearchInput"
+                                label="Search players"
+                                variant="filled"
+                                autoFocus
+                                value={newPlayerSearchBoxInput}
+                                onChange={(e) =>
+                                    newPlayerSetSearchBoxInput(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </div>
+                    </div> */}
+                </div>
             </div>
             <div className="pt-8 pb-4">
                 <FormCancelSave

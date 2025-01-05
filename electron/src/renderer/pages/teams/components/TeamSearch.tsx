@@ -63,7 +63,10 @@ export const TeamSearch = (props: TeamSearchProps): React.ReactElement => {
             <div>
                 <button
                     type="button"
-                    onClick={handleAddTeamButtonPress}
+                    onClick={() => {
+                        setSelectedOption(null);
+                        handleAddTeamButtonPress();
+                    }}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
                 >
                     New Team

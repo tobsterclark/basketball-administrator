@@ -42,6 +42,11 @@ const Teams = () => {
     const [selectedTeamPlayers, setSelectedTeamPlayers] =
         useState<TeamMemberRow[]>();
 
+    const [newPlayerSearchBoxInput, setNewPlayerSearchBoxInput] =
+        useState<string>('');
+    const [newPlayerAddPlayerDisabled, setNewPlayerAddPlayerDisabled] =
+        useState<boolean>(false);
+
     const [editedPlayersToRemove, setEditedPlayersToRemove] = useState<
         string[]
     >([]);
@@ -49,6 +54,7 @@ const Teams = () => {
     const [editingDisabled, setEditingDisabled] = useState<boolean>(true);
     const [unsavedEdits, setUnsavedEdits] = useState<boolean>(false);
     const [pullNewData, setPullNewData] = useState<boolean>(false);
+    const [isCreatingNewTeam, setIsCreatingNewTeam] = useState<boolean>(false);
 
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
     const [editedTeamName, setEditedTeamName] =
@@ -97,6 +103,38 @@ const Teams = () => {
             return;
         }
 
+        if (isCreatingNewTeam) {
+            const createTeamPush: PrismaCall = {
+                model: ModelName.team,
+                operation: CrudOperations.create,
+                data: {
+                    data: {
+                        name: editedTeamName,
+                        ageGroupId: editedAgeGroup.id,
+                    },
+                },
+            };
+
+            window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, createTeamPush)
+                .then((data) => {
+                    const newTeam = data as TeamCache;
+                    toast.success(`Created new team: ${newTeam.name}`);
+                    console.log('New team created');
+                    console.log(newTeam);
+                    setCachedTeams((currentCache) => {
+                        const newCache = new Map(currentCache);
+                        newCache.set(newTeam.id, newTeam);
+                        return newCache;
+                    });
+                    setPullNewData(true);
+                    setUnsavedEdits(false);
+                    setIsCreatingNewTeam(false);
+                    setSelectedTeam(newTeam.id);
+                });
+            return;
+        }
+
         const updateTeamPush: PrismaCall = {
             model: ModelName.team,
             operation: CrudOperations.update,
@@ -110,34 +148,12 @@ const Teams = () => {
             },
         };
 
-        // const updatePlayersPush: PrismaCall[] = editedPlayersToRemove.map(
-        //     (playerId) => ({
-        //         model: ModelName.player,
-        //         operation: CrudOperations.update,
-        //         data: {
-        //             where: { id: playerId },
-        //             data: { teamId: null },
-        //         },
-        //     }),
-        // );
-
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, updateTeamPush)
             .then((data) => {
                 const updatedTeam = data as TeamCache;
                 toast.success(`Updated team: ${updatedTeam.name}`);
             });
-
-        // updatePlayersPush.forEach((updatePlayerPush) => {
-        //     window.electron.ipcRenderer
-        //         .invoke(IpcChannels.PrismaClient, updatePlayerPush)
-        //         .then((data) => {
-        //             const updatedPlayer = data as PlayerDataResponse;
-        //             toast.success(
-        //                 `Removed player: ${updatedPlayer.firstName} from team ${selectedTeamName}`,
-        //             );
-        //         });
-        // });
 
         // Update local copies of team and players once saved
         // update team name and age group in cachedTeams
@@ -149,12 +165,6 @@ const Teams = () => {
             newCache.set(selectedTeam, updatedTeam!);
             return newCache;
         });
-
-        // update players in selectedTeamPlayers
-        // const updatedPlayers = selectedTeamPlayers?.filter(
-        //     (player) => !editedPlayersToRemove.includes(player.playerId),
-        // );
-        // setSelectedTeamPlayers(updatedPlayers);
 
         setPullNewData(true);
         setUnsavedEdits(false);
@@ -169,7 +179,7 @@ const Teams = () => {
 
     // Fetches all players from a given team
     useEffect(() => {
-        if (selectedTeam === '') {
+        if (selectedTeam === '' && !isCreatingNewTeam) {
             setEditingDisabled(true);
             return;
         }
@@ -260,7 +270,13 @@ const Teams = () => {
     }, [pullNewData]);
 
     const handleAddTeamButtonPress = () => {
-        // console.log('Add team button pressed');
+        setIsCreatingNewTeam(true);
+        console.log('Add team button pressed');
+        setSelectedTeam('');
+        setEditedTeamName('');
+        setEditedAgeGroup(undefined);
+        setSelectedTeamPlayers(teamMemberRowsTEMP);
+        setEditingDisabled(false);
     };
 
     // console.log(`selectedTeam: ${selectedTeam}`);
@@ -366,6 +382,10 @@ const Teams = () => {
                             editingDisabled={editingDisabled}
                             editedPlayersToRemove={editedPlayersToRemove}
                             setEditedPlayersToRemove={setEditedPlayersToRemove}
+                            newPlayerSearchBoxInput
+                            newPlayerSetSearchBoxInput
+                            newPlayerAddPlayerDisabled
+                            newPlayerHandleAddPlayerButtonPress
                         />
                     </div>
                 </div>
