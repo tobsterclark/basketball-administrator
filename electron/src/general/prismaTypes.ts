@@ -23,6 +23,7 @@ export enum CrudOperations {
     createManyAndReturn = 'createManyAndReturn',
     upsert = 'upsert',
     update = 'update',
+    delete = 'delete',
 }
 
 // TODO: how tf should we strongly type this crap

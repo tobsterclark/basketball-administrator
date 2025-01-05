@@ -6,6 +6,7 @@ import {
 } from '@mui/x-data-grid';
 import {
     ArrowLeftStartOnRectangleIcon,
+    TrashIcon,
     UserPlusIcon,
 } from '@heroicons/react/24/solid';
 import { useState } from 'react';
@@ -25,10 +26,7 @@ const TeamMembers = (props: TeamMembersProps) => {
         setEditedPlayersToRemove,
         onCancelClick,
         onSaveClick,
-        newPlayerSearchBoxInput,
-        newPlayerSetSearchBoxInput,
-        newPlayerAddPlayerDisabled,
-        newPlayerHandleAddPlayerButtonPress,
+        deleteTeam,
     } = props;
 
     const teamEditorColumns: GridColDef[] = [
@@ -61,6 +59,9 @@ const TeamMembers = (props: TeamMembersProps) => {
 
     const [rowSelectionMode, setRowSelectionModel] =
         useState<GridRowSelectionModel>([]);
+
+    const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
+        useState(false);
 
     const removePlayer = (rowIndex: number) => {
         const { playerId } = teamMemberRows[rowIndex];
@@ -149,10 +150,58 @@ const TeamMembers = (props: TeamMembersProps) => {
                         },
                     }}
                 />
-                <div className="flex justify-center items-center py-4 px-2 gap-2 bg-blue-200 hover:cursor-pointer hover:bg-blue-300">
+                {deleteConfirmationVisible ? (
+                    <div className="flex-row w-full text-center justify-center items-center py-4 px-2 gap-2 bg-red-300 disabled:bg-[#e2e8f0] disabled:cursor-not-allowed">
+                        <p>
+                            Are you sure you want to delete this team? This
+                            action is permanent.
+                        </p>
+                        <div className="flex flex-row gap-6 pt-4 px-4">
+                            <div className="w-1/2">
+                                <button
+                                    type="button"
+                                    disabled={editingDisabled}
+                                    onClick={() =>
+                                        setDeleteConfirmationVisible(false)
+                                    }
+                                    className="rounded-md w-full justify-center items-center py-4 px-2 gap-2 bg-blue-400 text-white hover:cursor-pointer hover:bg-blue-500"
+                                >
+                                    <p className="font-bold">Cancel</p>
+                                </button>
+                            </div>
+                            <div className="w-1/2">
+                                <button
+                                    type="button"
+                                    disabled={editingDisabled}
+                                    onClick={() => {
+                                        if (deleteTeam) {
+                                            deleteTeam();
+                                        }
+                                        setDeleteConfirmationVisible(false);
+                                    }}
+                                    className="rounded-md w-full flex justify-center items-center py-4 px-2 gap-2 bg-red-500 text-white hover:cursor-pointer hover:bg-red-600"
+                                >
+                                    <p className="font-bold">Delete Team</p>
+                                    <TrashIcon className="h-6 w-6 text-white" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        disabled={editingDisabled}
+                        onClick={() => setDeleteConfirmationVisible(true)}
+                        className="flex w-full justify-center items-center py-4 px-2 gap-2 bg-red-200 hover:cursor-pointer hover:bg-red-300 disabled:bg-[#e2e8f0] disabled:cursor-not-allowed"
+                    >
+                        <p className="font-bold">Delete Team</p>
+                        <TrashIcon className="h-6 w-6 text-black" />
+                    </button>
+                )}
+                {/* <div className="flex justify-center items-center py-4 px-2 gap-2 bg-blue-200 hover:cursor-pointer hover:bg-blue-300">
                     <p className="font-bold">Add player</p>
                     <UserPlusIcon className="h-6 w-6 text-black" />
-                </div>
+                </div> */}
                 <div>
                     {/* <div className="flex flex-row pt-12 pb-6 gap-6">
                         <div className="w-full">

@@ -33,6 +33,7 @@ export interface TeamMembersProps {
     setEditedPlayersToRemove: Dispatch<SetStateAction<string[]>>;
     onCancelClick?: () => void;
     onSaveClick?: () => void;
+    deleteTeam?: () => void;
 }
 
 export interface TeamSearchProps {

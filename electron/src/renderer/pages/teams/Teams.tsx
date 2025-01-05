@@ -67,6 +67,33 @@ const Teams = () => {
         AgeGroupDataResponse | undefined
     >(selectedAgeGroup);
 
+    const deleteTeam = () => {
+        const deleteTeamPush: PrismaCall = {
+            model: ModelName.team,
+            operation: CrudOperations.delete,
+            data: {
+                where: { id: selectedTeam },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, deleteTeamPush)
+            .then(() => {
+                toast.success(`Deleted team: ${selectedTeamName}`);
+                console.log('Team deleted');
+                setCachedTeams((currentCache) => {
+                    const newCache = new Map(currentCache);
+                    newCache.delete(selectedTeam);
+                    return newCache;
+                });
+                setPullNewData(true);
+                setSelectedTeam('');
+                setEditedTeamName('');
+                setEditedAgeGroup(undefined);
+                setSelectedTeamPlayers(teamMemberRowsTEMP);
+            });
+    };
+
     // i fucking hate react!!!
     useEffect(() => {
         if (selectedTeam !== '') {
@@ -382,10 +409,7 @@ const Teams = () => {
                             editingDisabled={editingDisabled}
                             editedPlayersToRemove={editedPlayersToRemove}
                             setEditedPlayersToRemove={setEditedPlayersToRemove}
-                            newPlayerSearchBoxInput
-                            newPlayerSetSearchBoxInput
-                            newPlayerAddPlayerDisabled
-                            newPlayerHandleAddPlayerButtonPress
+                            deleteTeam={deleteTeam}
                         />
                     </div>
                 </div>
