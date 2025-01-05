@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@mui/material';
+import { Button, styled } from '@mui/material';
+import {
+    Scheduler,
+    DayView,
+    Appointments,
+    AppointmentTooltip,
+    DateNavigator,
+    Toolbar,
+} from '@devexpress/dx-react-scheduler-material-ui';
+import { TodayButton, ViewState } from '@devexpress/dx-react-scheduler';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import {
@@ -8,6 +17,7 @@ import {
     CrudOperations,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
+import Terms2025 from '../data/Terms';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -49,9 +59,35 @@ type Event = {
     location: string;
 };
 
+const CustomAppointment = styled(Appointments.Appointment)(({ theme }) => ({
+    backgroundColor: '#000000',
+    borderRadius: '8px',
+    color: '#fff',
+}));
+
 const Roster = () => {
     const [allGames, setAllGames] = useState<Game[]>([]);
     const [allEvents, setAllEvents] = useState<Event[]>([]);
+
+    const transformGamesToEvents = (games: Game[]) => {
+        const events: Event[] = games.map((game: Game) => {
+            const startDate = new Date(game.timeslot.date);
+            const endDate = new Date(startDate);
+            endDate.setHours(startDate.getHours() + 1);
+
+            return {
+                title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
+                startDate,
+                endDate,
+                id: game.id,
+                location: game.timeslot.location,
+            };
+        });
+
+        setAllEvents(events);
+        console.log('events:');
+        console.log(events);
+    };
 
     useEffect(() => {
         const gamesRequest: PrismaCall = {
@@ -87,31 +123,12 @@ const Roster = () => {
             .then((data) => {
                 console.log(data);
                 setAllGames(data);
+                transformGamesToEvents(data);
             })
             .catch((err) => {
                 console.error(err);
             });
     }, []);
-
-    const transformGamesToEvents = (games: Game[]) => {
-        const events: Event[] = games.map((game: Game) => {
-            const startDate = new Date(game.timeslot.date);
-            const endDate = new Date(startDate);
-            endDate.setHours(startDate.getHours() + 1);
-
-            return {
-                title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
-                startDate,
-                endDate,
-                id: game.id,
-                location: game.timeslot.location,
-            };
-        });
-
-        setAllEvents(events);
-        console.log('events:');
-        console.log(events);
-    };
 
     return (
         <PageContainer>
@@ -120,6 +137,14 @@ const Roster = () => {
                 Transform
             </Button>
             <div className="pt-4">{/* <Scheduler data={allEvents} /> */}</div>
+            <Scheduler data={allEvents}>
+                <ViewState defaultCurrentDate={new Date()} />
+                <DayView startDayHour={8} endDayHour={16} />
+                <Toolbar />
+                <DateNavigator />
+                <Appointments appointmentComponent={CustomAppointment} />
+                <AppointmentTooltip />
+            </Scheduler>
         </PageContainer>
     );
 };
