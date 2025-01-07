@@ -64,7 +64,7 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="roster" element={<Roster />} />
+                    <Route path="roster" element={<Roster ageGroups={ageGroups} />} />
                     <Route
                         path="term-setup"
                         element={<TermSetup ageGroups={ageGroups} />}

@@ -21,10 +21,17 @@ import {
 import { IpcChannels } from '../../../general/IpcChannels';
 import Terms2025 from '../data/Terms';
 import React from 'react';
+import { PlayerDataProps } from '../players/components/Types';
 
 enum Location {
     ST_IVES = 'ST_IVES',
     BELROSE = 'BELROSE',
+}
+
+const toTitleCase = (str: any) => {
+    return str.toLowerCase().split(' ').map((word: any) => {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
 }
 
 const locationToText = (location: Location) => {
@@ -76,6 +83,7 @@ type Event = {
     id: string;
     location: string;
     court: number;
+    ageGroup: string;
 };
 
 const courtData = [
@@ -104,13 +112,21 @@ const testResources = [
     }
 ];
 
+const ageGroupColours = {
+    "Years 3-4": "#cb6bb2",
+    "Years 5-6": "#56ca85",
+    "Years 7-8": "#1e90ff",
+    "Years 9-12": "#ffaa66",
+    "": "#ff6666"
+}
+
 const CustomAppointment = ({ children, data, ...restProps }: { children: React.ReactNode, data: any }) => (
     <Appointments.Appointment {...restProps} className="!bg-transparent !cursor-default" data={data} onClick={() => {}} draggable={false} resources={[]}>
         <div className={`text-white px-1 py-1 ${data.location === Location.ST_IVES ? 'bg-blue-500' : 'bg-green-500'}`}>
             <div className='font-bold'>{data.title}</div>
             <div>{formatTime(data.startDate)} - {formatTime(data.endDate)}</div>
-            <div>{locationToText(data.location)}</div>
-            <div>Court {data.court}</div>
+            <div>{locationToText(data.location)} - Court {data.court}</div>
+            <div>{data.ageGroup}</div>
         </div>
     </Appointments.Appointment>
 );
@@ -157,17 +173,22 @@ const CustomToolbar = ({ currentDate, ...restProps }: { currentDate: Date, child
     );
 };
 
-const Roster = () => {
+const Roster = (props: PlayerDataProps) => {
+    const { ageGroups } = props;
     const [allGames, setAllGames] = useState<Game[]>([]);
     const [allEvents, setAllEvents] = useState<Event[]>([]);
     const [currentDate, setCurrentDate] = React.useState(new Date());
+
+    console.log('ageGroups":');
+    console.log(ageGroups);
 
     const transformGamesToEvents = (games: Game[]) => {
         const events: Event[] = games.map((game: Game) => {
             const startDate = new Date(game.timeslot.date);
             const endDate = new Date(startDate);
             endDate.setHours(startDate.getHours() + 1);
-    
+            const ageGroupIdStr: string = game.lightTeam.ageGroupId;
+            const ageGroupName = ageGroups.find((ageGroup) => ageGroup.id === ageGroupIdStr)?.displayName;
             return {
                 title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
                 startDate,
@@ -175,6 +196,7 @@ const Roster = () => {
                 id: game.id,
                 location: game.timeslot.location,
                 court: game.timeslot.court,
+                ageGroup: toTitleCase(ageGroupName),
             };
         });
     
@@ -195,22 +217,22 @@ const Roster = () => {
             model: ModelName.game,
             operation: CrudOperations.findMany,
             data: {
-                where: {
-                    OR: [
-                        {
-                            lightTeam: {
-                                ageGroupId:
-                                    '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
-                            },
-                        },
-                        {
-                            darkTeam: {
-                                ageGroupId:
-                                    '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
-                            },
-                        },
-                    ],
-                },
+                // where: {
+                //     OR: [
+                //         {
+                //             lightTeam: {
+                //                 ageGroupId:
+                //                     '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
+                //             },
+                //         },
+                //         {
+                //             darkTeam: {
+                //                 ageGroupId:
+                //                     '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
+                //             },
+                //         },
+                //     ],
+                // },
                 include: {
                     lightTeam: true,
                     darkTeam: true,
