@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, styled } from '@mui/material';
 import {
     Scheduler,
@@ -8,6 +8,7 @@ import {
     DateNavigator,
     Toolbar,
     Resources,
+    WeekView,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { TodayButton, ViewState } from '@devexpress/dx-react-scheduler';
 import PageContainer from '../../ui_components/PageContainer';
@@ -114,10 +115,52 @@ const CustomAppointment = ({ children, data, ...restProps }: { children: React.R
     </Appointments.Appointment>
 );
 
+const getCurrentTermAndWeek = (currentDate: Date) => {
+    for (let i = 0; i < Terms2025.length; i++) {
+        const term = Terms2025[i];
+        const nextTerm = Terms2025[i + 1];
+
+        if (currentDate >= term.date && (!nextTerm || currentDate < nextTerm.date)) {
+            const weekNumber = Math.floor(
+                (currentDate.getTime() - term.date.getTime()) / (7 * 24 * 60 * 60 * 1000)
+            ) + 1;
+            
+            if (weekNumber <= term.weeks) {
+                return { term: i + 1, week: weekNumber };
+            }
+        }
+    }
+    return null; // Outside of term dates
+};
+
+const CustomToolbar = ({ currentDate, ...restProps }: { currentDate: Date, children?: React.ReactNode }) => {
+    const termAndWeek = useMemo(() => getCurrentTermAndWeek(currentDate), [currentDate]);
+
+    return (
+        <Toolbar.Root {...restProps}>
+            <div className="flex items-center justify-between px-4 py-2">
+                {/* Original Toolbar Functionality */}
+                {restProps.children}
+
+                {/* Custom Text */}
+                {termAndWeek ? (
+                    <div className="text-sm font-bold text-gray-700">
+                        Term {termAndWeek.term}, Week {termAndWeek.week}
+                    </div>
+                ) : (
+                    <div className="text-sm font-bold text-gray-700">
+                        Outside of term dates
+                    </div>
+                )}
+            </div>
+        </Toolbar.Root>
+    );
+};
 
 const Roster = () => {
     const [allGames, setAllGames] = useState<Game[]>([]);
     const [allEvents, setAllEvents] = useState<Event[]>([]);
+    const [currentDate, setCurrentDate] = React.useState(new Date());
 
     const transformGamesToEvents = (games: Game[]) => {
         const events: Event[] = games.map((game: Game) => {
@@ -191,15 +234,12 @@ const Roster = () => {
     return (
         <PageContainer>
             <PageTitle text="Roster" />
-            <Button onClick={() => transformGamesToEvents(allGames)}>
-                Transform
-            </Button>
-            <div className="pt-4">{/* <Scheduler data={allEvents} /> */}</div>
-            <Scheduler data={allEvents}>
-                
-                <ViewState defaultCurrentDate={new Date()} />
-                <DayView startDayHour={8} endDayHour={16} />
-                <Toolbar />
+            <Scheduler data={allEvents}>                
+                <ViewState defaultCurrentDate={new Date()} currentDate={currentDate} onCurrentDateChange={setCurrentDate}  />
+                <WeekView excludedDays={[1, 2, 4, 5, 6]} startDayHour={8} endDayHour={16} />
+                <Toolbar rootComponent={(props) => (
+                    <CustomToolbar currentDate={currentDate} {...props} />
+                )} />
                 <DateNavigator />
                 <Appointments appointmentComponent={CustomAppointment}/>
                 <AppointmentTooltip />
