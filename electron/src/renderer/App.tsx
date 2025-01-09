@@ -18,6 +18,7 @@ import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
 import TermSetup from './pages/termsetup/TermSetup';
 import GameSetup from './pages/gamesetup/GameSetup';
+import GameResults from './pages/gameresults/GameResults';
 
 const App = () => {
     // TODO: get players here as well
@@ -64,6 +65,7 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="results" element={<GameResults ageGroups={ageGroups} />} />
                     <Route path="roster" element={<Roster ageGroups={ageGroups} />} />
                     <Route
                         path="term-setup"

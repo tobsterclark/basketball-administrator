@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     ArrowTrendingUpIcon,
     CalendarDaysIcon,
+    ChartBarSquareIcon,
     Cog6ToothIcon,
     GlobeAsiaAustraliaIcon,
     LifebuoyIcon,
@@ -30,6 +31,11 @@ const Navbar = () => {
                 name: 'Dashboard',
                 link: '/',
                 icon: <Squares2X2Icon className={iconStyle} />,
+            },
+            {
+                name: 'Game Results',
+                link: '/results',
+                icon: <ChartBarSquareIcon className={iconStyle} />,
             },
             {
                 name: 'Roster',
