@@ -121,12 +121,14 @@ const createPdf = async (game: ScoresheetResult) => {
 
   // Fill in general info
   form.getTextField("Team A").setText(game.lightTeam.name);
+  form.getTextField("Team A 2").setText(game.lightTeam.name);
   form.getTextField("Team B").setText(game.darkTeam.name);
+  form.getTextField("Team B 2").setText(game.darkTeam.name);
   form.getTextField("Venue").setText(formatString(game.timeslot.location));
   form.getTextField("Court").setText(game.timeslot.court.toString());
   form.getTextField("Date").setText("14th March");
   form.getTextField("Time").setText(gameTime);
-  form.getTextField("AgeGroups").setText(formatString(game.ageGroup.displayName));
+  form.getTextField("AgeGroup").setText(formatString(game.ageGroup.displayName));
 
   // Fill in light players
   game.lightTeam.players.forEach((player, index) => {
