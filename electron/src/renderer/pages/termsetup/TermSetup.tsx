@@ -111,6 +111,7 @@ const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
                     location: timeSlot.location,
                     date: timeSlot.date,
                     court: timeSlot.court,
+                    ageGroupId: "28bf465a-0f32-49fb-9a14-401f39f2c678",
                 },
                 select: {
                     id: true,

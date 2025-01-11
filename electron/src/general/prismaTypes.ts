@@ -24,6 +24,7 @@ export enum CrudOperations {
     upsert = 'upsert',
     update = 'update',
     delete = 'delete',
+    deleteMany = 'deleteMany',
 }
 
 // TODO: how tf should we strongly type this crap

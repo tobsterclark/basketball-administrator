@@ -32,6 +32,7 @@ import Terms2025 from '../data/Terms';
 import { IpcChannels } from '../../../general/IpcChannels';
 import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
+import { toast } from 'react-toastify';
 
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
@@ -56,6 +57,11 @@ export const GameSetup = (props: PlayerDataProps) => {
             setCurrentTerm(currentTerm - 1);
         }
     };
+
+    // Ensures that the createdGames are reset when the age group is changed
+    useEffect(() => {
+        setCreatedGames([]);
+    }, [selectedAgeGroupId]);
 
     const getTimesFromSlots = (
         timeSlots: timeSlotParams[],
@@ -198,9 +204,6 @@ export const GameSetup = (props: PlayerDataProps) => {
                 return timeSlot;
             }
         }
-        // console.log(
-        //     `no timeslot found for week ${week}, time ${time}, court ${court}`,
-        // );
         return null;
     };
 
@@ -210,7 +213,26 @@ export const GameSetup = (props: PlayerDataProps) => {
         return theTeam?.id || '';
     };
 
+    const deleteAllGames = () => {
+        const req: PrismaCall = {
+            model: ModelName.game,
+            operation: CrudOperations.deleteMany,
+            data: {
+                where: {},
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data) => {
+                console.log(data);
+                toast.success('All games deleted');
+            });
+    }
+
     const uploadGames = () => {
+        console.log('Attempting to upload games:');
+        console.log(createdGames);
         createdGames.forEach((game) => {
             const req: PrismaCall = {
                 model: ModelName.game,
@@ -231,6 +253,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     console.log(data);
                 });
         });
+        toast.success(`${createdGames.length} Games uploaded`);
         // const req: PrismaCall = {
         //     model: ModelName.team,
         //     operation: CrudOperations.findMany,
@@ -420,10 +443,12 @@ export const GameSetup = (props: PlayerDataProps) => {
                                 );
                             }}
                         >
-                            {ageGroups.map((ageGroup) => (
-                                <MenuItem key={ageGroup.id} value={ageGroup.id}>
-                                    {ageGroup.displayName}
-                                </MenuItem>
+                            {ageGroups
+                                .filter((ageGroup) => ageGroup.displayName !== "None")
+                                .map((ageGroup) => (
+                                    <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                                        {ageGroup.displayName}
+                                    </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -446,6 +471,16 @@ export const GameSetup = (props: PlayerDataProps) => {
                         onClick={uploadGames}
                     >
                         UPLOAD
+                    </Button>
+                </div>
+                <div className="w-1/4">
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={deleteAllGames}
+                    >
+                        DELETE ALL GAMES
                     </Button>
                 </div>
             </div>
