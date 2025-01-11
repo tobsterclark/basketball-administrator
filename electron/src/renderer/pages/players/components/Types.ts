@@ -16,6 +16,10 @@ export type TeamDataResponse = Prisma.TeamGetPayload<{
     select: { id: true; name: true; ageGroupId: true; division: true };
 }>;
 
+export type GameDataResponse = Prisma.GameGetPayload<{
+    include: { lightTeam: true; darkTeam: true; timeslot: true };
+}>;
+
 // Sub component prop interfaces
 
 export interface PlayerDataProps {
