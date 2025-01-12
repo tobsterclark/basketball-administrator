@@ -24,6 +24,7 @@ import Terms2025 from '../data/Terms';
 import React from 'react';
 import { PlayerDataProps } from '../players/components/Types';
 import { toast } from 'react-toastify';
+import { ArrowDownOnSquareStackIcon } from '@heroicons/react/24/solid';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -177,6 +178,40 @@ const downloadRunsheet = async (gameId: string) => {
     }
 };
 
+const downloadMultipleRunsheets = async (gameIds: string[]) => {
+    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=[${gameIds.join(',')}]`;
+    const defaultFileName = `scoresheets.zip`;
+
+    const toastId = toast.loading('Downloading ZIP...');
+    try {
+        const result = await window.electron.ipcRenderer.invoke('SaveZIP', { url, defaultFileName });
+        if (result.success) {
+            toast.update(toastId, {
+                render: `ZIP saved successfully at ${result.filePath}`,
+                type: 'success',
+                isLoading: false,
+                autoClose: 3000,
+            });
+        } else {
+            toast.update(toastId, {
+                render: `Error: ${result.message}`,
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000,
+            });
+        }
+    } catch (error) {
+        console.error('Error saving ZIP:');
+        console.error(error);
+        toast.update(toastId, {
+            render: `An error occurred while saving the ZIP: ${(error as Error).message}`,
+            type: 'error',
+            isLoading: false,
+            autoClose: 3000,
+        });
+    }
+};
+
 const CustomAppointment = ({ children, data, ...restProps }: { children: React.ReactNode, data: any }) => (
     <Appointments.Appointment {...restProps} className="!bg-transparent !cursor-default" data={data}  draggable={false} resources={[]}>
         <div className={`text-white px-1 py-1 ${data.location === Location.ST_IVES ? 'bg-blue-500' : 'bg-green-500'}`}>
@@ -231,7 +266,7 @@ const CustomToolbar = ({ currentDate, ...restProps }: { currentDate: Date, child
 };
 
 const CustomTooltipHeader = ({ appointmentData, ...restProps }: { appointmentData?: any, [key: string]: any }) => (
-    <AppointmentTooltip.Header {...restProps} appointmentData={appointmentData} showOpenButton showCloseButton showDeleteButton commandButtonIds={[]} commandButtonComponent={() => null}>
+    <AppointmentTooltip.Header {...restProps} appointmentData={appointmentData} showOpenButton showCloseButton showDeleteButton commandButtonIds={['a']} commandButtonComponent={() => null}>
         <Button
             variant="contained"
             color="primary"
@@ -247,6 +282,20 @@ const Roster = (props: PlayerDataProps) => {
     const [allGames, setAllGames] = useState<Game[]>([]);
     const [allEvents, setAllEvents] = useState<Event[]>([]);
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+
+    const getGameCountForDate = (date: Date) => {
+        return allGames.filter((game) => {
+            const gameDate = new Date(game.timeslot.date);
+            return gameDate.toDateString() === date.toDateString();
+        }).length;
+    };
+
+    const getGameIdsForDate = (date: Date): string[] => {
+        return allGames.filter((game) => {
+            const gameDate = new Date(game.timeslot.date);
+            return gameDate.toDateString() === date.toDateString();
+        }).map((game) => game.id);
+    }
 
     const transformGamesToEvents = (games: Game[]) => {
         const events: Event[] = games.map((game: Game) => {
@@ -283,22 +332,6 @@ const Roster = (props: PlayerDataProps) => {
             model: ModelName.game,
             operation: CrudOperations.findMany,
             data: {
-                // where: {
-                //     OR: [
-                //         {
-                //             lightTeam: {
-                //                 ageGroupId:
-                //                     '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
-                //             },
-                //         },
-                //         {
-                //             darkTeam: {
-                //                 ageGroupId:
-                //                     '2e67d5b8-ee1f-499c-bab6-f59ccd9f877c',
-                //             },
-                //         },
-                //     ],
-                // },
                 include: {
                     lightTeam: true,
                     darkTeam: true,
@@ -321,7 +354,7 @@ const Roster = (props: PlayerDataProps) => {
     return (
         <PageContainer>
             <PageTitle text="Roster" />
-            <div className='flex gap-8'>
+            <div className='flex gap-6 h-full'>
                 <div className='w-3/5'>
                     <Scheduler data={allEvents}>                
                         <ViewState defaultCurrentDate={new Date(2025, 1, 9)} currentDate={currentDate} onCurrentDateChange={setCurrentDate}  />
@@ -335,6 +368,19 @@ const Roster = (props: PlayerDataProps) => {
                         <AppointmentForm />
                         <Resources data={appointmentResources} mainResourceName='location' />
                     </Scheduler>
+                </div>
+                <div className='inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 '></div>
+                <div className='flex-col pl-8 justify-center w-2/5 pt-16'>
+                    <h2 className='text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue'>
+                        {getCurrentTermAndWeek(currentDate)?.term !== undefined ? 
+                            (`Manage Games for Term ${getCurrentTermAndWeek(currentDate)?.term}, Week ${getCurrentTermAndWeek(currentDate)?.week}`) : 
+                            ('Manage Games')}
+                    </h2>
+                    <p className='pt-4 pb-8'>{getGameCountForDate(currentDate)} games across all venues and courts.</p>
+                    <Button variant="contained" size="medium" className='flex items-center' onClick={async () => await downloadMultipleRunsheets(getGameIdsForDate(currentDate))}>
+                        Download Scoresheets 
+                        <ArrowDownOnSquareStackIcon className='h-6 ml-2' />
+                    </Button>
                 </div>
             </div>
         </PageContainer>

@@ -224,11 +224,7 @@ export default class MenuBuilder {
                 label: '&File',
                 submenu: [
                     {
-                        label: '&Open',
-                        accelerator: 'Ctrl+O',
-                    },
-                    {
-                        label: '&Close',
+                        label: '&Close application',
                         accelerator: 'Ctrl+W',
                         click: () => {
                             this.mainWindow.close();
@@ -282,33 +278,15 @@ export default class MenuBuilder {
                 label: 'Help',
                 submenu: [
                     {
-                        label: 'Learn More',
+                        label: 'Email Jamie',
                         click() {
-                            shell.openExternal('https://electronjs.org');
+                            shell.openExternal('mailto:jamie@jamiecole.dev');
                         },
                     },
                     {
-                        label: 'Documentation',
+                        label: 'Email Toby',
                         click() {
-                            shell.openExternal(
-                                'https://github.com/electron/electron/tree/main/docs#readme',
-                            );
-                        },
-                    },
-                    {
-                        label: 'Community Discussions',
-                        click() {
-                            shell.openExternal(
-                                'https://www.electronjs.org/community',
-                            );
-                        },
-                    },
-                    {
-                        label: 'Search Issues',
-                        click() {
-                            shell.openExternal(
-                                'https://github.com/electron/electron/issues',
-                            );
+                            shell.openExternal('mailto:me@tobyclark.dev');
                         },
                     },
                 ],

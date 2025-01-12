@@ -71,6 +71,29 @@ const Players = (playersProps: PlayerProps) => {
         null,
     );
 
+    const deletePlayer = () => {
+        if (!selectedPlayer) return;
+        const deletePlayerPush: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.delete,
+            data: {
+                where: { id: selectedPlayer?.id },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, deletePlayerPush)
+            .then(() => {
+                toast.success(`Deleted player: ${selectedPlayer?.firstName}`);
+                console.log('Player deleted');
+                setSelectedPlayer(null);
+                setRowSelectionModel([]);
+                setTotalPlayers((currentTotal) => currentTotal - 1);
+                
+            });
+    };
+    
+
     const createNewPlayerPrisma = (player: PlayerCache) => {
         // Converts player number as string to number/int as req. by Prisma
         const playerNumberInt = parseInt(String(player.number), 10);
@@ -414,6 +437,7 @@ const Players = (playersProps: PlayerProps) => {
                                 updateExistingPlayerPrisma(player);
                             }
                         }}
+                        deletePlayer={deletePlayer}
                     />
                 </div>
             </div>

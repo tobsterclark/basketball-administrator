@@ -7,6 +7,7 @@ module.exports = {
             colors: {
                 sky: colors.sky,
                 cyan: colors.cyan,
+                nsbl_primary: 'rgb(236, 113, 36)',
             },
         },
     },
