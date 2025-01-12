@@ -274,7 +274,6 @@ const CustomTooltipHeader = ({ appointmentData, ...restProps }: { appointmentDat
         >
             Download Runsheet
         </Button>
-        <p>{appointmentData.id}</p>
     </AppointmentTooltip.Header>
 );
 
