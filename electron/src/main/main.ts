@@ -66,6 +66,50 @@ ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
     });
 });
 
+ipcMain.handle(IpcChannels.SaveZIP, async (event, { url, defaultFileName }) => {
+    // Open Save As Dialog
+    try {
+        const { filePath } = await dialog.showSaveDialog({
+            title: 'Save ZIP',
+            defaultPath: path.join(app.getPath('downloads'), defaultFileName),
+            filters: [{ name: 'ZIP Files', extensions: ['zip'] }],
+        });
+
+        if (!filePath) {
+            return { success: false, message: 'User cancelled save dialog' };
+        }
+
+        // Download ZIP and save
+        return new Promise((resolve, reject) => {
+            const fileStream = fs.createWriteStream(filePath);
+
+            http.get(url, (response: any) => {
+                if (response.statusCode === 200) {
+                    response.pipe(fileStream);
+                    fileStream.on('finish', () => {
+                        fileStream.close();
+                        resolve({ success: true, filePath });
+                    });
+                } else {
+                    const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
+                    console.error(errMsg);
+                    reject({ success: false, message: errMsg });
+                }
+            }).on('error', (err: any) => {
+                console.error('HTTP Request Error:', err);
+                reject({ success: false, message: err.message });
+            });
+        });
+    }
+    catch (e) {
+        console.error("Error in SaveZIP handler:");
+        console.error(e);
+        return { success: false, message: (e instanceof Error) ? e.message : 'Unknown error' };
+    }
+});
+
+
+
 if (process.env.NODE_ENV === 'production') {
     const sourceMapSupport = require('source-map-support');
     sourceMapSupport.install();

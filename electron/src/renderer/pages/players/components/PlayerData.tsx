@@ -7,10 +7,11 @@ import {
     SelectChangeEvent,
     TextField,
 } from '@mui/material';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { toast } from 'react-toastify';
 import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { PlayerDataProps } from './Types';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 export const PlayerData = (props: PlayerDataProps) => {
     const {
@@ -21,6 +22,7 @@ export const PlayerData = (props: PlayerDataProps) => {
         isCreatingNewPlayer,
         onValidSave,
         onCancel,
+        deletePlayer,
     } = props;
 
     // Used for checking if all fields are filled in new player creation, to disable save button
@@ -56,6 +58,9 @@ export const PlayerData = (props: PlayerDataProps) => {
 
         updatePlayer({ ...player, [name]: value });
     };
+
+    const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
+            useState(false);
 
     return (
         <div className="bg-gray-50 shadow-md rounded-md h-min">
@@ -152,6 +157,57 @@ export const PlayerData = (props: PlayerDataProps) => {
                             </Select>
                         </FormControl>
                     </div>
+                </div>
+                {/* Delete Player */}
+                <div className='pb-8 flex flex-col items-center'>
+                    {deleteConfirmationVisible ? (
+                        <div className="flex-row w-full shadow-md rounded-md text-center justify-center items-center py-4 px-2 gap-2 bg-red-300 disabled:bg-[#e2e8f0] disabled:cursor-not-allowed">
+                            <p>
+                                Are you sure you want to delete this player? This
+                                action is irreversible.
+                            </p>
+                            <div className="flex flex-row gap-6 pt-4 px-4">
+                                <div className="w-1/2">
+                                    <button
+                                        type="button"
+                                        disabled={player === null}
+                                        onClick={() =>
+                                            setDeleteConfirmationVisible(false)
+                                        }
+                                        className="rounded-md shadow-md w-full justify-center items-center py-4 px-2 gap-2 bg-blue-400 text-white hover:cursor-pointer hover:bg-blue-500"
+                                    >
+                                        <p className="font-bold">Cancel</p>
+                                    </button>
+                                </div>
+                                <div className="w-1/2">
+                                    <button
+                                        type="button"
+                                        disabled={player === null}
+                                        onClick={() => {
+                                            if (deletePlayer) {
+                                                deletePlayer();
+                                            }
+                                            setDeleteConfirmationVisible(false);
+                                        }}
+                                        className="rounded-md shadow-md w-full flex justify-center items-center py-4 px-2 gap-2 bg-red-500 text-white hover:cursor-pointer hover:bg-red-600"
+                                    >
+                                        <p className="font-bold">Delete Player</p>
+                                        <TrashIcon className="h-6 w-6 text-white" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            disabled={player === null}
+                            onClick={() => setDeleteConfirmationVisible(true)}
+                            className="flex w-2/3 disabled:text-gray-400 shadow-md rounded-md justify-center items-center py-4 px-2 gap-2 bg-red-200 hover:cursor-pointer hover:bg-red-300 disabled:bg-[#e2e8f0] disabled:cursor-not-allowed"
+                        >
+                            <p className="font-bold">Delete Player</p>
+                            <TrashIcon className="h-6 w-6" />
+                        </button>
+                    )}
                 </div>
                 <div className="pb-8">
                     <FormCancelSave

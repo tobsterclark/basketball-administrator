@@ -3,6 +3,8 @@ import { promises as fs } from "fs";
 import { PDFDocument, TextAlignment } from "pdf-lib";
 import { Prisma, PrismaClient } from "@prisma/client";
 import path from "path";
+import { Readable } from "stream";
+const archiver = require("archiver");
 
 const db = new PrismaClient();
 type Game = Prisma.GameGetPayload<{
@@ -42,7 +44,16 @@ const formatString = (str: string) => {
 export default onRequest(
   { region: "australia-southeast1", labels: { test: "test" } },
   async (req, res) => {
-    const gameId = req.query.gameId as string;
+    const gameIdsParam = req.query.gameIds as string;
+    const gameIds = gameIdsParam.split(",");
+
+    console.log("Attempting to generate scoresheets for games:");
+    console.log(gameIds);
+
+    if (!gameIds || gameIds.length === 0) {
+      res.status(400).send("No game IDs provided");
+      return;
+    }
 
     // Get all teams, ageGroups and 5 games.
     const teams: Team[] = await db.team.findMany({
@@ -50,65 +61,72 @@ export default onRequest(
     });
 
     const ageGroups: AgeGroup[] = await db.ageGroup.findMany();
-
-    // Get Data
-    const games: Game[] = await db.game.findMany({
-      where: { id: gameId },
-      take: 1,
-      include: {
-        // team_dark: { include: { players: true } },
-        // team_light: { include: { players: true } },
-        timeslot: true,
-      },
-    });
-
     const scoreSheetResults: ScoresheetResult[] = [];
-    for (const game of games) {
-      const lightTeam = teams.find((team) => team.id === game.lightTeamId);
-      const darkTeam = teams.find((team) => team.id === game.darkTeamId);
-      const result: ScoresheetResult = {
-        id: game.id,
-        lightTeam: lightTeam!,
-        darkTeam: darkTeam!,
-        ageGroup: ageGroups.find((ageGroup) => ageGroup.id === lightTeam?.ageGroupId)!,
-        timeslot: {
-          date: game.timeslot.date,
-          location: game.timeslot.location,
-          court: game.timeslot.court,
+
+    // Get Data for each gameId
+    for (const gameId of gameIds) {
+      console.log(`Getting data for game ${gameId}`);
+      const game: Game | null = await db.game.findUnique({
+        where: { id: gameId },
+        include: {
+          timeslot: true,
         },
-      };
-      scoreSheetResults.push(result);
-    };
+      });
+    
+      if (game) {
+        const lightTeam = teams.find((team) => team.id === game.lightTeamId);
+        const darkTeam = teams.find((team) => team.id === game.darkTeamId);
+        const result: ScoresheetResult = {
+          id: game.id,
+          lightTeam: lightTeam!,
+          darkTeam: darkTeam!,
+          ageGroup: ageGroups.find((ageGroup) => ageGroup.id === lightTeam?.ageGroupId)!,
+          timeslot: {
+            date: game.timeslot.date,
+            location: game.timeslot.location,
+            court: game.timeslot.court,
+          },
+        };
+        scoreSheetResults.push(result);
+      }
+    }
 
     if (scoreSheetResults.length > 0) {
       try {
-        const pdfBuffer = await createPdf(scoreSheetResults[0]);
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=scoresheet-${gameId}.pdf`);
+        const archive = archiver("zip", {
+          zlib: { level: 9 },
+        });
 
-        res.status(200).send(pdfBuffer);
+        // const pdfBuffer = await createPdf(scoreSheetResults[0]);
+        // Set response headers
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader("Content-Disposition", `attachment; filename=scoresheets.zip`);
+
+        archive.pipe(res);
+
+        // Add each PDF file to zip
+        for (const result of scoreSheetResults) {
+          const pdfBuffer = await createPdf(result);
+          console.log(`Adding scoresheet-${result.id}.pdf to ZIP`);
+          const stream = new Readable();
+          stream.push(pdfBuffer);
+          stream.push(null);
+          archive.append(stream, { name: `scoresheet-${result.id}.pdf` });
+        }
+
+        // Finish zip
+        await archive.finalize();
+        console.log("Finished ZIP");
+
       } catch (e) {
         console.error(e);
-        res.status(500).send("Error generating PDF");
+        res.status(500).send("Error generating ZIP file");
       }
     } else {
       res.status(404).send("Game not found");
     }
-
-    // const data = {
-    //   teams,
-    //   ageGroups,
-    // }
-    // res.status(200).send(data);
   },
 );
-
-const grabPdf = async (gameId: string): Promise<Buffer> => {
-  const pdfBuffer = await fs.readFile(
-    path.join(__dirname, `/../resources/out/sheet-${gameId}.pdf`),
-  );
-  return pdfBuffer;
-};
 
 const createPdf = async (game: ScoresheetResult): Promise<Buffer> => {
   // Load PDF
@@ -137,21 +155,35 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer> => {
   form.getTextField("AgeGroup").setText(formatString(game.ageGroup.displayName));
 
   // Fill in light players
-  game.lightTeam.players.forEach((player, index) => {
-    form.getTextField(`white_player_${index + 1}`).setText(player.firstName);
-    form
-      .getTextField(`white_num_${index + 1}`)
-      .setText(player.number?.toString());
-  });
+  try {
+    game.lightTeam.players.forEach((player, index) => {
+      form.getTextField(`white_player_${index + 1}`).setText(player.firstName);
+      form
+        .getTextField(`white_num_${index + 1}`)
+        .setText(player.number?.toString());
+    });
+  }
+  catch (e) {
+    console.error('Error filling in light players:');
+    console.error(game.lightTeam.players);
+    console.error(e);
+  }
+  
 
   // Fill in dark players
-  game.darkTeam.players.forEach((player, index) => {
-    form.getTextField(`black_player_${index + 1}`).setText(player.firstName);
-    form
-      .getTextField(`black_num_${index + 1}`)
-      .setText(player.number?.toString());
-  });
-
+  try {
+    game.darkTeam.players.forEach((player, index) => {
+      form.getTextField(`black_player_${index + 1}`).setText(player.firstName);
+      form
+        .getTextField(`black_num_${index + 1}`)
+        .setText(player.number?.toString());
+    });
+  }
+  catch (e) {
+    console.error('Error filling in dark players:');
+    console.error(game.darkTeam.players);
+    console.error(e);
+  }
   form.flatten();
 
   const bytes = await pdfTemplate.save();

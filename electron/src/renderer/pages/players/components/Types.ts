@@ -30,6 +30,7 @@ export interface PlayerDataProps {
     isCreatingNewPlayer: boolean;
     onCancel: () => void;
     onValidSave: (player: PlayerCache) => void;
+    deletePlayer: () => void;
 }
 
 export interface PlayerSearchProps {
