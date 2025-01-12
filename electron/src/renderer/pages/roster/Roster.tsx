@@ -162,7 +162,7 @@ const appointmentResources = [
 ];
 
 const downloadRunsheet = async (gameId: string) => {
-    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=${gameId}`;
+    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
     const defaultFileName = `scoresheet-${gameId}.pdf`;
 
     try {
@@ -182,17 +182,33 @@ const downloadMultipleRunsheets = async (gameIds: string[]) => {
     const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=[${gameIds.join(',')}]`;
     const defaultFileName = `scoresheets.zip`;
 
+    const toastId = toast.loading('Downloading ZIP...');
     try {
         const result = await window.electron.ipcRenderer.invoke('SaveZIP', { url, defaultFileName });
         if (result.success) {
-            toast.success(`ZIP saved successfully at ${result.filePath}`);
+            toast.update(toastId, {
+                render: `ZIP saved successfully at ${result.filePath}`,
+                type: 'success',
+                isLoading: false,
+                autoClose: 3000,
+            });
         } else {
-            toast.error(`Error: ${result.message}`);
+            toast.update(toastId, {
+                render: `Error: ${result.message}`,
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000,
+            });
         }
     } catch (error) {
         console.error('Error saving ZIP:');
         console.error(error);
-        toast.error('An error occurred while saving the ZIP.');
+        toast.update(toastId, {
+            render: `An error occurred while saving the ZIP: ${(error as Error).message}`,
+            type: 'error',
+            isLoading: false,
+            autoClose: 3000,
+        });
     }
 };
 

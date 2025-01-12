@@ -44,11 +44,21 @@ const formatString = (str: string) => {
 export default onRequest(
   { region: "australia-southeast1", labels: { test: "test" } },
   async (req, res) => {
+    const gameIdParam = req.query.gameId as string;
     const gameIdsParam = req.query.gameIds as string;
-    const gameIds = gameIdsParam.split(",");
 
-    console.log("Attempting to generate scoresheets for games:");
-    console.log(gameIds);
+    if (gameIdParam && gameIdsParam) {
+      res.status(400).send("Malformed request: Cannot provide both gameId and gameIds");
+      return;
+    }
+
+    let gameIds: string[] = [];
+
+    if (!gameIdsParam && gameIdParam) {
+      gameIds = [gameIdParam];
+    } else if (!gameIdParam && gameIdsParam) {
+      gameIds = gameIdsParam.split(",");
+    }
 
     if (!gameIds || gameIds.length === 0) {
       res.status(400).send("No game IDs provided");
@@ -91,7 +101,22 @@ export default onRequest(
       }
     }
 
-    if (scoreSheetResults.length > 0) {
+    if (scoreSheetResults.length === 1) {
+      try {
+        const pdfBuffer = await createPdf(scoreSheetResults[0]);
+        if (!pdfBuffer) {
+          res.status(500).send("Error generating PDF file");
+          return;
+        }
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=scoresheet-${scoreSheetResults[0].id}.pdf`);
+        res.send(pdfBuffer);
+      } catch (e) {
+        console.error(e);
+        res.status(500).send("Error generating PDF file");
+      }
+    } 
+    else if (scoreSheetResults.length > 0) {
       try {
         const archive = archiver("zip", {
           zlib: { level: 9 },
@@ -107,6 +132,10 @@ export default onRequest(
         // Add each PDF file to zip
         for (const result of scoreSheetResults) {
           const pdfBuffer = await createPdf(result);
+          if (!pdfBuffer) {
+            res.status(500).send("Error generating PDF file");
+            return;
+          }
           console.log(`Adding scoresheet-${result.id}.pdf to ZIP`);
           const stream = new Readable();
           stream.push(pdfBuffer);
@@ -128,10 +157,10 @@ export default onRequest(
   },
 );
 
-const createPdf = async (game: ScoresheetResult): Promise<Buffer> => {
+const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
   // Load PDF
   const pdfTemplateFs = await fs.readFile(
-    __dirname + "/../resources/scoresheet_template_test.pdf",
+    __dirname + "/../resources/scoresheet_template.pdf",
   );
 
   const pdfTemplate = await PDFDocument.load(pdfTemplateFs);
@@ -187,13 +216,14 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer> => {
   form.flatten();
 
   const bytes = await pdfTemplate.save();
-  const outputDir = path.join(__dirname, "/../resources/out");
-  await fs.mkdir(outputDir, { recursive: true });
+  // Saving PDF to filepath - not needed rn
+  // const outputDir = path.join(__dirname, "/../resources/out");
+  // await fs.mkdir(outputDir, { recursive: true });
 
-  await fs.writeFile(
-    path.join(outputDir, `sheet-${game.id}.pdf`),
-    bytes,
-  );
+  // await fs.writeFile(
+  //   path.join(outputDir, `sheet-${game.id}.pdf`),
+  //   bytes,
+  // );
 
   console.log("Saved PDF");
   return Buffer.from(bytes);
