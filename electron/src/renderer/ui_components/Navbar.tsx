@@ -12,9 +12,12 @@ import {
     Squares2X2Icon,
     WrenchIcon,
 } from '@heroicons/react/24/solid';
+import Logo from '../../../assets/LogoUI.png';
 
 const Navbar = () => {
     const locationPathName = useLocation().pathname;
+
+    const primary = 'rgb(236, 113, 36)';
 
     const links = (
         divStyle: string,
@@ -68,9 +71,9 @@ const Navbar = () => {
             <div className={divStyle}>
                 {linkList.map((value, index) => {
                     let fullLinkStyle = linkStyle;
-                    fullLinkStyle += ` rounded-lg ${
+                    fullLinkStyle += ` rounded-lg text-slate-950 ${
                         locationPathName === value.link
-                            ? 'bg-red-500 shadow-sm'
+                            ? `bg-nsbl_primary shadow-sm`
                             : 'hover:bg-gray-100 bg-transparent'
                     }`;
 
@@ -92,11 +95,13 @@ const Navbar = () => {
 
     const large = () => (
         <div className="hidden text-md xl:flex flex-col justify-between h-full pt-20 pb-5 px-5 w-fit min-w-fit border-r-2 border-dashed">
-            <div className="flex gap-2 items-center justify-start">
+            <div className="flex-col gap-2 items-center justify-start">
                 {/* <LogoSVG className="h-16" /> */}
-                <h1 className="text-lg font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue shadow-xl">
+                
+                {/* <h1 className="text-lg font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue pb-4">
                     NSBL
-                </h1>
+                </h1> */}
+                <img src={Logo} alt="logo" className="h-24 pl-4" />
             </div>
             {links('flex flex-col gap-8', 'flex gap-3 p-2', 'w-6 h-6', '')}
             <button
