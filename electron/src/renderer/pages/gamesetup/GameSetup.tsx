@@ -22,7 +22,7 @@ import {
 import { styled } from '@mui/material/styles';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { PlayerDataProps, TeamDataResponse } from '../players/components/Types';
+import { GameDataResponse, PlayerDataProps, TeamDataResponse } from '../players/components/Types';
 import {
     CrudOperations,
     ModelName,
@@ -44,6 +44,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         useState<timeSlotParams[]>();
     const [ageGroupTeams, setAgeGroupTeams] = useState<TeamDataResponse[]>();
     const [createdGames, setCreatedGames] = useState<Game[]>([]);
+    const [dbGames, setDbGames] = useState<Game[]>([]);
     const [belroseGames, setBelroseGames] = useState<boolean>(false);
 
     const navigateTerm = (fowards: boolean) => {
@@ -58,9 +59,44 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
     };
 
+    const getDbGames = () => {
+        const req: PrismaCall = {
+            model: ModelName.game,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    timeslot: {
+                        date: {
+                            lte: Terms2025[currentTerm + 1].date,
+                            gte: Terms2025[currentTerm].date,
+                        },
+                        ageGroupId: selectedAgeGroupId,
+                    },
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data) => {
+                const games = (data as GameDataResponse[]).map(({ lightTeamId, darkTeamId, timeslotId }) => ({
+                    lightTeamId,
+                    darkTeamId,
+                    timeSlotId: timeslotId,
+                }));
+                setDbGames(games as Game[]);
+            });
+    }
+
+    const printCreatedGames = () => {
+        console.log('Created games:');
+        console.log(createdGames);
+    }
+
     // Ensures that the createdGames are reset when the age group is changed
     useEffect(() => {
         setCreatedGames([]);
+        getDbGames();
     }, [selectedAgeGroupId]);
 
     const getTimesFromSlots = (
@@ -100,19 +136,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                console.log(
-                    `Getting timeslots between ${
-                        Terms2025[currentTerm].date
-                    } and ${Terms2025[currentTerm + 1].date}`,
-                );
-                console.log(data);
-                console.log('times from slots:');
-                console.log(
-                    getTimesFromSlots(data as timeSlotParams[], 'ST_IVES'),
-                );
-                console.log(
-                    getTimesFromSlots(data as timeSlotParams[], 'BELROSE'),
-                );
                 setAgeGroupsTimeSlots(data as timeSlotParams[]);
                 const belrose = data.find(
                     (slot: { location: string }) => slot.location === 'BELROSE',
@@ -135,8 +158,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                // console.log(`All teams for age group ${ageGroupId}`);
-                // console.log(data);
                 setAgeGroupTeams(data as TeamDataResponse[]);
             });
         return null;
@@ -225,15 +246,25 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                console.log(data);
+                setCreatedGames([]);
+                setDbGames([]);
                 toast.success('All games deleted');
             });
     }
 
     const uploadGames = () => {
-        console.log('Attempting to upload games:');
-        console.log(createdGames);
-        createdGames.forEach((game) => {
+        let actualUploadCount = 0;
+        let actualUpdateCount = 0;
+
+        const promises = createdGames.map((game) => {
+            // check if game with matching lightTeamId, darkTeamId and timeslotId already exists in dbGames, and if so, skip it
+            if (dbGames.find(
+                (dbGame) => dbGame.lightTeamId === game.lightTeamId && dbGame.darkTeamId === game.darkTeamId && dbGame.timeSlotId === game.timeSlotId
+            )) {
+                return Promise.resolve();
+            }
+            actualUploadCount += 1;
+
             const req: PrismaCall = {
                 model: ModelName.game,
                 operation: CrudOperations.create,
@@ -247,31 +278,41 @@ export const GameSetup = (props: PlayerDataProps) => {
                     },
                 },
             };
-            window.electron.ipcRenderer
+
+            return window.electron.ipcRenderer
                 .invoke(IpcChannels.PrismaClient, req)
-                .then((data) => {
-                    console.log(data);
+                .catch((error) => {
+                    // Game already exists, we have to update it instead.
+                    if (error.message.includes('Unique constraint failed')) {
+                        actualUpdateCount += 1;
+                        actualUploadCount -= 1;
+                        const req: PrismaCall = {
+                            model: ModelName.game,
+                            operation: CrudOperations.update,
+                            data: {
+                                where: {
+                                    timeslotId: game.timeSlotId,
+                                },
+                                data: {
+                                    lightTeamId: game.lightTeamId,
+                                    darkTeamId: game.darkTeamId,
+                                },
+                            },
+                        };
+                        return window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, req);
+                    }
                 });
         });
-        toast.success(`${createdGames.length} Games uploaded`);
-        // const req: PrismaCall = {
-        //     model: ModelName.team,
-        //     operation: CrudOperations.findMany,
-        //     data: {
-        //         where: {
-        //             ageGroupId,
-        //         },
-        //     },
-        // };
 
-        // window.electron.ipcRenderer
-        //     .invoke(IpcChannels.PrismaClient, req)
-        //     .then((data) => {
-        //         // console.log(`All teams for age group ${ageGroupId}`);
-        //         // console.log(data);
-        //         setAgeGroupTeams(data as TeamDataResponse[]);
-        //     });
-        // return null;
+        Promise.all(promises).then(() => {
+            if (actualUploadCount > 0) {
+                toast.success(`${actualUploadCount} Game${actualUploadCount === 1 ? '' : 's'} uploaded`);
+            }
+            if (actualUpdateCount > 0) {
+                toast.info(`${actualUpdateCount} Game${actualUpdateCount === 1 ? '' : 's'} updated`);
+            }
+            getDbGames();
+        });
     };
 
     const updateGame = (
@@ -342,9 +383,18 @@ export const GameSetup = (props: PlayerDataProps) => {
         if (!timeSlot) {
             return <div />;
         }
-        const game = createdGames.find(
+        // console.log("attempting to find a game in dbGames");
+        let game = dbGames.find(
             (gamee) => gamee.timeSlotId === timeSlot?.id,
         );
+        
+        const createdGame = createdGames.find(
+            (gamee) => gamee.timeSlotId === timeSlot?.id,
+        );
+        
+        if (createdGame) {
+            game = createdGame;
+        };
 
         const lightTeamId = game?.lightTeamId || '';
         const darkTeamId = game?.darkTeamId || '';
@@ -453,7 +503,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         </Select>
                     </FormControl>
                 </div>
-                <div className="w-1/4">
+                <div className="w-1/5">
                     <Button
                         fullWidth
                         variant="contained"
@@ -463,7 +513,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         Generate Schedule
                     </Button>
                 </div>
-                <div className="w-1/4">
+                <div className="w-1/5">
                     <Button
                         fullWidth
                         variant="contained"
@@ -473,7 +523,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         UPLOAD
                     </Button>
                 </div>
-                <div className="w-1/4">
+                <div className="w-1/5">
                     <Button
                         fullWidth
                         variant="contained"
@@ -481,6 +531,26 @@ export const GameSetup = (props: PlayerDataProps) => {
                         onClick={deleteAllGames}
                     >
                         DELETE ALL GAMES
+                    </Button>
+                </div>
+                <div className="w-1/5">
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={printCreatedGames}
+                    >
+                        PRINT CREATED GAMES
+                    </Button>
+                </div>
+                <div className="w-1/5">
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={getDbGames}
+                    >
+                        GET DB GAMES
                     </Button>
                 </div>
             </div>

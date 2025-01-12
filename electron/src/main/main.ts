@@ -10,13 +10,15 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { IpcChannels } from '../general/IpcChannels';
 import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
+const fs = require('fs');
+const http = require('http');
 
 class AppUpdater {
     constructor() {
@@ -31,6 +33,38 @@ let mainWindow: BrowserWindow | null = null;
 // ipc handlers get defined here
 // implementation should be in a separate file
 ipcMain.handle(IpcChannels.PrismaClient, handleIpcPrismaCalls);
+
+ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
+    // Open Save As Dialog
+    const { filePath } = await dialog.showSaveDialog({
+        title: 'Save PDF',
+        defaultPath: path.join(app.getPath('downloads'), defaultFileName),
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+    });
+
+    if (!filePath) {
+        return { success: false, message: 'User cancelled save dialog' };
+    }
+
+    // Download PDF and save
+    return new Promise((resolve, reject) => {
+        const fileStream = fs.createWriteStream(filePath);
+
+        http.get(url, (response: any) => {
+            if (response.statusCode === 200) {
+                response.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    resolve({ success: true, filePath });
+                });
+            } else {
+                reject({ success: false, message: 'Failed to download PDF' });
+            }
+        }).on('error', (err: any) => {
+            reject({ success: false, message: err.message });
+        });
+    });
+});
 
 if (process.env.NODE_ENV === 'production') {
     const sourceMapSupport = require('source-map-support');

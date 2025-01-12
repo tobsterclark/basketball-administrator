@@ -42,6 +42,8 @@ const formatString = (str: string) => {
 export default onRequest(
   { region: "australia-southeast1", labels: { test: "test" } },
   async (req, res) => {
+    const gameId = req.query.gameId as string;
+
     // Get all teams, ageGroups and 5 games.
     const teams: Team[] = await db.team.findMany({
       include: { players: true },
@@ -51,6 +53,7 @@ export default onRequest(
 
     // Get Data
     const games: Game[] = await db.game.findMany({
+      where: { id: gameId },
       take: 1,
       include: {
         // team_dark: { include: { players: true } },
@@ -77,34 +80,37 @@ export default onRequest(
       scoreSheetResults.push(result);
     };
 
+    if (scoreSheetResults.length > 0) {
+      try {
+        const pdfBuffer = await createPdf(scoreSheetResults[0]);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=scoresheet-${gameId}.pdf`);
 
-    // Create list of scoresheet results
-    // const scoresheetResults: ScoresheetResult[] = games.map((game) => {
-    //   return {
-    //     id: game.id,
-    //     lightTeam: game.lightTeamId,
-    //     darkTeam: game.darkTeamId,
-    //     ageGroup: game.team_light.ageGroup,
-    //     timeslot: {
-    //       date: game.timeslot.date,
-    //       location: game.timeslot.location,
-    //       court: game.timeslot.court,
-    //     },
-    //   };
-    // });
+        res.status(200).send(pdfBuffer);
+      } catch (e) {
+        console.error(e);
+        res.status(500).send("Error generating PDF");
+      }
+    } else {
+      res.status(404).send("Game not found");
+    }
 
-    for (const scoreSheet of scoreSheetResults) {
-      await createPdf(scoreSheet);
-    }
-    const data = {
-      teams,
-      ageGroups,
-    }
-    res.status(200).send(data);
+    // const data = {
+    //   teams,
+    //   ageGroups,
+    // }
+    // res.status(200).send(data);
   },
 );
 
-const createPdf = async (game: ScoresheetResult) => {
+const grabPdf = async (gameId: string): Promise<Buffer> => {
+  const pdfBuffer = await fs.readFile(
+    path.join(__dirname, `/../resources/out/sheet-${gameId}.pdf`),
+  );
+  return pdfBuffer;
+};
+
+const createPdf = async (game: ScoresheetResult): Promise<Buffer> => {
   // Load PDF
   const pdfTemplateFs = await fs.readFile(
     __dirname + "/../resources/scoresheet_template_test.pdf",
@@ -158,4 +164,5 @@ const createPdf = async (game: ScoresheetResult) => {
   );
 
   console.log("Saved PDF");
+  return Buffer.from(bytes);
 };

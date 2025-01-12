@@ -9,6 +9,7 @@ import {
     Toolbar,
     Resources,
     WeekView,
+    AppointmentForm,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { TodayButton, ViewState } from '@devexpress/dx-react-scheduler';
 import PageContainer from '../../ui_components/PageContainer';
@@ -22,6 +23,7 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import Terms2025 from '../data/Terms';
 import React from 'react';
 import { PlayerDataProps } from '../players/components/Types';
+import { toast } from 'react-toastify';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -86,42 +88,97 @@ type Event = {
     ageGroup: string;
 };
 
-const courtData = [
+const courtResources = [
     {
         text: "Court 1",
         id: 1,
-        color: "#cb6bb2"
+        color: "#DBB1BC"
     },
     {
         text: "Court 2",
         id: 2,
-        color: "#56ca85"
+        color: "#6B0F1A"
     },
     {
         text: "Court 3",
         id: 3,
-        color: "#1e90ff"
+        color: "#212D40"
     }
 ];
 
-const testResources = [
+const venueResources = [
+    {
+        text: "St Ives",
+        id: Location.ST_IVES,
+        color: "#64b5f6"
+    },
+    {
+        text: "Belrose",
+        id: Location.BELROSE,
+        color: "#22c55e"
+    }
+];
+
+const ageGroupResources = [
+    {
+        text: "Years 3/4",
+        id: "Years 3/4",
+        color: "#F7EBEC"
+    },
+    {
+        text: "Years 5/6",
+        id: "Years 5/6",
+        color: "#DDBDD5"
+    },
+    {
+        text: "Years 7/8",
+        id: "Years 7/8",
+        color: "#AC9FBB"
+    },
+    {
+        text: "Years 9/12",
+        id: "Years 9/12",
+        color: "#59656F"
+    }
+]
+
+const appointmentResources = [
+    {
+        fieldName: "location",
+        title: "location",
+        instances: venueResources
+    },
     {
         fieldName: "court",
         title: "court",
-        instances: courtData
+        instances: courtResources
+    },
+    {
+        fieldName: "ageGroup",
+        title: "ageGroup",
+        instances: ageGroupResources
     }
 ];
 
-const ageGroupColours = {
-    "Years 3-4": "#cb6bb2",
-    "Years 5-6": "#56ca85",
-    "Years 7-8": "#1e90ff",
-    "Years 9-12": "#ffaa66",
-    "": "#ff6666"
-}
+const downloadRunsheet = async (gameId: string) => {
+    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
+    const defaultFileName = `scoresheet-${gameId}.pdf`;
+
+    try {
+        const result = await window.electron.ipcRenderer.invoke('SavePDF', { url, defaultFileName });
+        if (result.success) {
+            toast.success(`PDF saved successfully at ${result.filePath}`);
+        } else {
+            toast.error(`Error: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Error saving PDF:', error);
+        toast.error('An error occurred while saving the PDF.');
+    }
+};
 
 const CustomAppointment = ({ children, data, ...restProps }: { children: React.ReactNode, data: any }) => (
-    <Appointments.Appointment {...restProps} className="!bg-transparent !cursor-default" data={data} onClick={() => {}} draggable={false} resources={[]}>
+    <Appointments.Appointment {...restProps} className="!bg-transparent !cursor-default" data={data}  draggable={false} resources={[]}>
         <div className={`text-white px-1 py-1 ${data.location === Location.ST_IVES ? 'bg-blue-500' : 'bg-green-500'}`}>
             <div className='font-bold'>{data.title}</div>
             <div>{formatTime(data.startDate)} - {formatTime(data.endDate)}</div>
@@ -173,14 +230,23 @@ const CustomToolbar = ({ currentDate, ...restProps }: { currentDate: Date, child
     );
 };
 
+const CustomTooltipHeader = ({ appointmentData, ...restProps }: { appointmentData?: any, [key: string]: any }) => (
+    <AppointmentTooltip.Header {...restProps} appointmentData={appointmentData} showOpenButton showCloseButton showDeleteButton commandButtonIds={[]} commandButtonComponent={() => null}>
+        <Button
+            variant="contained"
+            color="primary"
+            onClick={async () => await downloadRunsheet(appointmentData.id)}
+        >
+            Download Runsheet
+        </Button>
+    </AppointmentTooltip.Header>
+);
+
 const Roster = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [allGames, setAllGames] = useState<Game[]>([]);
     const [allEvents, setAllEvents] = useState<Event[]>([]);
-    const [currentDate, setCurrentDate] = React.useState(new Date());
-
-    console.log('ageGroups":');
-    console.log(ageGroups);
+    const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
 
     const transformGamesToEvents = (games: Game[]) => {
         const events: Event[] = games.map((game: Game) => {
@@ -244,7 +310,6 @@ const Roster = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, gamesRequest)
             .then((data) => {
-                console.log(data);
                 setAllGames(data);
                 transformGamesToEvents(data);
             })
@@ -256,17 +321,22 @@ const Roster = (props: PlayerDataProps) => {
     return (
         <PageContainer>
             <PageTitle text="Roster" />
-            <Scheduler data={allEvents}>                
-                <ViewState defaultCurrentDate={new Date()} currentDate={currentDate} onCurrentDateChange={setCurrentDate}  />
-                <WeekView excludedDays={[1, 2, 4, 5, 6]} startDayHour={8} endDayHour={16} />
-                <Toolbar rootComponent={(props) => (
-                    <CustomToolbar currentDate={currentDate} {...props} />
-                )} />
-                <DateNavigator />
-                <Appointments appointmentComponent={CustomAppointment}/>
-                <AppointmentTooltip />
-                <Resources data={testResources} mainResourceName='court' />
-            </Scheduler>
+            <div className='flex gap-8'>
+                <div className='w-3/5'>
+                    <Scheduler data={allEvents}>                
+                        <ViewState defaultCurrentDate={new Date(2025, 1, 9)} currentDate={currentDate} onCurrentDateChange={setCurrentDate}  />
+                        <WeekView excludedDays={[1, 2, 3, 4, 5, 6]} startDayHour={8} endDayHour={16} />
+                        <Toolbar rootComponent={(props) => (
+                            <CustomToolbar currentDate={currentDate} {...props} />
+                        )} />
+                        <DateNavigator />
+                        <Appointments appointmentComponent={CustomAppointment}/>
+                        <AppointmentTooltip showOpenButton headerComponent={CustomTooltipHeader} />
+                        <AppointmentForm />
+                        <Resources data={appointmentResources} mainResourceName='location' />
+                    </Scheduler>
+                </div>
+            </div>
         </PageContainer>
     );
 };
