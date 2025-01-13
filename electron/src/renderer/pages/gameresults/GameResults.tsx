@@ -3,15 +3,53 @@ import PageContainer from "../../ui_components/PageContainer";
 import PageTitle from "../../ui_components/PageTitle";
 import { PlayerDataProps } from "../players/components/Types";
 import Terms2025 from "../data/Terms";
-import React from "react";
+import React, { useEffect } from "react";
 import { Button, FormControlLabel, FormGroup, Paper, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { green, red } from "chalk";
 import CourtTable from "./components/CourtTable";
+import { IpcChannels } from "../../../general/IpcChannels";
+import { PrismaCall, ModelName, CrudOperations } from "../../../general/prismaTypes";
 
 enum Location {
     ST_IVES = 'ST_IVES',
     BELROSE = 'BELROSE',
 }
+
+type Team = {
+    id: string;
+    name: string;
+    ageGroupId: string;
+    division: number | null;
+};
+
+type Timeslot = {
+    id: string;
+    location: Location;
+    court: number;
+    ageGroupId: string;
+    date: string; // ISO date string
+};
+
+type Game = {
+    id: string;
+    lightTeamId: string;
+    darkTeamId: string;
+    lightScore: number;
+    darkScore: number;
+    timeslotId: string;
+    lightTeam: Team;
+    darkTeam: Team;
+    timeslot: Timeslot;
+};
+
+type TableEntry = {
+    time: string;
+    ageGroup: string;
+    lightTeam: string;
+    darkTeam: string;
+    winningTeam: string;
+};
+
 
 const tableData = [
     {
@@ -65,8 +103,15 @@ const tableData = [
     }
 ];
 
+const toTitleCase = (str: any) => {
+    return str.toLowerCase().split(' ').map((word: any) => {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+}
+
 const GameResults = (props: PlayerDataProps) => {
     const { ageGroups, teams } = props;
+    const [currentGames, setCurrentGames] = React.useState<Game[]>([]);
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
     const [venue, setVenue] = React.useState<Location>(Location.ST_IVES);
 
@@ -94,6 +139,67 @@ const GameResults = (props: PlayerDataProps) => {
             month: 'long',
             day: 'numeric'
         });
+    };
+
+    const formatTime = (date: Date) => {
+        // format time in <HH:mm> AM/PM format
+        return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    const getCurrentGames = (currentDate: Date, venue: Location): Game[] => {
+        const gamesRequest: PrismaCall = {
+            model: ModelName.game,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    timeslot: {
+                        date: {
+                            lte: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000), // +/- 1 day
+                            gte: new Date(currentDate.getTime() - 24 * 60 * 60 * 1000),
+                        },
+                        location: venue,
+                    },
+                },
+                include: {
+                    lightTeam: true,
+                    darkTeam: true,
+                    timeslot: true,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, gamesRequest)
+            .then((data) => {
+                setCurrentGames(data as Game[]);
+            })
+            .catch((err) => {
+                console.error(err);
+            });
+        return [];   
+    };
+
+    useEffect(() => {
+        getCurrentGames(currentDate, venue);
+    }, [currentDate, venue]);
+
+    const getTableEntries = (games: Game[], court: number): TableEntry[] => {
+        return games
+            .filter((game) => game.timeslot.court === court)
+            .map((game) => {
+                return {
+                    time: formatTime(new Date(game.timeslot.date)),
+                    ageGroup: toTitleCase(ageGroups.find((ageGroup) => ageGroup.id === game.timeslot.ageGroupId)?.displayName || ''),
+                    lightTeam: game.lightTeam.name,
+                    darkTeam: game.darkTeam.name,
+                    winningTeam: (game.lightScore === 0 && game.darkScore === 0) ? '' : game.lightScore > game.darkScore ? game.lightTeam.name : game.darkTeam.name,
+                };
+            })
+            .sort((a, b) => new Date(`1970/01/01 ${a.time}`).getTime() - new Date(`1970/01/01 ${b.time}`).getTime());
+    };
+
+    const getNumCourts = (games: Game[]): number => {
+        return Math.max(...games.map((game) => game.timeslot.court));
     };
 
     return (
@@ -125,7 +231,6 @@ const GameResults = (props: PlayerDataProps) => {
                             <Switch 
                                 checked={venue !== Location.ST_IVES} 
                                 onChange={() => setVenue(venue === Location.ST_IVES ? Location.BELROSE : Location.ST_IVES)} 
-                                defaultChecked 
                                 size="medium"
                                 sx={{
                                     '& .MuiSwitch-track': {
@@ -145,8 +250,10 @@ const GameResults = (props: PlayerDataProps) => {
                             <p>Belrose</p>
                         </div>
                     </div>
-                    <div>
-                        <CourtTable courtNumber={1} tableData={tableData} />
+                    <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+                        {Array.from({ length: getNumCourts(currentGames) }, (_, i) => (
+                            <CourtTable key={i + 1} courtNumber={i + 1} tableData={getTableEntries(currentGames, i + 1)} />
+                        ))}
                     </div>
                 </div>
             </div>

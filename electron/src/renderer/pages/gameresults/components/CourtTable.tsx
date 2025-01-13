@@ -5,10 +5,10 @@ const CourtTable = (props: CourtTableProps) => {
     const { courtNumber, tableData } = props;
 
     return (
-        <div className="pt-8">
+        <div className="pt-8 pr-2">
             <h2 className="font-bold text-lg pb-2">Court {courtNumber}</h2>
             <TableContainer component={Paper} sx={{ maxWidth: 800, margin: "auto" }}>
-                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                <Table sx={{ minWidth: 650 }} aria-label="Game Table">
                     <TableHead>
                     <TableRow>
                         <TableCell>Time</TableCell>
@@ -22,7 +22,7 @@ const CourtTable = (props: CourtTableProps) => {
                     {tableData.map((row, index) => (
                         <TableRow
                             key={index}
-                            className={index < 2 ? 'bg-green-200' : 'bg-red-200'}
+                            className={`hover:bg-blue-400 cursor-pointer ${row.winningTeam === '' ? 'bg-red-200' : 'bg-green-200'}`}
                         >
                             <TableCell>{row.time}</TableCell>
                             <TableCell>{row.ageGroup}</TableCell>
