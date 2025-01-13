@@ -162,6 +162,10 @@ const GameResults = (props: PlayerDataProps) => {
         return Math.max(...games.map((game) => game.timeslot.court));
     };
 
+    const getNumGamesUpdated = (games: Game[]): number => {
+        return games.filter((game) => game.lightScore !== 0 || game.darkScore !== 0).length;
+    }
+
     const uploadGameResults = (game: Game) => {
         const gameRequest: PrismaCall = {
             model: ModelName.game,
@@ -195,7 +199,7 @@ const GameResults = (props: PlayerDataProps) => {
             <div className="flex flex-row gap-4 w-full h-5/6">
                 <div className="w-2/5 pt-4">
                     <h1 className="font-bold text-xl">{formatDate(currentDate)}</h1>
-                    <h2 className="text-lg">4/28 recorded</h2>
+                    <h2 className="text-lg">{getNumGamesUpdated(currentGames)}/{currentGames.length} {venue === Location.BELROSE ? "Belrose" : "St Ives"} games recorded</h2>
                     <div className="pt-8">
                         <div className="">
                             <h2>Light Team</h2>
@@ -282,7 +286,7 @@ const GameResults = (props: PlayerDataProps) => {
                                 <FormCancelSave 
                                     cancelButtonDisabled={selectedGame===""} 
                                     saveButtonDisabled={selectedGame===""} 
-                                    onCancelClick={() => {setSelectedGame('')}} 
+                                    onCancelClick={() => {setSelectedGame(''); getCurrentGames(currentDate, venue)}} 
                                     onSaveClick={() => {uploadGameResults(currentGames.find((game) => game.id === selectedGame) as Game)}}
                                 />
                             </div>
