@@ -4,11 +4,13 @@ import PageTitle from "../../ui_components/PageTitle";
 import { PlayerDataProps } from "../players/components/Types";
 import Terms2025 from "../data/Terms";
 import React, { useEffect } from "react";
-import { Button, FormControlLabel, FormGroup, Paper, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { Button, FormControl, FormControlLabel, FormGroup, InputLabel, MenuItem, Paper, Select, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
 import { green, red } from "chalk";
 import CourtTable from "./components/CourtTable";
 import { IpcChannels } from "../../../general/IpcChannels";
 import { PrismaCall, ModelName, CrudOperations } from "../../../general/prismaTypes";
+import FormCancelSave from "../../ui_components/FormCancelSave";
+import { toast } from "react-toastify";
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -44,64 +46,12 @@ type Game = {
 
 type TableEntry = {
     time: string;
+    gameId: string;
     ageGroup: string;
     lightTeam: string;
     darkTeam: string;
     winningTeam: string;
 };
-
-
-const tableData = [
-    {
-      time: "10:00 AM",
-      ageGroup: "23",
-      lightTeam: "Phoenix",
-      darkTeam: "Dragons",
-      winningTeam: "Phoenix"
-    },
-    {
-      time: "11:30 AM",
-      ageGroup: "25",
-      lightTeam: "Titans",
-      darkTeam: "Warriors",
-      winningTeam: "Warriors"
-    },
-    {
-      time: "1:00 PM",
-      ageGroup: "28",
-      lightTeam: "Eagles",
-      darkTeam: "Lions",
-      winningTeam: "Eagles"
-    },
-    {
-      time: "2:30 PM",
-      ageGroup: "21",
-      lightTeam: "Panthers",
-      darkTeam: "Bears",
-      winningTeam: "Bears"
-    },
-    {
-      time: "4:00 PM",
-      ageGroup: "24",
-      lightTeam: "Wolves",
-      darkTeam: "Tigers",
-      winningTeam: "Tigers"
-    },
-    {
-      time: "5:30 PM",
-      ageGroup: "26",
-      lightTeam: "Hawks",
-      darkTeam: "Ravens",
-      winningTeam: "Hawks"
-    },
-    {
-      time: "7:00 PM",
-      ageGroup: "22",
-      lightTeam: "Falcons",
-      darkTeam: "Sharks",
-      winningTeam: "Sharks"
-    }
-];
 
 const toTitleCase = (str: any) => {
     return str.toLowerCase().split(' ').map((word: any) => {
@@ -112,6 +62,7 @@ const toTitleCase = (str: any) => {
 const GameResults = (props: PlayerDataProps) => {
     const { ageGroups, teams } = props;
     const [currentGames, setCurrentGames] = React.useState<Game[]>([]);
+    const [selectedGame, setSelectedGame] = React.useState<string>('');
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
     const [venue, setVenue] = React.useState<Location>(Location.ST_IVES);
 
@@ -187,12 +138,21 @@ const GameResults = (props: PlayerDataProps) => {
         return games
             .filter((game) => game.timeslot.court === court)
             .map((game) => {
+                let winningTeam = '';
+                if (game.lightScore === 0 && game.darkScore === 0) {
+                    winningTeam = '';
+                } else if (game.lightScore === game.darkScore) {
+                    winningTeam = 'TIE!';
+                } else {
+                    winningTeam = game.lightScore > game.darkScore ? game.lightTeam.name : game.darkTeam.name;
+                }
                 return {
                     time: formatTime(new Date(game.timeslot.date)),
+                    gameId: game.id,
                     ageGroup: toTitleCase(ageGroups.find((ageGroup) => ageGroup.id === game.timeslot.ageGroupId)?.displayName || ''),
                     lightTeam: game.lightTeam.name,
                     darkTeam: game.darkTeam.name,
-                    winningTeam: (game.lightScore === 0 && game.darkScore === 0) ? '' : game.lightScore > game.darkScore ? game.lightTeam.name : game.darkTeam.name,
+                    winningTeam: winningTeam,
                 };
             })
             .sort((a, b) => new Date(`1970/01/01 ${a.time}`).getTime() - new Date(`1970/01/01 ${b.time}`).getTime());
@@ -202,6 +162,33 @@ const GameResults = (props: PlayerDataProps) => {
         return Math.max(...games.map((game) => game.timeslot.court));
     };
 
+    const uploadGameResults = (game: Game) => {
+        const gameRequest: PrismaCall = {
+            model: ModelName.game,
+            operation: CrudOperations.update,
+            data: {
+                where: {
+                    id: game.id,
+                },
+                data: {
+                    lightScore: game.lightScore,
+                    darkScore: game.darkScore,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, gameRequest)
+            .then((data) => {
+                console.log(data);
+                toast.success('Game results updated successfully');
+            })
+            .catch((err) => {
+                console.error(err);
+            }
+        );
+    }
+
     return (
         <PageContainer>
             <PageTitle text="Game Results" />
@@ -209,6 +196,98 @@ const GameResults = (props: PlayerDataProps) => {
                 <div className="w-2/5 pt-4">
                     <h1 className="font-bold text-xl">{formatDate(currentDate)}</h1>
                     <h2 className="text-lg">4/28 recorded</h2>
+                    <div className="pt-8">
+                        <div className="">
+                            <h2>Light Team</h2>
+                            <div className="flex gap-4 pt-2">
+                                <div className="w-1/2">
+                                    <FormControl fullWidth disabled={selectedGame === ''}>
+                                        <InputLabel
+                                            id="demo-simple-select-label"
+                                        >
+                                            Light Team
+                                        </InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value={currentGames.find((game) => game.id === selectedGame)?.lightTeamId || ''}
+                                            label="Team"
+                                            name="teamId"
+                                            // onChange={}
+                                        >
+                                            {teams.map((team) => (
+                                                <MenuItem key={team.id} value={team.id}>
+                                                    {team.name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </div>
+                                <div className="w-36 pb-8">
+                                    <TextField
+                                        id="lightTeamScore"
+                                        label="Score"
+                                        variant="outlined"
+                                        name="number"
+                                        disabled={selectedGame === ''}
+                                        value={currentGames.find((game) => game.id === selectedGame)?.lightScore || 0}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value);
+                                            setCurrentGames(currentGames.map((game) => game.id === selectedGame ? {...game, lightScore: isNaN(value) ? 0 : value} : game));
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <h2>Dark Team</h2>
+                            <div className="flex gap-4 pt-2">
+                                <div className="w-1/2">
+                                    <FormControl fullWidth disabled={selectedGame === ''}>
+                                        <InputLabel
+                                            id="demo-simple-select-label"
+                                        >
+                                            Dark Team
+                                        </InputLabel>
+                                        <Select
+                                            labelId="demo-simple-select-label"
+                                            id="demo-simple-select"
+                                            value={currentGames.find((game) => game.id === selectedGame)?.darkTeamId || ''}
+                                            label="Team"
+                                            name="teamId"
+                                            // onChange={}
+                                        >
+                                            {teams.map((team) => (
+                                                <MenuItem key={team.id} value={team.id}>
+                                                    {team.name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </div>
+                                <div className="w-36 pb-8">
+                                    <TextField
+                                        id="darkTeamScore"
+                                        label="Score"
+                                        variant="outlined"
+                                        name="number"
+                                        disabled={selectedGame === ''}
+                                        value={currentGames.find((game) => game.id === selectedGame)?.darkScore || 0}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value);
+                                            setCurrentGames(currentGames.map((game) => game.id === selectedGame ? {...game, darkScore: isNaN(value) ? 0 : value} : game));
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="pr-8">
+                                <FormCancelSave 
+                                    cancelButtonDisabled={selectedGame===""} 
+                                    saveButtonDisabled={selectedGame===""} 
+                                    onCancelClick={() => {setSelectedGame('')}} 
+                                    onSaveClick={() => {uploadGameResults(currentGames.find((game) => game.id === selectedGame) as Game)}}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div className='inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 '></div>
                 <div className="w-3/4 pt-4 pl-4">
@@ -252,7 +331,7 @@ const GameResults = (props: PlayerDataProps) => {
                     </div>
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
                         {Array.from({ length: getNumCourts(currentGames) }, (_, i) => (
-                            <CourtTable key={i + 1} courtNumber={i + 1} tableData={getTableEntries(currentGames, i + 1)} />
+                            <CourtTable key={i + 1} courtNumber={i + 1} tableData={getTableEntries(currentGames, i + 1)} setSelectedGame={setSelectedGame} />
                         ))}
                     </div>
                 </div>

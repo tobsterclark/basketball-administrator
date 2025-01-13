@@ -2,7 +2,7 @@ import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody
 import { CourtTableProps } from "../Props";
 
 const CourtTable = (props: CourtTableProps) => {
-    const { courtNumber, tableData } = props;
+    const { courtNumber, tableData, setSelectedGame } = props;
 
     return (
         <div className="pt-8 pr-2">
@@ -23,6 +23,7 @@ const CourtTable = (props: CourtTableProps) => {
                         <TableRow
                             key={index}
                             className={`hover:bg-blue-400 cursor-pointer ${row.winningTeam === '' ? 'bg-red-200' : 'bg-green-200'}`}
+                            onClick={() => setSelectedGame(row.gameId)}
                         >
                             <TableCell>{row.time}</TableCell>
                             <TableCell>{row.ageGroup}</TableCell>
