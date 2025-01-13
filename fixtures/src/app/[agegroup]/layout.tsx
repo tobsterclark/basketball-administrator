@@ -1,15 +1,18 @@
+import { getAgeGroup, getAllAgeGroups } from "@/db/cached";
 import Link from "next/link";
 import { ReactNode } from "react";
 
+// Revalidate static pages once a day, this should very rarely change so cache reduces db calls
 export const dynamicParams = false;
+export const revalidate = 86400;
 
+// Generate fixture/ladder/results pages for each age group
 export async function generateStaticParams() {
-  return [
-    { agegroup: "123" },
-    { agegroup: "9-12" },
-    { agegroup: "7/8" },
-    { agegroup: "5/6" },
-  ];
+  const ageGroups = await getAllAgeGroups();
+
+  return ageGroups.map(({ id }) => {
+    return { agegroup: id };
+  });
 }
 
 export default async function MainLayout({
@@ -19,20 +22,28 @@ export default async function MainLayout({
   children: ReactNode;
   params: Promise<{ agegroup: string }>;
 }) {
-  const agegroup = (await params).agegroup;
+  // Use the cached age group to get the current display name from the age group ID
+  const ageGroupId = (await params).agegroup;
+  const ageGroup = (await getAgeGroup(ageGroupId))?.displayName;
 
   return (
     <div className="flex flex-col gap-8 bg-white text-black p-5 w-screen h-screen">
-      <h1 className="text-xl font-bold">Grade {agegroup}</h1>
+      <h1 className="text-xl font-bold">Grade {ageGroup}</h1>
 
       <div className="flex flex-row gap-6">
-        <Link href={`/${agegroup}/fixture`} className="bg-red-500 p-2 rounded">
+        <Link
+          href={`/${ageGroupId}/fixture`}
+          className="bg-red-500 p-2 rounded"
+        >
           Fixture
         </Link>
-        <Link href={`/${agegroup}/results`} className="bg-red-500 p-2 rounded">
+        <Link
+          href={`/${ageGroupId}/results`}
+          className="bg-red-500 p-2 rounded"
+        >
           Results
         </Link>
-        <Link href={`/${agegroup}/ladder`} className="bg-red-500 p-2 rounded">
+        <Link href={`/${ageGroupId}/ladder`} className="bg-red-500 p-2 rounded">
           Ladder
         </Link>
       </div>
