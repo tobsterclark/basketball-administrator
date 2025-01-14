@@ -2,7 +2,7 @@ import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody
 import { CourtTableProps } from "../Props";
 
 const CourtTable = (props: CourtTableProps) => {
-    const { courtNumber, tableData, setSelectedGame } = props;
+    const { courtNumber, tableData, selectedGame, setSelectedGame } = props;
 
     return (
         <div className="pt-8 pr-2">
@@ -14,7 +14,9 @@ const CourtTable = (props: CourtTableProps) => {
                         <TableCell>Time</TableCell>
                         <TableCell>Age</TableCell>
                         <TableCell>Light Team</TableCell>
+                        <TableCell>Pts</TableCell>
                         <TableCell>Dark Team</TableCell>
+                        <TableCell>Pts</TableCell>
                         <TableCell>Winner</TableCell>
                     </TableRow>
                     </TableHead>
@@ -22,13 +24,15 @@ const CourtTable = (props: CourtTableProps) => {
                     {tableData.map((row, index) => (
                         <TableRow
                             key={index}
-                            className={`hover:bg-blue-400 cursor-pointer ${row.winningTeam === '' ? 'bg-red-200' : 'bg-green-200'}`}
+                            className={`hover:bg-blue-300 cursor-pointer ${row.winningTeam === '' ? 'bg-red-200' : 'bg-green-200'} ${selectedGame === row.gameId ? '!bg-blue-400' : ''}`}
                             onClick={() => setSelectedGame(row.gameId)}
                         >
                             <TableCell>{row.time}</TableCell>
                             <TableCell>{row.ageGroup}</TableCell>
                             <TableCell>{row.lightTeam}</TableCell>
+                            <TableCell>{row.lightTeamScore}</TableCell>
                             <TableCell>{row.darkTeam}</TableCell>
+                            <TableCell>{row.darkTeamScore}</TableCell>
                             <TableCell>{row.winningTeam}</TableCell>
                         </TableRow>
                     ))}

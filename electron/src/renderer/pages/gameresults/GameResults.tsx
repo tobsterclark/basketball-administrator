@@ -1,9 +1,10 @@
 import { ArrowLeftCircleIcon, ArrowRightCircleIcon } from "@heroicons/react/24/solid";
+import { ArrowLeftIcon, ArrowLongRightIcon, ArrowRightIcon, ExclamationCircleIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import PageContainer from "../../ui_components/PageContainer";
 import PageTitle from "../../ui_components/PageTitle";
 import { PlayerDataProps } from "../players/components/Types";
 import Terms2025 from "../data/Terms";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Button, FormControl, FormControlLabel, FormGroup, InputLabel, MenuItem, Paper, Select, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
 import { green, red } from "chalk";
 import CourtTable from "./components/CourtTable";
@@ -49,6 +50,8 @@ type TableEntry = {
     gameId: string;
     ageGroup: string;
     lightTeam: string;
+    lightTeamScore: number;
+    darkTeamScore: number;
     darkTeam: string;
     winningTeam: string;
 };
@@ -151,7 +154,9 @@ const GameResults = (props: PlayerDataProps) => {
                     gameId: game.id,
                     ageGroup: toTitleCase(ageGroups.find((ageGroup) => ageGroup.id === game.timeslot.ageGroupId)?.displayName || ''),
                     lightTeam: game.lightTeam.name,
+                    lightTeamScore: game.lightScore,
                     darkTeam: game.darkTeam.name,
+                    darkTeamScore: game.darkScore,
                     winningTeam: winningTeam,
                 };
             })
@@ -193,13 +198,79 @@ const GameResults = (props: PlayerDataProps) => {
         );
     }
 
+    const handleKeyPress = useCallback((e: KeyboardEvent) => {
+        const currentCourt = currentGames.find((game) => game.id === selectedGame)?.timeslot.court || 1;
+        const entries = getTableEntries(currentGames, currentCourt);
+        const currentIndex = entries.findIndex((game) => game.gameId === selectedGame);
+        const nextIndex = currentIndex + 1;
+        const prevIndex = currentIndex - 1;
+        const currentGame = currentGames[currentIndex];
+
+        if (e.ctrlKey && e.key === 's') {
+            uploadGameResults(currentGame);
+        } else if (e.ctrlKey && e.key === 'c') {
+            setSelectedGame('');
+            getCurrentGames(currentDate, venue);
+        } else if (e.key === 'ArrowRight') {
+            if (selectedGame === '') {
+                setSelectedGame(entries[0]?.gameId || '');
+            }
+            else if (nextIndex < entries.length) {
+                setSelectedGame(entries[nextIndex]?.gameId || '');
+            } else {
+                const nextCourt = currentCourt + 1;
+                const nextCourtEntries = getTableEntries(currentGames, nextCourt);
+                if (nextCourtEntries.length > 0) {
+                    setSelectedGame(nextCourtEntries[0]?.gameId || '');
+                }
+            }
+        } else if (e.key === 'ArrowLeft') {
+            if (prevIndex >= 0) {
+                setSelectedGame(entries[prevIndex]?.gameId || '');
+            } else {
+                const prevCourt = currentCourt - 1;
+                const prevCourtEntries = getTableEntries(currentGames, prevCourt);
+                if (prevCourtEntries.length > 0) {
+                    setSelectedGame(prevCourtEntries[prevCourtEntries.length - 1]?.gameId || '');
+                }
+            }
+        }
+    }, [currentGames, selectedGame, currentDate, venue]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyPress);
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [handleKeyPress]);
+
+    useEffect(() => {
+        const focusableElements = document.querySelectorAll(
+          'a, button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
+        );
+    
+        focusableElements.forEach((el) => {
+          // Allow focus only on the text input fields
+          if (el.id !== 'lightTeamScore' && el.id !== 'darkTeamScore') {
+            el.setAttribute('tabindex', '-1');
+          }
+        });
+    
+        // Cleanup on unmount to restore original tabindex values
+        return () => {
+          focusableElements.forEach((el) => {
+            el.removeAttribute('tabindex');
+          });
+        };
+      }, []);
+
     return (
         <PageContainer>
             <PageTitle text="Game Results" />
             <div className="flex flex-row gap-4 w-full h-5/6">
                 <div className="w-2/5 pt-4">
                     <h1 className="font-bold text-xl">{formatDate(currentDate)}</h1>
-                    <h2 className="text-lg">{getNumGamesUpdated(currentGames)}/{currentGames.length} {venue === Location.BELROSE ? "Belrose" : "St Ives"} games recorded</h2>
+                    <h2 className="text-lg pt-2">{getNumGamesUpdated(currentGames)}/{currentGames.length} {venue === Location.BELROSE ? "Belrose" : "St Ives"} games recorded</h2>
                     <div className="pt-8">
                         <div className="">
                             <h2>Light Team</h2>
@@ -207,17 +278,17 @@ const GameResults = (props: PlayerDataProps) => {
                                 <div className="w-1/2">
                                     <FormControl fullWidth disabled={selectedGame === ''}>
                                         <InputLabel
-                                            id="demo-simple-select-label"
+                                            id="light-team-label"
                                         >
                                             Light Team
                                         </InputLabel>
                                         <Select
-                                            labelId="demo-simple-select-label"
-                                            id="demo-simple-select"
+                                            labelId="light-team-label"
+                                            id="light-team-select"
                                             value={currentGames.find((game) => game.id === selectedGame)?.lightTeamId || ''}
                                             label="Team"
                                             name="teamId"
-                                            // onChange={}
+                                            inputProps={{ readOnly: true, tabIndex: -1 }}
                                         >
                                             {teams.map((team) => (
                                                 <MenuItem key={team.id} value={team.id}>
@@ -239,25 +310,26 @@ const GameResults = (props: PlayerDataProps) => {
                                             const value = parseInt(e.target.value);
                                             setCurrentGames(currentGames.map((game) => game.id === selectedGame ? {...game, lightScore: isNaN(value) ? 0 : value} : game));
                                         }}
+                                        tabIndex={1}
                                     />
                                 </div>
                             </div>
                             <h2>Dark Team</h2>
                             <div className="flex gap-4 pt-2">
                                 <div className="w-1/2">
-                                    <FormControl fullWidth disabled={selectedGame === ''}>
+                                    <FormControl fullWidth disabled={selectedGame === ''} tabIndex={-1}>
                                         <InputLabel
-                                            id="demo-simple-select-label"
+                                            id="dark-team-label"
                                         >
                                             Dark Team
                                         </InputLabel>
                                         <Select
-                                            labelId="demo-simple-select-label"
-                                            id="demo-simple-select"
+                                            labelId="dark-team-label"
+                                            id="dark-team-select"
                                             value={currentGames.find((game) => game.id === selectedGame)?.darkTeamId || ''}
                                             label="Team"
                                             name="teamId"
-                                            // onChange={}
+                                            inputProps={{ readOnly: true, tabIndex: -1 }}
                                         >
                                             {teams.map((team) => (
                                                 <MenuItem key={team.id} value={team.id}>
@@ -279,6 +351,7 @@ const GameResults = (props: PlayerDataProps) => {
                                             const value = parseInt(e.target.value);
                                             setCurrentGames(currentGames.map((game) => game.id === selectedGame ? {...game, darkScore: isNaN(value) ? 0 : value} : game));
                                         }}
+                                        tabIndex={2}
                                     />
                                 </div>
                             </div>
@@ -289,6 +362,44 @@ const GameResults = (props: PlayerDataProps) => {
                                     onCancelClick={() => {setSelectedGame(''); getCurrentGames(currentDate, venue)}} 
                                     onSaveClick={() => {uploadGameResults(currentGames.find((game) => game.id === selectedGame) as Game)}}
                                 />
+                            </div>
+                            <div className="pt-24">
+                                <div className="flex gap-1 text-gray-500">
+                                    <ExclamationCircleIcon className="h-6 w-6 inline-block" />
+                                    <h3>Quick tip</h3>
+                                </div>
+                                <div className="flex gap-2 pl-2">
+                                    <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                    <p className="text-sm text-gray-600 pt-1">
+                                        <span>Use </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">tab</span>
+                                        <span> to cycle between the score text fields.</span>
+                                    </p>
+                                </div>
+                                <div className="flex gap-2 pl-2 pt-2">
+                                    <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                    <p className="text-sm text-gray-600 pt-1">
+                                        <span>Use </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">ctrl</span>
+                                        <span> + </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">s</span>
+                                        <span> to save the entered score, or </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">ctrl</span>
+                                        <span> + </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">c</span>
+                                        <span> to cancel.</span>
+                                    </p>
+                                </div>
+                                <div className="flex gap-2 pl-2 pt-2">
+                                    <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                    <p className="text-sm text-gray-600 pt-1">
+                                        <span>Use arrow keys </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm"><ArrowLeftIcon className="h-4 w-4 inline-block mb-0.5 mr-0.5 ml-0.5" /></span>
+                                        <span> or </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm"><ArrowRightIcon className="h-4 w-4 inline-block mb-0.5 mr-0.5 ml-0.5" /></span>
+                                        <span> to navigate between games.</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -335,7 +446,7 @@ const GameResults = (props: PlayerDataProps) => {
                     </div>
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
                         {Array.from({ length: getNumCourts(currentGames) }, (_, i) => (
-                            <CourtTable key={i + 1} courtNumber={i + 1} tableData={getTableEntries(currentGames, i + 1)} setSelectedGame={setSelectedGame} />
+                            <CourtTable key={i + 1} courtNumber={i + 1} tableData={getTableEntries(currentGames, i + 1)} selectedGame={selectedGame} setSelectedGame={setSelectedGame} />
                         ))}
                     </div>
                 </div>

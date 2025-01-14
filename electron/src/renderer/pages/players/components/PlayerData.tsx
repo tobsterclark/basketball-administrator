@@ -13,6 +13,12 @@ import FormCancelSave from '../../../ui_components/FormCancelSave';
 import { PlayerDataProps } from './Types';
 import { TrashIcon } from '@heroicons/react/24/solid';
 
+const toTitleCase = (str: any) => {
+    return str.toLowerCase().split(' ').map((word: any) => {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+}
+
 export const PlayerData = (props: PlayerDataProps) => {
     const {
         player,
@@ -151,7 +157,7 @@ export const PlayerData = (props: PlayerDataProps) => {
                                         key={ageGroup.id}
                                         value={ageGroup.id}
                                     >
-                                        {ageGroup.displayName}
+                                        {toTitleCase(ageGroup.displayName)}
                                     </MenuItem>
                                 ))}
                             </Select>

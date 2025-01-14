@@ -7,8 +7,11 @@ export interface CourtTableProps {
         gameId: string;
         ageGroup: string;
         lightTeam: string;
+        lightTeamScore: number;
         darkTeam: string;
+        darkTeamScore: number;
         winningTeam: string;
     }[];
+    selectedGame: string;
     setSelectedGame: React.Dispatch<React.SetStateAction<string>>;
 }

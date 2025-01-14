@@ -23,6 +23,12 @@ import { PlayerCache, PlayerDataResponse } from './components/Types';
 import { PlayerData } from './components/PlayerData';
 import { PlayerProps } from './PlayersProps';
 
+const toTitleCase = (str: any) => {
+    return str.toLowerCase().split(' ').map((word: any) => {
+      return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+}
+
 const Players = (playersProps: PlayerProps) => {
     const { ageGroups, teams } = playersProps;
 
@@ -301,7 +307,7 @@ const Players = (playersProps: PlayerProps) => {
                     id: player.id,
                     number: player.number,
                     firstName: player.firstName,
-                    ageGroup: player.ageGroup.displayName,
+                    ageGroup: toTitleCase(player.ageGroup.displayName),
                     teamDivision: player.team.division,
                     teamName: player.team.name,
                 }));
