@@ -111,11 +111,11 @@ const Navbar = () => {
                 // }}
                 className="font-extralight flex gap-3 mx-2"
             >
-                <Cog6ToothIcon
+                {/* <Cog6ToothIcon
                     className="w-6 h-6 "
                     style={{ strokeWidth: 1 }}
                 />
-                Settings
+                Settings */}
             </button>
         </div>
     );
@@ -136,11 +136,11 @@ const Navbar = () => {
                 }}
                 className="font-light flex flex-col items-center justify-center gap-1 w-20 h-16 hover:bg-gray-100 rounded-xl dark:text-darktext dark:hover:bg-darkgray"
             >
-                <Cog6ToothIcon
+                {/* <Cog6ToothIcon
                     className="w-6 h-6 "
                     style={{ strokeWidth: 1 }}
                 />
-                Settings
+                Settings */}
             </button>
         </div>
     );
