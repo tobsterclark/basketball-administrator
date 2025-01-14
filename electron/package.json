@@ -1,5 +1,5 @@
 {
-    "description": "A foundation for scalable desktop apps",
+    "description": "NSBL Manager",
     "keywords": [
         "electron",
         "boilerplate",
@@ -11,25 +11,25 @@
         "hot",
         "reload"
     ],
-    "homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
+    "homepage": "https://nsbl.com.au",
     "bugs": {
-        "url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
+        "url": "mailto://jamie@jamiecole.dev"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
+        "url": "git+https://github.com/tobsterclark/basketball-administrator.git"
     },
-    "license": "MIT",
+    "license": "No License",
     "author": {
-        "name": "Electron React Boilerplate Maintainers",
-        "email": "electronreactboilerplate@gmail.com",
-        "url": "https://electron-react-boilerplate.js.org"
+        "name": "Jamie Cole",
+        "email": "jamie@jamiecole.dev",
+        "url": "mailto://jamie@jamiecole.dev"
     },
     "contributors": [
         {
-            "name": "Amila Welihinda",
-            "email": "amilajack@gmail.com",
-            "url": "https://github.com/amilajack"
+            "name": "Toby Clark",
+            "email": "me@tobyclark.dev",
+            "url": "https://github.com/tobsterclark"
         }
     ],
     "main": "./src/main/main.ts",
@@ -109,7 +109,6 @@
         "@prisma/client": "^5.14.0",
         "@tobsterclark/prisma-orm": ">=1.1.1",
         "date-fns": "^4.1.0",
-        "downloads-folder": "^3.0.3",
         "electron-debug": "^3.2.0",
         "electron-log": "^4.4.8",
         "electron-updater": "^6.1.4",
@@ -192,8 +191,8 @@
         "webpack-merge": "^5.9.0"
     },
     "build": {
-        "productName": "ElectronReact",
-        "appId": "org.erb.ElectronReact",
+        "productName": "NSBL Manager",
+        "appId": "org.jamiecole.nsbl-manager",
         "asar": true,
         "asarUnpack": "**\\*.{node,dll}",
         "files": [
@@ -251,12 +250,12 @@
         ],
         "publish": {
             "provider": "github",
-            "owner": "electron-react-boilerplate",
-            "repo": "electron-react-boilerplate"
+            "owner": "jamiejcole",
+            "repo": "tobsterclark/basketball-administrator"
         }
     },
     "collective": {
-        "url": "https://opencollective.com/electron-react-boilerplate-594"
+        "url": "mailto://jamie@jamiecole.dev"
     },
     "engines": {
         "node": ">=14.x",
