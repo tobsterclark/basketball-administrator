@@ -1,7 +1,39 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Prisma, PrismaClient } from '@prisma/client';
+// import path from 'path';
 
-// Prisma Client singleton
+// Determine the path to the Prisma query engine binary
+// const getPrismaEnginePath = (): string => {
+//   // Check if the app is running in a packaged environment
+//   if (process.env.NODE_ENV === 'production') {
+//     return path.join(
+//       process.resourcesPath, // Electron's resources path in production
+//       '.prisma',
+//       'client',
+//       'query_engine-windows.dll.node' // Use the appropriate binary for your platform
+//     );
+//   }
+
+//   // Use the default path for development
+//   return path.join(
+//     __dirname,
+//     '..',
+//     'node_modules',
+//     '.prisma',
+//     'client',
+//     'query_engine-windows.dll.node'
+//   );
+// };
+
+// // Initialize Prisma Client with the correct engine path
+// export const prismaClient = new PrismaClient({
+//   __internal: {
+//     engine: {
+//       binaryPath: getPrismaEnginePath(),
+//     },
+//   },
+// });
+
 export const prismaClient = new PrismaClient();
 
 // TODO: How to just set this to strings rather than have to explicitly define this
