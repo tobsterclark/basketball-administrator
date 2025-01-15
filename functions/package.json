@@ -1,7 +1,6 @@
 {
     "name": "functions",
     "scripts": {
-        "lint": "eslint --ext .js,.ts .",
         "build": "tsc && shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/",
         "build-watch": "shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/ && tsc --watch",
         "serve": "npm run build-watch | firebase emulators:start",
@@ -24,11 +23,6 @@
         "pdf-lib": "^1.17.1"
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^5.12.0",
-        "@typescript-eslint/parser": "^5.12.0",
-        "eslint": "^8.9.0",
-        "eslint-config-google": "^0.14.0",
-        "eslint-plugin-import": "^2.25.4",
         "firebase-functions-test": "^3.1.0",
         "shx": "^0.3.4",
         "typescript": "^4.9.0"

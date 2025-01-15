@@ -173,7 +173,8 @@ const downloadRunsheet = async (gameId: string) => {
             toast.error(`Error: ${result.message}`);
         }
     } catch (error) {
-        console.error('Error saving PDF:', error);
+        console.error('Error saving PDF:');
+        console.error(error);
         toast.error('An error occurred while saving the PDF.');
     }
 };
