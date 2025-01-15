@@ -257,7 +257,9 @@
             "output": "release/build"
         },
         "extraResources": [
-            "./assets/**"
+            "./assets/**",
+            "node_modules/.prisma/**/*",
+            "node_modules/@prisma/client/**/*"
         ],
         "publish": {
             "provider": "github",
