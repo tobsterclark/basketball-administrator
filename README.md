@@ -33,3 +33,32 @@ You will need to authenticate your npm with Github to download the standard ORM 
 2. Switch out the `TOKEN` with a Github **classic** personal access token
 3. Clone Github repo
 4. In `functions` **and** in `electron` run `npm install`
+
+## Packaging a electron build
+> NOTE: MacOS currently not supported.
+Sometimes the `npm run package` command fails, this is fine, just re-run it and it will compile. Make sure you:
+1. Run `npm ci --legacy-peer-deps`
+2. Ensure you have the following info in your `.env` file.
+3. Check the build works with `npm start`
+4. Package a build with `npm run package`.
+
+## .env file
+You need to have a .env file in each directory with with the following lines:
+```
+DATABASE_USERNAME="developer"
+DATABASE_PASSWORD="<password>"
+DATABASE_IP="35.201.1.63"
+DATABASE_NAME="postgres"
+DATABASE_URL="postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres"
+GCLOUD_AUTH_BEARER=<auth bearer>
+```
+
+You can get a google cloud auth bearer from gcloud cli by running `gcloud auth print-identity-token`.
+
+## Functions deployment
+Currently there's an issue with authenticating the custom NPM package when deploying the cloud functions. To resolve this,
+1. Add in the auth token to `/functions/.npmrc`
+2. Run `firebase deploy --only functions`
+3. **Remove auth token prior to committing** 
+
+For some reason, I can't add the `.npmrc` file to the `.gitignore`, and adding google cloud secrets won't work either, because you need to be authenticated while deploying and in the actual deployment itself.
