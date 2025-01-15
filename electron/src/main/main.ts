@@ -19,7 +19,6 @@ import { IpcChannels } from '../general/IpcChannels';
 import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
 const fs = require('fs');
 const http = require('http');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 class AppUpdater {
     constructor() {

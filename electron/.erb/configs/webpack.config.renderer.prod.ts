@@ -14,6 +14,7 @@ import baseConfig from './webpack.config.base';
 import webpackPaths from './webpack.paths';
 import checkNodeEnv from '../scripts/check-node-env';
 import deleteSourceMaps from '../scripts/delete-source-maps';
+const Dotenv = require('dotenv-webpack');
 
 checkNodeEnv('production');
 deleteSourceMaps();
@@ -114,6 +115,34 @@ const configuration: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
       DEBUG_PROD: false,
+    }),
+
+    new Dotenv({
+      path: path.join(webpackPaths.rootPath, 'renderer.env'),
+      safe: false, // If true, load '.env.example' to verify the '.env' variables are all set. Can also be a string to a different file.
+      silent: false, // If true, all warnings will be suppressed
+      defaults: false, // Adds support for dotenv-defaults. If set to true, uses ./.env.defaults. If a string, uses that location for a defaults file
+    }),
+
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: 'production',
+      DATABASE_USERNAME: "developer"
+    }),
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: 'production',
+      DATABASE_PASSWORD: "%2Ch6VKM7gX.m%5BL%24B%2C"
+    }),
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: 'production',
+      DATABASE_IP: "35.201.1.63"
+    }),
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: 'production',
+      DATABASE_NAME: "postgres"
+    }),
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: 'production',
+      DATABASE_URL: "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres"
     }),
 
     new MiniCssExtractPlugin({

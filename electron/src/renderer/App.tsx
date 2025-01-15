@@ -27,6 +27,10 @@ const App = () => {
     const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
     const [teams, setTeams] = useState<TeamDataResponse[]>([]);
 
+    console.log("##### BEGIN DOTENV CONFIG #####");
+    console.log(process.env.DATABASE_URL);
+    console.log("##### END DOTENV CONFIG #####");
+
     // TODO: Do this in a separate function and use an app wide state instead of passing to components
     // Gets all age groups and team names for dropdowns on mount, ignores duplicates
     useEffect(() => {
