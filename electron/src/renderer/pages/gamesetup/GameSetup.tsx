@@ -520,10 +520,10 @@ export const GameSetup = (props: PlayerDataProps) => {
                         size="large"
                         onClick={uploadGames}
                     >
-                        UPLOAD
+                        Save
                     </Button>
                 </div>
-                <div className="w-1/5">
+                {/* <div className="w-1/5">
                     <Button
                         fullWidth
                         variant="contained"
@@ -532,27 +532,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     >
                         DELETE ALL GAMES
                     </Button>
-                </div>
-                <div className="w-1/5">
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        onClick={printCreatedGames}
-                    >
-                        PRINT CREATED GAMES
-                    </Button>
-                </div>
-                <div className="w-1/5">
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        onClick={getDbGames}
-                    >
-                        GET DB GAMES
-                    </Button>
-                </div>
+                </div> */}
             </div>
             <div className="pt-8">
                 {belroseGames ? (
