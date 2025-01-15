@@ -19,6 +19,7 @@ import { IpcChannels } from '../general/IpcChannels';
 import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 
 class AppUpdater {
     constructor() {
@@ -50,19 +51,42 @@ ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
     return new Promise((resolve, reject) => {
         const fileStream = fs.createWriteStream(filePath);
 
-        http.get(url, (response: any) => {
-            if (response.statusCode === 200) {
-                response.pipe(fileStream);
-                fileStream.on('finish', () => {
-                    fileStream.close();
-                    resolve({ success: true, filePath });
-                });
-            } else {
-                reject({ success: false, message: 'Failed to download PDF' });
-            }
-        }).on('error', (err: any) => {
-            reject({ success: false, message: err.message });
-        });
+        // For prod functions
+        if (url.startsWith('https')) {
+            // Add auth header for GCloud functions - TEMP bearer using jamie's account
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${process.env.GCLOUD_AUTH_BEARER}`,
+                }
+            };
+            https.get(url, options, (response: any) => {
+                if (response.statusCode === 200) {
+                    response.pipe(fileStream);
+                    fileStream.on('finish', () => {
+                        fileStream.close();
+                        resolve({ success: true, filePath });
+                    });
+                } else {
+                    reject({ success: false, message: response.statusMessage });
+                }
+            }).on('error', (err: any) => {
+                reject({ success: false, message: err.message });
+            });
+        } else {
+            http.get(url, (response: any) => {
+                if (response.statusCode === 200) {
+                    response.pipe(fileStream);
+                    fileStream.on('finish', () => {
+                        fileStream.close();
+                        resolve({ success: true, filePath });
+                    });
+                } else {
+                    reject({ success: false, message: 'Failed to download PDF' });
+                }
+            }).on('error', (err: any) => {
+                reject({ success: false, message: err.message });
+            });
+        }
     });
 });
 
@@ -83,22 +107,47 @@ ipcMain.handle(IpcChannels.SaveZIP, async (event, { url, defaultFileName }) => {
         return new Promise((resolve, reject) => {
             const fileStream = fs.createWriteStream(filePath);
 
-            http.get(url, (response: any) => {
-                if (response.statusCode === 200) {
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        resolve({ success: true, filePath });
-                    });
-                } else {
-                    const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
-                    console.error(errMsg);
-                    reject({ success: false, message: errMsg });
-                }
-            }).on('error', (err: any) => {
-                console.error('HTTP Request Error:', err);
-                reject({ success: false, message: err.message });
-            });
+            if (url.startsWith('https')) {
+                // Add auth header for GCloud functions - TEMP bearer using jamie's account
+                const options = {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GCLOUD_AUTH_BEARER}`,
+                    }
+                };
+                https.get(url, options, (response: any) => {
+                    if (response.statusCode === 200) {
+                        response.pipe(fileStream);
+                        fileStream.on('finish', () => {
+                            fileStream.close();
+                            resolve({ success: true, filePath });
+                        });
+                    } else {
+                        const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
+                        console.error(errMsg);
+                        reject({ success: false, message: errMsg });
+                    }
+                }).on('error', (err: any) => {
+                    console.error('HTTP Request Error:', err);
+                    reject({ success: false, message: err.message });
+                });
+            } else {
+                http.get(url, (response: any) => {
+                    if (response.statusCode === 200) {
+                        response.pipe(fileStream);
+                        fileStream.on('finish', () => {
+                            fileStream.close();
+                            resolve({ success: true, filePath });
+                        });
+                    } else {
+                        const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
+                        console.error(errMsg);
+                        reject({ success: false, message: errMsg });
+                    }
+                }).on('error', (err: any) => {
+                    console.error('HTTP Request Error:', err);
+                    reject({ success: false, message: err.message });
+                });
+            };
         });
     }
     catch (e) {

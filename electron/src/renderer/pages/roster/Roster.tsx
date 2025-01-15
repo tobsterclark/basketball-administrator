@@ -162,25 +162,46 @@ const appointmentResources = [
 ];
 
 const downloadRunsheet = async (gameId: string) => {
-    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
+    const devURL = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
+    const prodURL = `https://australia-southeast1-runsheetcontrol.cloudfunctions.net/generaterunsheets?gameId=${gameId}`;
     const defaultFileName = `scoresheet-${gameId}.pdf`;
+    const url = process.env.NODE_ENV === 'development' ? devURL : prodURL;
 
+    const toastId = toast.loading('Downloading PDF...');
     try {
         const result = await window.electron.ipcRenderer.invoke('SavePDF', { url, defaultFileName });
         if (result.success) {
-            toast.success(`PDF saved successfully at ${result.filePath}`);
+            toast.update(toastId, {
+                render: `PDF saved successfully at ${result.filePath}`,
+                type: 'success',
+                isLoading: false,
+                autoClose: 3000,
+            });
         } else {
-            toast.error(`Error: ${result.message}`);
+            toast.update(toastId, {
+                render: `Error: ${result.message}`,
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000,
+            });
         }
     } catch (error) {
         console.error('Error saving PDF:');
         console.error(error);
-        toast.error('An error occurred while saving the PDF.');
+        toast.update(toastId, {
+            render: `An error occurred while saving the ZIP: ${(error as Error).message}`,
+            type: 'error',
+            isLoading: false,
+            autoClose: 3000,
+        });
     }
 };
 
 const downloadMultipleRunsheets = async (gameIds: string[]) => {
-    const url = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=[${gameIds.join(',')}]`;
+    const devURL = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=[${gameIds.join(',')}]`;
+    const prodURL = `https://australia-southeast1-runsheetcontrol.cloudfunctions.net/generaterunsheets?gameIds=[${gameIds.join(',')}]`;
+    const url = process.env.NODE_ENV === 'development' ? devURL : prodURL;
+
     const defaultFileName = `scoresheets.zip`;
 
     const toastId = toast.loading('Downloading ZIP...');
