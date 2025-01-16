@@ -43,6 +43,7 @@ const Dashboard = () => {
                         <div className="absolute w-full ">
                             <div className="overflow-x-auto gap-6 pt-4 pb-4 min-width-max pr-[200px]">
                                 <p className='font-bold text-lg'>Version {appVersion}</p>
+                                <p className='font-bold text-xl'>Wow omg this is the new version</p>
                                 {updateAvailable ? (
                                     <div className='pt-4'>
                                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
