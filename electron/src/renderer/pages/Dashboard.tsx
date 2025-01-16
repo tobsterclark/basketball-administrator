@@ -4,7 +4,7 @@ import PageTitle from '../ui_components/PageTitle';
 import { Button } from '@mui/material';
 
 const Dashboard = () => {
-    const [appVersion, setAppVersion] = useState('0.1.0');
+    const [appVersion, setAppVersion] = useState('0.1.1');
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
@@ -32,6 +32,7 @@ const Dashboard = () => {
                         <div className="absolute w-full ">
                             <div className="overflow-x-auto flex gap-6 pt-4 pb-4 min-width-max pr-[200px]">
                                 <p className='font-bold text-lg'>Version {appVersion}</p>
+                                <p>blah blah</p>
                                 {updateAvailable ? (<p>Update availalbe!</p>) : null}
                                 {updateDownloaded ? (
                                     <div>
