@@ -40,6 +40,7 @@ const Dashboard = () => {
                             <div className="overflow-x-auto flex gap-6 pt-4 pb-4 min-width-max pr-[200px]">
                                 <p className='font-bold text-lg'>Version {appVersion}</p>
                                 <p>MEOW!</p>
+                                <p>woof</p>
                                 {updateAvailable ? (<p>Update availalbe!</p>) : null}
                                 {updateDownloaded ? (
                                     <div>
