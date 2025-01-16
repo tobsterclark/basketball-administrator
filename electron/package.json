@@ -266,8 +266,8 @@
         ],
         "publish": {
             "provider": "github",
-            "owner": "jamiejcole",
-            "repo": "tobsterclark/basketball-administrator"
+            "owner": "tobsterclark",
+            "repo": "basketball-administrator"
         }
     },
     "collective": {
