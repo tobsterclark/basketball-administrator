@@ -4,9 +4,16 @@ import PageTitle from '../ui_components/PageTitle';
 import { Button } from '@mui/material';
 
 const Dashboard = () => {
-    const [appVersion, setAppVersion] = useState('0.1.1');
+    const [appVersion, setAppVersion] = useState('0');
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
+
+    window.electron.ipcRenderer.send('app_version');
+    window.electron.ipcRenderer.on('app_version', (event, arg) => {
+        window.electron.ipcRenderer.removeAllListeners('app_version');
+        setAppVersion(arg.version);
+        console.log('app_version', arg.version);
+    });
 
     window.electron.ipcRenderer.on('update_available', () => {
         window.electron.ipcRenderer.removeAllListeners('update_available');
@@ -32,7 +39,7 @@ const Dashboard = () => {
                         <div className="absolute w-full ">
                             <div className="overflow-x-auto flex gap-6 pt-4 pb-4 min-width-max pr-[200px]">
                                 <p className='font-bold text-lg'>Version {appVersion}</p>
-                                <p>blah blah</p>
+                                <p>MEOW!</p>
                                 {updateAvailable ? (<p>Update availalbe!</p>) : null}
                                 {updateDownloaded ? (
                                     <div>
@@ -46,6 +53,13 @@ const Dashboard = () => {
                                         </Button>
                                     </div>
                                 ) : null}
+                                <Button
+                                            onClick={() => {
+                                                window.electron.ipcRenderer.send('restart_app');
+                                            }}
+                                        >
+                                            Restart now2?
+                                        </Button>
                             </div>
                         </div>
                     </div>
