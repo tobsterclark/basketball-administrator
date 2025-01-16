@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 
 const Dashboard = () => {
+    const [appVersion, setAppVersion] = useState('0.1.1');
+
     return (
         <PageContainer>
             <div>
@@ -13,7 +16,7 @@ const Dashboard = () => {
 						<hr className="w-[125px]"></hr> */}
                         <div className="absolute w-full ">
                             <div className="overflow-x-auto flex gap-6 pt-4 pb-4 min-width-max pr-[200px]">
-                                <p className='font-bold text-lg'>Version 0.1.0</p>
+                                <p className='font-bold text-lg'>Version {appVersion}</p>
                             </div>
                         </div>
                     </div>
