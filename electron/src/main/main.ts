@@ -25,6 +25,12 @@ class AppUpdater {
     constructor() {
         log.transports.file.level = 'debug';
         autoUpdater.logger = log;
+        autoUpdater.setFeedURL({
+            provider: 'github',
+            owner: 'tobsterclark',
+            repo: 'basketball-administrator',
+            token: process.env.GH_TOKEN
+        })
         autoUpdater.checkForUpdatesAndNotify();
     }
 }
