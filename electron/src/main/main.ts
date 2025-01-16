@@ -21,13 +21,13 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 
-class AppUpdater {
-    constructor() {
-        log.transports.file.level = 'info';
-        autoUpdater.logger = log;
-        autoUpdater.checkForUpdatesAndNotify();
-    }
-}
+// class AppUpdater {
+//     constructor() {
+//         log.transports.file.level = 'info';
+//         autoUpdater.logger = log;
+//         autoUpdater.checkForUpdatesAndNotify();
+//     }
+// }
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -237,8 +237,23 @@ const createWindow = async () => {
 
     // Remove this if your app does not use auto updates
     // eslint-disable-next-line
-    new AppUpdater();
+    // new AppUpdater();
+    mainWindow.once('ready-to-show', () => {
+        autoUpdater.checkForUpdatesAndNotify();
+    });
 };
+
+autoUpdater.on('update-available', () => {
+    mainWindow?.webContents.send('update_available');
+});
+
+autoUpdater.on('update-downloaded', () => {
+    mainWindow?.webContents.send('update_downloaded');
+});
+
+ipcMain.on('restart_app', () => {
+    autoUpdater.quitAndInstall();
+});
 
 /**
  * Add event listeners...
