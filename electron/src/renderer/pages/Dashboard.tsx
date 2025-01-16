@@ -41,6 +41,7 @@ const Dashboard = () => {
                                 <p className='font-bold text-lg'>Version {appVersion}</p>
                                 <p>dolphin</p>
                                 <p>monkey</p>
+                                <p>banana</p>
                                 {updateAvailable ? (<p>Update availalbe!</p>) : null}
                                 {updateDownloaded ? (
                                     <div>
