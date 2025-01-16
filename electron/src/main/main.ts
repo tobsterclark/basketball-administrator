@@ -21,13 +21,13 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 
-// class AppUpdater {
-//     constructor() {
-//         log.transports.file.level = 'info';
-//         autoUpdater.logger = log;
-//         autoUpdater.checkForUpdatesAndNotify();
-//     }
-// }
+class AppUpdater {
+    constructor() {
+        log.transports.file.level = 'debug';
+        autoUpdater.logger = log;
+        autoUpdater.checkForUpdatesAndNotify();
+    }
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -236,11 +236,11 @@ const createWindow = async () => {
     });
 
     // Remove this if your app does not use auto updates
-    // eslint-disable-next-line
-    // new AppUpdater();
-    mainWindow.once('ready-to-show', () => {
-        autoUpdater.checkForUpdatesAndNotify();
-    });
+    
+    new AppUpdater();
+    // mainWindow.once('ready-to-show', () => {
+    //     autoUpdater.checkForUpdatesAndNotify();
+    // });
 };
 
 autoUpdater.on('update-available', () => {
