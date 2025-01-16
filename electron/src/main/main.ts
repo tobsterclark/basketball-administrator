@@ -249,8 +249,12 @@ const createWindow = async () => {
     // });
 };
 
-autoUpdater.on('update-available', () => {
-    mainWindow?.webContents.send('update_available');
+autoUpdater.on('update-available', (updateInfo) => {
+    mainWindow?.webContents.send('update_available', {
+        version: updateInfo.version,
+        releaseNotes: updateInfo.releaseNotes,
+        releaseName: updateInfo.releaseName,
+    });
 });
 
 autoUpdater.on('update-downloaded', () => {
