@@ -32,3 +32,4 @@ npm-debug.log.*
 *.scss.d.ts
 
 renderer.env
+electron-builder.yml

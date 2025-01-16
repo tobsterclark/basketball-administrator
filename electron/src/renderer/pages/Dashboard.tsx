@@ -4,7 +4,7 @@ import PageTitle from '../ui_components/PageTitle';
 import { Button } from '@mui/material';
 
 const Dashboard = () => {
-    const [appVersion, setAppVersion] = useState('0.1.2');
+    const [appVersion, setAppVersion] = useState('0.1.0');
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
