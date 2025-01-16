@@ -36,11 +36,13 @@ You will need to authenticate your npm with Github to download the standard ORM 
 
 ## Packaging a electron build
 > NOTE: MacOS currently not supported.
-Sometimes the `npm run package` command fails, this is fine, just re-run it and it will compile. Make sure you:
-1. Run `npm ci --legacy-peer-deps`
-2. Ensure you have the following info in your `.env` file.
-3. Check the build works with `npm start`
-4. Package a build with `npm run package`.
+
+1. Ensure you have the following info in your `.env` file.
+2. Check the build works with `npm start`
+3. Bump the `package.json` versions with `npm run bump-version <x.x.x>`
+4. Package and deploy the release with `npm run package`
+5. Publish the release in GitHub releases
+6. Open the NSBL Manager app and it should prompt an update.
 
 ## .env file
 You need to have a .env file in each directory with with the following lines:
