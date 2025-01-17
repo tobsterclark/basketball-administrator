@@ -17,6 +17,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { IpcChannels } from '../general/IpcChannels';
 import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
+import { GoogleAuth } from 'google-auth-library';
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -53,18 +54,27 @@ ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
         return { success: false, message: 'User cancelled save dialog' };
     }
 
+    const auth = new GoogleAuth({
+        keyFile: path.join(__dirname, '../../runsheetcontrol-e5e8685ae733.json'),
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const client = await auth.getClient();
+    const token = await client.getAccessToken();
+    console.log('Access Token:', token.token);
+
     // Download PDF and save
     return new Promise((resolve, reject) => {
         const fileStream = fs.createWriteStream(filePath);
 
+        const options = {
+            headers: {
+                Authorization: `Bearer ${token.token}`
+            }
+        }
+
         // For prod functions
         if (url.startsWith('https')) {
-            // Add auth header for GCloud functions - TEMP bearer using jamie's account
-            const options = {
-                headers: {
-                    Authorization: `Bearer ${process.env.GCLOUD_AUTH_BEARER}`,
-                }
-            };
             https.get(url, options, (response: any) => {
                 if (response.statusCode === 200) {
                     response.pipe(fileStream);
@@ -73,7 +83,7 @@ ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
                         resolve({ success: true, filePath });
                     });
                 } else {
-                    reject({ success: false, message: response.statusMessage });
+                    reject({ success: false, message: `HTTP ${response.statusCode}` });
                 }
             }).on('error', (err: any) => {
                 reject({ success: false, message: err.message });

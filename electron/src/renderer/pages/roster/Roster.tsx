@@ -168,7 +168,9 @@ const downloadRunsheet = async (gameId: string) => {
     const devURL = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
     const prodURL = `https://australia-southeast1-runsheetcontrol.cloudfunctions.net/generaterunsheets?gameId=${gameId}`;
     const defaultFileName = `scoresheet-${gameId}.pdf`;
-    const url = process.env.NODE_ENV === 'development' ? devURL : prodURL;
+    const url = process.env.NODE_ENV !== 'development' ? devURL : prodURL;
+    console.log('url:');
+    console.log(url);
 
     const toastId = toast.loading('Downloading PDF...');
     try {
