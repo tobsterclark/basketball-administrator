@@ -1,3 +1,4 @@
+/* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
@@ -17,7 +18,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { IpcChannels } from '../general/IpcChannels';
 import { handleIpcPrismaCalls } from './prisma/prismaIpcRenderer';
-import { GoogleAuth } from 'google-auth-library';
+import { savePDF, saveZIP } from './api/PDF';
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -30,8 +31,8 @@ class AppUpdater {
             provider: 'github',
             owner: 'tobsterclark',
             repo: 'basketball-administrator',
-            token: process.env.GH_TOKEN
-        })
+            token: process.env.GH_TOKEN,
+        });
         autoUpdater.checkForUpdatesAndNotify();
     }
 }
@@ -42,138 +43,13 @@ let mainWindow: BrowserWindow | null = null;
 // implementation should be in a separate file
 ipcMain.handle(IpcChannels.PrismaClient, handleIpcPrismaCalls);
 
-ipcMain.handle(IpcChannels.SavePDF, async (event, { url, defaultFileName }) => {
-    // Open Save As Dialog
-    const { filePath } = await dialog.showSaveDialog({
-        title: 'Save PDF',
-        defaultPath: path.join(app.getPath('downloads'), defaultFileName),
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
-    });
-
-    if (!filePath) {
-        return { success: false, message: 'User cancelled save dialog' };
-    }
-
-    const auth = new GoogleAuth({
-        keyFile: path.join(__dirname, '../../runsheetcontrol-e5e8685ae733.json'),
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    });
-
-    const client = await auth.getClient();
-    const token = await client.getAccessToken();
-    console.log('Access Token:', token.token);
-
-    // Download PDF and save
-    return new Promise((resolve, reject) => {
-        const fileStream = fs.createWriteStream(filePath);
-
-        const options = {
-            headers: {
-                Authorization: `Bearer ${token.token}`
-            }
-        }
-
-        // For prod functions
-        if (url.startsWith('https')) {
-            https.get(url, options, (response: any) => {
-                if (response.statusCode === 200) {
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        resolve({ success: true, filePath });
-                    });
-                } else {
-                    reject({ success: false, message: `HTTP ${response.statusCode}` });
-                }
-            }).on('error', (err: any) => {
-                reject({ success: false, message: err.message });
-            });
-        } else {
-            http.get(url, (response: any) => {
-                if (response.statusCode === 200) {
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        resolve({ success: true, filePath });
-                    });
-                } else {
-                    reject({ success: false, message: 'Failed to download PDF' });
-                }
-            }).on('error', (err: any) => {
-                reject({ success: false, message: err.message });
-            });
-        }
-    });
+ipcMain.handle(IpcChannels.SavePDF, async (_, { gameId, defaultFileName }) => {
+    return savePDF(gameId, defaultFileName);
 });
 
-ipcMain.handle(IpcChannels.SaveZIP, async (event, { url, defaultFileName }) => {
-    // Open Save As Dialog
-    try {
-        const { filePath } = await dialog.showSaveDialog({
-            title: 'Save ZIP',
-            defaultPath: path.join(app.getPath('downloads'), defaultFileName),
-            filters: [{ name: 'ZIP Files', extensions: ['zip'] }],
-        });
-
-        if (!filePath) {
-            return { success: false, message: 'User cancelled save dialog' };
-        }
-
-        // Download ZIP and save
-        return new Promise((resolve, reject) => {
-            const fileStream = fs.createWriteStream(filePath);
-
-            if (url.startsWith('https')) {
-                // Add auth header for GCloud functions - TEMP bearer using jamie's account
-                const options = {
-                    headers: {
-                        Authorization: `Bearer ${process.env.GCLOUD_AUTH_BEARER}`,
-                    }
-                };
-                https.get(url, options, (response: any) => {
-                    if (response.statusCode === 200) {
-                        response.pipe(fileStream);
-                        fileStream.on('finish', () => {
-                            fileStream.close();
-                            resolve({ success: true, filePath });
-                        });
-                    } else {
-                        const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
-                        console.error(errMsg);
-                        reject({ success: false, message: errMsg });
-                    }
-                }).on('error', (err: any) => {
-                    console.error('HTTP Request Error:', err);
-                    reject({ success: false, message: err.message });
-                });
-            } else {
-                http.get(url, (response: any) => {
-                    if (response.statusCode === 200) {
-                        response.pipe(fileStream);
-                        fileStream.on('finish', () => {
-                            fileStream.close();
-                            resolve({ success: true, filePath });
-                        });
-                    } else {
-                        const errMsg = `Failed to download ZIP: ${response.statusCode} ${response.statusMessage}`;
-                        console.error(errMsg);
-                        reject({ success: false, message: errMsg });
-                    }
-                }).on('error', (err: any) => {
-                    console.error('HTTP Request Error:', err);
-                    reject({ success: false, message: err.message });
-                });
-            };
-        });
-    }
-    catch (e) {
-        console.error("Error in SaveZIP handler:");
-        console.error(e);
-        return { success: false, message: (e instanceof Error) ? e.message : 'Unknown error' };
-    }
+ipcMain.handle(IpcChannels.SaveZIP, async (_, { gameIds, defaultFileName }) => {
+    return saveZIP(gameIds, defaultFileName);
 });
-
-
 
 if (process.env.NODE_ENV === 'production') {
     const sourceMapSupport = require('source-map-support');
@@ -252,7 +128,7 @@ const createWindow = async () => {
     });
 
     // Remove this if your app does not use auto updates
-    
+
     new AppUpdater();
     // mainWindow.once('ready-to-show', () => {
     //     autoUpdater.checkForUpdatesAndNotify();

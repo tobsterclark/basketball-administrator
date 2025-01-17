@@ -165,17 +165,12 @@ const appointmentResources = [
 ];
 
 const downloadRunsheet = async (gameId: string) => {
-    const devURL = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameId=${gameId}`;
-    const prodURL = `https://australia-southeast1-runsheetcontrol.cloudfunctions.net/generaterunsheets?gameId=${gameId}`;
     const defaultFileName = `scoresheet-${gameId}.pdf`;
-    const url = process.env.NODE_ENV !== 'development' ? devURL : prodURL;
-    console.log('url:');
-    console.log(url);
 
     const toastId = toast.loading('Downloading PDF...');
     try {
         const result = await window.electron.ipcRenderer.invoke('SavePDF', {
-            url,
+            gameId,
             defaultFileName,
         });
         console.log('result:');
@@ -210,20 +205,12 @@ const downloadRunsheet = async (gameId: string) => {
 };
 
 const downloadMultipleRunsheets = async (gameIds: string[]) => {
-    const devURL = `http://127.0.0.1:5001/runsheetcontrol/australia-southeast1/generaterunsheets?gameIds=[${gameIds.join(
-        ',',
-    )}]`;
-    const prodURL = `https://australia-southeast1-runsheetcontrol.cloudfunctions.net/generaterunsheets?gameIds=[${gameIds.join(
-        ',',
-    )}]`;
-    const url = process.env.NODE_ENV === 'development' ? devURL : prodURL;
-
     const defaultFileName = `scoresheets.zip`;
 
     const toastId = toast.loading('Downloading ZIP...');
     try {
         const result = await window.electron.ipcRenderer.invoke('SaveZIP', {
-            url,
+            gameIds,
             defaultFileName,
         });
         if (result.success) {
