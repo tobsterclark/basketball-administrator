@@ -264,6 +264,7 @@
     },
     "extraResources": [
       "./assets/**",
+      "./runsheetcontrol-e5e8685ae733.json",
       "node_modules/.prisma/**/*",
       "node_modules/@prisma/client/**/*"
     ],
