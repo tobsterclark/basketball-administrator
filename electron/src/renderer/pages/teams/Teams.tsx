@@ -32,6 +32,14 @@ import {
 } from './components/Types';
 import { TeamSearch } from './components/TeamSearch';
 
+const toTitleCase = (str: string) => {
+    return str
+        .toLowerCase()
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 const Teams = () => {
     const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
         new Map(),
@@ -371,7 +379,7 @@ const Teams = () => {
                                             key={ageGroup.id}
                                             value={ageGroup.id}
                                         >
-                                            {ageGroup.displayName}
+                                            {toTitleCase(ageGroup.displayName)}
                                         </MenuItem>
                                     ))}
                                 </Select>

@@ -34,6 +34,14 @@ import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
 import { toast } from 'react-toastify';
 
+const toTitleCase = (str: string) => {
+    return str
+        .toLowerCase()
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
@@ -497,7 +505,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                                 .filter((ageGroup) => ageGroup.displayName !== "None")
                                 .map((ageGroup) => (
                                     <MenuItem key={ageGroup.id} value={ageGroup.id}>
-                                        {ageGroup.displayName}
+                                        {toTitleCase(ageGroup.displayName)}
                                     </MenuItem>
                             ))}
                         </Select>
