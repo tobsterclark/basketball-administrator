@@ -51,7 +51,27 @@ const App = () => {
             .invoke(IpcChannels.PrismaClient, ageGroupRequest)
             .then((data) => {
                 const ages = data as AgeGroupDataResponse[];
-                setAgeGroups(ages);
+                try {
+                    const sorted = ages.sort((a, b) => {
+                        const parseYear = (displayName: string) => {
+                            const parts = displayName.split(' ');
+                            if (parts.length > 1) {
+                                const yearPart = parts[1].split('/')[0];
+                                return parseInt(yearPart, 10);
+                            }
+                            return 0; // Default value for non-matching displayNames
+                        };
+                    
+                        const aYear = a.displayName ? parseYear(a.displayName) : 0;
+                        const bYear = b.displayName ? parseYear(b.displayName) : 0;
+                        return aYear - bYear;
+                    });
+                    setAgeGroups(sorted);
+                } catch (e) {
+                    console.error('Error sorting age groups', e);
+                    console.error(ages);
+                    setAgeGroups(ages);
+                }
             });
 
         window.electron.ipcRenderer

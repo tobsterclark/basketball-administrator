@@ -162,6 +162,14 @@ const handleSelectInput = (
     );
 };
 
+const toTitleCase = (str: string) => {
+    return str
+        .toLowerCase()
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 const renderSelectInput = (
     timeSlotId: string,
     ageGroups: AgeGroupDataResponse[],
@@ -200,7 +208,7 @@ const renderSelectInput = (
             >
                 {ageGroups.map((ageGroup) => (
                     <MenuItem key={ageGroup.id} value={ageGroup.id}>
-                        {ageGroup.displayName}
+                        {toTitleCase(ageGroup.displayName)}
                     </MenuItem>
                 ))}
                 <MenuItem value="noEvent">No Event</MenuItem>
@@ -357,6 +365,7 @@ const WeekTabPanel = (
 
 export const TermSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
+
     const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [loading, setLoading] = useState(true);
@@ -365,11 +374,6 @@ export const TermSetup = (props: PlayerDataProps) => {
     const [modifiedTimeSlots, setModifiedTimeSlots] = useState<
         timeSlotParams[]
     >([]);
-
-    const printDbTimeSlots = () => {
-        console.log('DB Time Slots:');
-        console.log(dbTimeSlots);
-    };
 
     const uploadChanges = () => {
         const timeSlotsToUpdate = modifiedTimeSlots.filter(
