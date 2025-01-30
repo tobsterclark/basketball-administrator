@@ -13,6 +13,7 @@ import {
     WrenchIcon,
 } from '@heroicons/react/24/solid';
 import Logo from '../../../assets/LogoUI.png';
+import { CakeIcon } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
     const locationPathName = useLocation().pathname;
@@ -76,6 +77,11 @@ const Navbar = () => {
                 link: '/teams',
                 icon: <ArrowTrendingUpIcon className={iconStyle} />,
             },
+            {
+                name: 'Age Groups',
+                link: '/agegroups',
+                icon: <CakeIcon className={iconStyle} />,
+            }
         ];
 
         return (

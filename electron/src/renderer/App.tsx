@@ -19,6 +19,7 @@ import Roster from './pages/roster/Roster';
 import TermSetup from './pages/termsetup/TermSetup';
 import GameSetup from './pages/gamesetup/GameSetup';
 import GameResults from './pages/gameresults/GameResults';
+import AgeGroups from './pages/agegroups/AgeGroups';
 
 const App = () => {
     // TODO: get players here as well
@@ -29,7 +30,8 @@ const App = () => {
 
     // TODO: Do this in a separate function and use an app wide state instead of passing to components
     // Gets all age groups and team names for dropdowns on mount, ignores duplicates
-    useEffect(() => {
+
+    const getAgeGroups = () => {
         const ageGroupRequest: PrismaCall = {
             model: ModelName.ageGroup,
             operation: CrudOperations.findMany,
@@ -77,6 +79,9 @@ const App = () => {
                 setTeams(dataAllTeamNames);
             });
 
+    }
+    useEffect(() => {
+        getAgeGroups();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -102,6 +107,12 @@ const App = () => {
                         }
                     />
                     <Route path="teams" element={<Teams />} />
+                    <Route
+                        path="agegroups"
+                        element={
+                            <AgeGroups ageGroups={ageGroups} getAgeGroups={getAgeGroups} />
+                        }
+                    />
                 </Route>
             </Routes>
             <ToastContainer autoClose={3500} />

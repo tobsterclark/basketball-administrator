@@ -23,14 +23,15 @@ export type GameDataResponse = Prisma.GameGetPayload<{
 // Sub component prop interfaces
 
 export interface PlayerDataProps {
-    player: PlayerCache | null;
-    updatePlayer: Dispatch<SetStateAction<PlayerCache | null>>;
-    teams: TeamDataResponse[];
+    player?: PlayerCache | null;
+    updatePlayer?: Dispatch<SetStateAction<PlayerCache | null>>;
+    teams?: TeamDataResponse[];
     ageGroups: AgeGroupDataResponse[];
-    isCreatingNewPlayer: boolean;
-    onCancel: () => void;
-    onValidSave: (player: PlayerCache) => void;
-    deletePlayer: () => void;
+    getAgeGroups?: () => void;
+    isCreatingNewPlayer?: boolean;
+    onCancel?: () => void;
+    onValidSave?: (player: PlayerCache) => void;
+    deletePlayer?: () => void;
 }
 
 export interface PlayerSearchProps {
