@@ -43,7 +43,13 @@ const Navbar = () => {
             {
                 name: 'Roster',
                 link: '/roster',
-                icon: <CalendarDaysIcon className={iconStyle} />,
+                icon: <CalendarDaysIcon className={`${iconStyle}`} />,
+            },
+            // Divider
+            {
+                name: '',
+                link: '',
+                icon: <hr className='w-full border-t border-gray-300'/>,
             },
             {
                 name: 'Term Setup',
@@ -54,6 +60,11 @@ const Navbar = () => {
                 name: 'Game Setup',
                 link: '/game-setup',
                 icon: <LifebuoyIcon className={iconStyle} />,
+            },
+            {
+                name: '',
+                link: '',
+                icon: <hr className='w-full border-t border-gray-300'/>,
             },
             {
                 name: 'Players',
@@ -70,6 +81,14 @@ const Navbar = () => {
         return (
             <div className={divStyle}>
                 {linkList.map((value, index) => {
+                    if (value.name === '') {
+                        return (
+                            <div key={index} className="my-1">
+                                {value.icon}
+                            </div>
+                        );
+                    }
+
                     let fullLinkStyle = linkStyle;
                     fullLinkStyle += ` rounded-lg text-slate-950 ${
                         locationPathName === value.link
@@ -77,12 +96,14 @@ const Navbar = () => {
                             : 'hover:bg-gray-100 bg-transparent'
                     }`;
 
+                    const customMargin = 'my-2';
+
                     return (
                         <Link
                             to={value.link}
                             // eslint-disable-next-line react/no-array-index-key
                             key={index}
-                            className={fullLinkStyle}
+                            className={`${fullLinkStyle} ${customMargin}`}
                         >
                             {value.icon}
                             <span className={textStyle}>{value.name}</span>
@@ -103,7 +124,7 @@ const Navbar = () => {
                 </h1> */}
                 <img src={Logo} alt="logo" className="h-24 pl-4" />
             </div>
-            {links('flex flex-col gap-8', 'flex gap-3 p-2', 'w-6 h-6', '')}
+            {links('flex flex-col gap-2', 'flex gap-3 p-2', 'w-6 h-6', '')}
             <button
                 type="button"
                 // onClick={() => {
