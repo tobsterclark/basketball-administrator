@@ -1,4 +1,4 @@
-import { Button, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import PageContainer from "../../ui_components/PageContainer";
 import PageTitle from "../../ui_components/PageTitle";
 import { AgeGroupDataResponse, PlayerDataProps } from "../players/components/Types";
@@ -41,7 +41,7 @@ export const AgeGroups = (props: PlayerDataProps) => {
         }
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, prismaCall)
-            .then((data) => {
+            .then(() => {
                 // update ageGroups state to exclude the deleted ageGroup
                 const updatedAgeGroups = ageGroups.filter(group => group.id !== deletePopupId);
                 setAgeGroups(updatedAgeGroups);
