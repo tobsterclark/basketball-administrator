@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, styled } from '@mui/material';
 import {
     Scheduler,
@@ -25,6 +25,8 @@ import React from 'react';
 import { PlayerDataProps } from '../players/components/Types';
 import { toast } from 'react-toastify';
 import { ArrowDownOnSquareStackIcon } from '@heroicons/react/24/solid';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -364,6 +366,50 @@ const Roster = (props: PlayerDataProps) => {
     const [allEvents, setAllEvents] = useState<Event[]>([]);
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
 
+    // PDF rendering
+    const componentRef = useRef<HTMLDivElement>(null);
+    const handleDownloadCalendar = async () => {
+        const element = componentRef.current;
+    
+        if (!element) return;
+    
+        const canvas = await html2canvas(element, { scale: 2 });
+    
+        // Create a temporary canvas for grayscale conversion
+        const tempCanvas = document.createElement("canvas");
+        const ctx = tempCanvas.getContext("2d");
+    
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+    
+        // Draw the original canvas onto the temp canvas
+        if (ctx) {
+            ctx.drawImage(canvas, 0, 0);
+        
+            // Convert image to grayscale
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3; // Average RGB
+                data[i] = avg;      // Red
+                data[i + 1] = avg;  // Green
+                data[i + 2] = avg;  // Blue
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+    
+        // Convert to image and add to PDF
+        const imgData = tempCanvas.toDataURL("image/png");
+    
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgWidth = 200; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+        pdf.save("Runsheet.pdf"); // Triggers save-as dialog
+    };
+    
+
     const getGameCountForDate = (date: Date) => {
         return allGames.filter((game) => {
             const gameDate = new Date(game.timeslot.date);
@@ -440,7 +486,7 @@ const Roster = (props: PlayerDataProps) => {
         <PageContainer>
             <PageTitle text="Roster" />
             <div className="flex gap-6 h-full">
-                <div className="w-3/5">
+                <div className="w-3/5" ref={componentRef}>
                     <Scheduler data={allEvents}>
                         <ViewState
                             defaultCurrentDate={new Date(2025, 1, 9)}
@@ -490,19 +536,31 @@ const Roster = (props: PlayerDataProps) => {
                         {getGameCountForDate(currentDate)} games across all
                         venues and courts.
                     </p>
-                    <Button
-                        variant="contained"
-                        size="medium"
-                        className="flex items-center"
-                        onClick={async () =>
-                            await downloadMultipleRunsheets(
-                                getGameIdsForDate(currentDate),
-                            )
-                        }
-                    >
-                        Download Scoresheets
-                        <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
-                    </Button>
+                    <div>
+                        <Button
+                            variant="contained"
+                            size="medium"
+                            className="flex items-center"
+                            onClick={async () =>
+                                await downloadMultipleRunsheets(
+                                    getGameIdsForDate(currentDate),
+                                )
+                            }
+                        >
+                            Download Scoresheets
+                            <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
+                        </Button>
+                    </div>
+                    <div className='pt-4'>
+                        <Button
+                            variant="contained"
+                            size="medium"
+                            className="flex items-center"
+                            onClick={handleDownloadCalendar}
+                        >
+                            Download Runsheet
+                        </Button>
+                    </div>
                 </div>
             </div>
         </PageContainer>
