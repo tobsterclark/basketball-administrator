@@ -185,33 +185,28 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 
   // Fill in light players
   try {
-    game.lightTeam.players.forEach((player, index) => {
-      form.getTextField(`white_player_${index + 1}`).setText(player.firstName);
-      form
-        .getTextField(`white_num_${index + 1}`)
-        .setText(player.number?.toString());
-    });
-  }
-  catch (e) {
-    console.error('Error filling in light players:');
-    console.error(game.lightTeam.players);
-    console.error(e);
+      const sortedLightPlayers = game.lightTeam.players.sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+      sortedLightPlayers.forEach((player, index) => {
+          form.getTextField(`white_player_${index + 1}`).setText(player.firstName);
+          form.getTextField(`white_num_${index + 1}`).setText(player.number?.toString());
+      });
+  } catch (e) {
+      console.error('Error filling in light players:');
+      console.error(game.lightTeam.players);
+      console.error(e);
   }
   
-
   // Fill in dark players
   try {
-    game.darkTeam.players.forEach((player, index) => {
-      form.getTextField(`black_player_${index + 1}`).setText(player.firstName);
-      form
-        .getTextField(`black_num_${index + 1}`)
-        .setText(player.number?.toString());
-    });
-  }
-  catch (e) {
-    console.error('Error filling in dark players:');
-    console.error(game.darkTeam.players);
-    console.error(e);
+      const sortedDarkPlayers = game.darkTeam.players.sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+      sortedDarkPlayers.forEach((player, index) => {
+          form.getTextField(`black_player_${index + 1}`).setText(player.firstName);
+          form.getTextField(`black_num_${index + 1}`).setText(player.number?.toString());
+      });
+  } catch (e) {
+      console.error('Error filling in dark players:');
+      console.error(game.darkTeam.players);
+      console.error(e);
   }
   form.flatten();
 
