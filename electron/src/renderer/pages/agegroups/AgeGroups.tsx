@@ -14,26 +14,54 @@ export const AgeGroups = (props: PlayerDataProps) => {
     const getAgeGroups = props.getAgeGroups;
     const [ageGroups, setAgeGroups] = useState(props.ageGroups);
     const [modifiedAgeGroups, setModifiedAgeGroups] = useState(ageGroups);
-    console.log(ageGroups);
+    const [deletePopupId, setDeletePopupId] = useState('');
 
     const cancel = () => {
         setModifiedAgeGroups(ageGroups);
     }
 
     const addAgeGroup = () => {
+        const i = modifiedAgeGroups.length - ageGroups.length + 1;
         const newAgeGroup = {
-            id: 'new',
+            id: `new${i}`,
             displayName: '',
         };
         setModifiedAgeGroups([...modifiedAgeGroups, newAgeGroup]);
     }
 
+    const handleDelete = () => {
+        const prismaCall: PrismaCall = {
+            model: ModelName.ageGroup,
+            operation: CrudOperations.delete,
+            data: {
+                where: {
+                    id: deletePopupId,
+                },
+            },
+        }
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, prismaCall)
+            .then((data) => {
+                // update ageGroups state to exclude the deleted ageGroup
+                const updatedAgeGroups = ageGroups.filter(group => group.id !== deletePopupId);
+                setAgeGroups(updatedAgeGroups);
+                setModifiedAgeGroups(updatedAgeGroups);
+                setDeletePopupId('');
+                if (getAgeGroups) {
+                    getAgeGroups();
+                }
+                toast.success(`Age Group deleted!`);
+            });
+    }
+
     const handleSave = () => {
-        console.log('same lengths');
+        const updatedAgeGroups = [...ageGroups];
+        const newAgeGroups = modifiedAgeGroups.filter(group => group.id.startsWith('new'));
+    
+        // Update existing age groups
         ageGroups.forEach((ageGroup) => {
             const modifiedAgeGroup = modifiedAgeGroups.find(group => group.id === ageGroup.id);
             if (modifiedAgeGroup && modifiedAgeGroup.displayName !== ageGroup.displayName) {
-                console.log(`ageGroup ${ageGroup.displayName} has been modified to ${modifiedAgeGroup.displayName}`);
                 const prismaCall: PrismaCall = {
                     model: ModelName.ageGroup,
                     operation: CrudOperations.update,
@@ -45,35 +73,25 @@ export const AgeGroups = (props: PlayerDataProps) => {
                             displayName: modifiedAgeGroup.displayName,
                         },
                     },
-                }
+                };
                 window.electron.ipcRenderer
                     .invoke(IpcChannels.PrismaClient, prismaCall)
                     .then((data) => {
-                        console.log("updated data!!!:");
-                        console.log(data);
-                        // update ageGroups state to include the modified ageGroup
-                        const updatedAgeGroups = ageGroups.map((group) => {
-                            if (group.id === ageGroup.id) {
-                                return {
-                                    ...group,
-                                    displayName: modifiedAgeGroup.displayName,
-                                };
-                            }
-                            return group;
-                        });
-                        setAgeGroups(updatedAgeGroups);
-                        setModifiedAgeGroups(updatedAgeGroups);
-                        if (getAgeGroups) {
-                            getAgeGroups();
+                        // Update the ageGroups state to include the modified ageGroup
+                        const index = updatedAgeGroups.findIndex(group => group.id === ageGroup.id);
+                        if (index !== -1) {
+                            updatedAgeGroups[index] = {
+                                ...updatedAgeGroups[index],
+                                displayName: modifiedAgeGroup.displayName,
+                            };
                         }
                         toast.success(`${modifiedAgeGroup.displayName} updated!`);
                     });
             }
         });
-        // add new age groups
-        const newAgeGroups = modifiedAgeGroups.filter(group => group.id === 'new');
+    
+        // Add new age groups
         newAgeGroups.forEach((newAgeGroup) => {
-            console.log(`adding new age group ${newAgeGroup.displayName}`);
             const prismaCall: PrismaCall = {
                 model: ModelName.ageGroup,
                 operation: CrudOperations.create,
@@ -82,22 +100,59 @@ export const AgeGroups = (props: PlayerDataProps) => {
                         displayName: newAgeGroup.displayName,
                     },
                 },
-            }
+            };
             window.electron.ipcRenderer
                 .invoke(IpcChannels.PrismaClient, prismaCall)
                 .then((data) => {
-                    console.log("created data!!!:");
-                    console.log(data);
-                    // update ageGroups state to include the modified ageGroup
-                    const updatedAgeGroups = [...ageGroups, data as AgeGroupDataResponse];
-                    setAgeGroups(updatedAgeGroups);
-                    setModifiedAgeGroups(updatedAgeGroups);
-                    if (getAgeGroups) {
-                        getAgeGroups();
-                    }
+
+                    // Update the ageGroups state to include the new ageGroup
+                    updatedAgeGroups.push(data as AgeGroupDataResponse);
                     toast.success(`${newAgeGroup.displayName} added!`);
                 });
         });
+    
+        // Update the state after all operations
+        setAgeGroups(updatedAgeGroups);
+        setModifiedAgeGroups(updatedAgeGroups);
+    
+        // Optionally, refresh the age groups from the database
+        if (getAgeGroups) {
+            getAgeGroups();
+        }
+    };
+
+    const deletePopup = () => {
+        const ageGroupDisplayName = ageGroups.find(group => group.id === deletePopupId)?.displayName;
+        return (
+            <div className='pt-4'>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
+                        <h2 className="text-xl font-semibold mb-4">Delete Age Group?</h2>
+                        
+                        <div>
+                            <p className="text-gray-600 pt-1 mb-6">
+                                Are you sure you want to delete <span className="font-bold">{ageGroupDisplayName}</span>? This action cannot be undone.
+                            </p>
+                            <div className='flex gap-4 justify-center font-semibold'>
+                                <button 
+                                    className="px-6 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+                                    onClick={() => setDeletePopupId('')}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                                    onClick={() => handleDelete()}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        )
     }
 
 
@@ -112,7 +167,7 @@ export const AgeGroups = (props: PlayerDataProps) => {
                         return (
                             <div key={ageGroup.id} className="flex flex-row gap-4">
                                 <div className="w-1/2">
-                                    {ageGroup.id !== 'new' ? (
+                                    {!ageGroup.id.startsWith('new') ? (
                                         <div>
                                             <TextField 
                                                 variant="filled" 
@@ -151,7 +206,10 @@ export const AgeGroups = (props: PlayerDataProps) => {
                                         <div>
                                             {isChanged ? 
                                                 <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500 animate-ping" /> : 
-                                                <TrashIcon className="w-6 h-6 text-red-500 hover:cursor-pointer hover:text-red-800" />
+                                                <TrashIcon 
+                                                    className="w-6 h-6 text-red-500 hover:cursor-pointer hover:text-red-800"
+                                                    onClick={() => setDeletePopupId(ageGroup.id)}
+                                                />
                                             }
                                         </div>
                                     </div>
@@ -159,6 +217,11 @@ export const AgeGroups = (props: PlayerDataProps) => {
                             </div>
                         );
                     })}
+                
+                {deletePopupId !== "" ? (
+                    deletePopup()
+                ) : null}
+
                 <div className="w-2/3 pt-2 flex items-center justify-center">
                     <Button size="large" variant="contained" color="primary" onClick={addAgeGroup} >Add Age Group</Button>
                 </div>
