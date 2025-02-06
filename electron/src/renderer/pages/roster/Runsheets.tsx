@@ -5,13 +5,17 @@ import { AppointmentEvent, PlayerDataProps, RosterDataProps } from "../players/c
 import { Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { ArrowLongLeftIcon } from "@heroicons/react/24/solid";
 import { useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
 
 const Runsheets = (props: PlayerDataProps & RosterDataProps) => {
-    const { ageGroups, allEvents, setAllEvents } = props;
+    const { ageGroups, allEvents, allGames } = props;
     const navigate = useNavigate();
+
+    const getNewTitle = (gameId: string) => {
+        const game = allGames.find((game) => game.id === gameId);
+        if (!game) return "Unknown";
+        return `${game.lightTeam.name} (W) vs ${game.darkTeam.name} (B)`;
+    }
 
     const newAllEvents = allEvents.filter(event => {
         const eventDate = new Date(event.startDate);
@@ -83,7 +87,7 @@ const Runsheets = (props: PlayerDataProps & RosterDataProps) => {
                                         })}
                                         </TableCell>
                                         <TableCell>{`Court ${event.court}`}</TableCell>
-                                        <TableCell>{event.title}</TableCell>
+                                        <TableCell>{getNewTitle(event.id)}</TableCell>
                                     </TableRow>
                                     ))}
                                 </TableBody>

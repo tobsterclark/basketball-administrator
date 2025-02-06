@@ -352,8 +352,9 @@ const CustomTooltipHeader = ({
 );
 
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
-    const { ageGroups, allEvents, setAllEvents } = props;
-    const [allGames, setAllGames] = useState<Game[]>([]);
+    const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
+    // const [allGames, setAllGames] = useState<Game[]>([]);
+    console.log(allGames);
 
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
 
