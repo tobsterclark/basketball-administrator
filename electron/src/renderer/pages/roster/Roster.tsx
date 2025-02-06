@@ -450,45 +450,51 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                 <Typography variant="h5" className="pb-4">
                     NSBL Runsheet &nbsp;-&nbsp; {locationToText(selectedLocation)} &nbsp;-&nbsp; {currentDate.toDateString()}
                 </Typography>
-                {Object.keys(groupedEvents).map((ageGroup) => (
-                    <div key={ageGroup} className="pb-4">
-                        <Typography variant="h6" className="pb-2 font-bold">
-                            {ageGroup}
-                        </Typography>
-                        <TableContainer component={Paper} className="shadow-md">
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow className="bg-gray-100">
-                                        <TableCell>Time</TableCell>
-                                        <TableCell>Court</TableCell>
-                                        <TableCell>Teams</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {groupedEvents[ageGroup]
-                                        .sort((a, b) => {
-                                        const timeA = new Date(a.startDate).getTime();
-                                        const timeB = new Date(b.startDate).getTime();
-                                        if (timeA !== timeB) return timeA - timeB;
-                                        return a.court - b.court;
-                                        })
-                                        .map((event) => (
-                                        <TableRow key={event.id}>
-                                            <TableCell>
-                                            {event.startDate.toLocaleTimeString("en-US", {
-                                                hour: "numeric",
-                                                minute: "2-digit",
-                                                hour12: true,
-                                            })}
-                                            </TableCell>
-                                            <TableCell>{`Court ${event.court}`}</TableCell>
-                                            <TableCell>{getNewTitle(event.id)}</TableCell>
+                {Object.keys(groupedEvents)
+                    .map(ageGroup => ({
+                        ageGroup,
+                        firstGameTime: Math.min(...groupedEvents[ageGroup].map(event => new Date(event.startDate).getTime()))
+                    }))
+                    .sort((a, b) => a.firstGameTime - b.firstGameTime) // Sort tables by first game time
+                    .map(({ ageGroup }) => (
+                        <div key={ageGroup} className="pb-4">
+                            <Typography variant="h6" className="pb-2 font-bold">
+                                {ageGroup}
+                            </Typography>
+                            <TableContainer component={Paper} className="shadow-md">
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow className="bg-gray-100">
+                                            <TableCell>Time</TableCell>
+                                            <TableCell>Court</TableCell>
+                                            <TableCell>Teams</TableCell>
                                         </TableRow>
-                                        ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </div>
+                                    </TableHead>
+                                    <TableBody>
+                                        {groupedEvents[ageGroup]
+                                            .sort((a, b) => {
+                                                const timeA = new Date(a.startDate).getTime();
+                                                const timeB = new Date(b.startDate).getTime();
+                                                if (timeA !== timeB) return timeA - timeB;
+                                                return a.court - b.court;
+                                            })
+                                            .map(event => (
+                                                <TableRow key={event.id}>
+                                                    <TableCell>
+                                                        {new Date(event.startDate).toLocaleTimeString("en-US", {
+                                                            hour: "numeric",
+                                                            minute: "2-digit",
+                                                            hour12: true,
+                                                        })}
+                                                    </TableCell>
+                                                    <TableCell>{`Court ${event.court}`}</TableCell>
+                                                    <TableCell>{getNewTitle(event.id)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </div>
                 ))}
             </div>
         </PageContainer>
