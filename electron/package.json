@@ -222,7 +222,7 @@
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
       "target": {
-        "target": ["zip"],
+        "target": "default",
         "arch": [
           "arm64",
           "x64"
