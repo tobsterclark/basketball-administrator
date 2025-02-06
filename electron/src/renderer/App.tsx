@@ -22,7 +22,6 @@ import TermSetup from './pages/termsetup/TermSetup';
 import GameSetup from './pages/gamesetup/GameSetup';
 import GameResults from './pages/gameresults/GameResults';
 import AgeGroups from './pages/agegroups/AgeGroups';
-import Runsheets from './pages/roster/Runsheets';
 
 const App = () => {
     // TODO: get players here as well
@@ -97,7 +96,6 @@ const App = () => {
                     <Route index element={<Dashboard />} />
                     <Route path="results" element={<GameResults ageGroups={ageGroups} teams={teams} />} />
                     <Route path="roster" element={<Roster {...{ ageGroups, allEvents, setAllEvents, allGames, setAllGames }} />} />
-                    <Route path="runsheets" element={<Runsheets {...{ ageGroups, allEvents, setAllEvents, allGames, setAllGames }} />} />
                     <Route
                         path="term-setup"
                         element={<TermSetup ageGroups={ageGroups} />}

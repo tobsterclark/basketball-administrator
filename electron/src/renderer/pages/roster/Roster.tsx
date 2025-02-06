@@ -226,7 +226,6 @@ const CustomTooltipHeader = ({
 
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
-    console.log(allGames);
 
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
     const tableRef = useRef<HTMLDivElement>(null);
@@ -235,6 +234,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     // ####################     PDF DOWNLOADING     ########################################
 
     const [exportingTable, setExportingTable] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<Location.ST_IVES | Location.BELROSE>(Location.ST_IVES);
 
     const getNewTitle = (gameId: string) => {
         const game = allGames.find((game) => game.id === gameId);
@@ -242,10 +242,13 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
         return `${game.lightTeam.name} (W) vs ${game.darkTeam.name} (B)`;
     };
 
-    const newAllEvents = allEvents.filter(event => {
-        const eventDate = new Date(event.startDate);
-        return eventDate.getFullYear() === 2025 && eventDate.getMonth() === 1 && eventDate.getDate() === 9;
-    });
+    const newAllEvents = allEvents
+        .filter(event => {
+            const eventDate = new Date(event.startDate);
+            return eventDate.toDateString() === currentDate.toDateString();
+        })
+        .filter(event => !selectedLocation || event.location === selectedLocation); // Apply location filter
+
 
     const groupedEvents: Record<string, AppointmentEvent[]> = newAllEvents.reduce((acc, event) => {
         if (!acc[event.ageGroup]) acc[event.ageGroup] = [];
@@ -253,24 +256,26 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
         return acc;
     }, {} as Record<string, AppointmentEvent[]>);
 
-    const handleDownloadPDF = async () => {
-        setExportingTable(true);
-        console.log('set visible');
-        const element = tableRef.current;
-        if (!element) return;
-
-        await html2pdf()
-            .set({
-                margin: 10,
-                filename: "Runsheet.pdf",
-                image: { type: "jpeg", quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-            })
-            .from(element)
-            .save();
-        setExportingTable(false);
-        console.log('set hidden');
+    const handleDownloadPDF = async (location: Location.ST_IVES | Location.BELROSE) => {
+        setSelectedLocation(location);
+        // setTimeout(async () => {
+            setExportingTable(true);
+            const element = tableRef.current;
+            if (!element) return;
+    
+            await html2pdf()
+                .set({
+                    margin: 10,
+                    filename: "Runsheet.pdf",
+                    image: { type: "jpeg", quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                    pagebreak: { mode: ["css", "avoid-all"] } // Ensure proper page breaks
+                })
+                .from(element)
+                .save();
+            setExportingTable(false);
+        // }, 100);
     };
 
     // ####################    END OF PDF DOWNLOADING     ##################################
@@ -417,20 +422,34 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
                         </Button>
                     </div>
-                    <div className='pt-4'>
+                    <hr className='w-3/4 mt-8 mb-8'></hr>
+                    <div className=''>
                         <Button
                             variant="contained"
                             size="medium"
                             className="flex items-center"
-                            onClick={handleDownloadPDF}
+                            onClick={() => handleDownloadPDF(Location.ST_IVES)}
                         >
-                            Download Runsheet!!!
+                            Download St Ives Runsheet
+                        </Button>
+                    </div>
+                    <div className='pt-2'>
+                        <Button
+                            variant="contained"
+                            size="medium"
+                            className="flex items-center"
+                            onClick={() => handleDownloadPDF(Location.BELROSE)}
+                        >
+                            Download Belrose Runsheet
                         </Button>
                     </div>
                 </div>
                 
             </div>
-            <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] h-[297mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
+            <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
+                <Typography variant="h5" className="pb-4">
+                    NSBL Runsheet &nbsp;-&nbsp; {locationToText(selectedLocation)} &nbsp;-&nbsp; {currentDate.toDateString()}
+                </Typography>
                 {Object.keys(groupedEvents).map((ageGroup) => (
                     <div key={ageGroup} className="pb-4">
                         <Typography variant="h6" className="pb-2 font-bold">
