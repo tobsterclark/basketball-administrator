@@ -12,7 +12,9 @@ import Teams from './pages/teams/Teams';
 import { CrudOperations, ModelName, PrismaCall } from '../general/prismaTypes';
 import {
     AgeGroupDataResponse,
+    AppointmentEvent,
     TeamDataResponse,
+    Game
 } from './pages/players/components/Types';
 import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
@@ -27,6 +29,8 @@ const App = () => {
     //       replicate that across the app
     const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
     const [teams, setTeams] = useState<TeamDataResponse[]>([]);
+    const [allEvents, setAllEvents] = useState<AppointmentEvent[]>([]);
+    const [allGames, setAllGames] = useState<Game[]>([]);
 
     // TODO: Do this in a separate function and use an app wide state instead of passing to components
     // Gets all age groups and team names for dropdowns on mount, ignores duplicates
@@ -91,7 +95,7 @@ const App = () => {
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
                     <Route path="results" element={<GameResults ageGroups={ageGroups} teams={teams} />} />
-                    <Route path="roster" element={<Roster ageGroups={ageGroups} />} />
+                    <Route path="roster" element={<Roster {...{ ageGroups, allEvents, setAllEvents, allGames, setAllGames }} />} />
                     <Route
                         path="term-setup"
                         element={<TermSetup ageGroups={ageGroups} />}

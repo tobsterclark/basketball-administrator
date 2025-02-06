@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, styled } from '@mui/material';
+import { Button, Paper, styled, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import {
     Scheduler,
     DayView,
@@ -22,149 +22,13 @@ import {
 import { IpcChannels } from '../../../general/IpcChannels';
 import Terms2025 from '../data/Terms';
 import React from 'react';
-import { PlayerDataProps } from '../players/components/Types';
+import { AppointmentEvent, PlayerDataProps, RosterDataProps } from '../players/components/Types';
 import { toast } from 'react-toastify';
-import { ArrowDownOnSquareStackIcon } from '@heroicons/react/24/solid';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { ArrowDownOnSquareStackIcon, ArrowLongRightIcon } from '@heroicons/react/24/solid';
+import { useNavigate } from 'react-router-dom';
+import { formatTime, locationToText, toTitleCase, appointmentResources, Location, Team, Timeslot, Game } from './Resources';
+import html2pdf from "html2pdf.js";
 
-enum Location {
-    ST_IVES = 'ST_IVES',
-    BELROSE = 'BELROSE',
-}
-
-const toTitleCase = (str: any) => {
-    return str
-        .toLowerCase()
-        .split(' ')
-        .map((word: any) => {
-            return word.charAt(0).toUpperCase() + word.slice(1);
-        })
-        .join(' ');
-};
-
-const locationToText = (location: Location) => {
-    switch (location) {
-        case Location.ST_IVES:
-            return 'St Ives';
-        case Location.BELROSE:
-            return 'Belrose';
-    }
-};
-
-const formatTime = (date: Date) => {
-    // format time in <HH:mm> AM/PM format
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-};
-
-type Team = {
-    id: string;
-    name: string;
-    ageGroupId: string;
-    division: number | null;
-};
-
-type Timeslot = {
-    id: string;
-    location: Location;
-    court: number;
-    ageGroupId: string;
-    date: string; // ISO date string
-};
-
-type Game = {
-    id: string;
-    lightTeamId: string;
-    darkTeamId: string;
-    lightScore: number;
-    darkScore: number;
-    timeslotId: string;
-    lightTeam: Team;
-    darkTeam: Team;
-    timeslot: Timeslot;
-};
-
-type Event = {
-    title: string;
-    startDate: Date;
-    endDate: Date;
-    id: string;
-    location: string;
-    court: number;
-    ageGroup: string;
-};
-
-const courtResources = [
-    {
-        text: 'Court 1',
-        id: 1,
-        color: '#DBB1BC',
-    },
-    {
-        text: 'Court 2',
-        id: 2,
-        color: '#6B0F1A',
-    },
-    {
-        text: 'Court 3',
-        id: 3,
-        color: '#212D40',
-    },
-];
-
-const venueResources = [
-    {
-        text: 'St Ives',
-        id: Location.ST_IVES,
-        color: '#64b5f6',
-    },
-    {
-        text: 'Belrose',
-        id: Location.BELROSE,
-        color: '#22c55e',
-    },
-];
-
-const ageGroupResources = [
-    {
-        text: 'Years 3/4',
-        id: 'Years 3/4',
-        color: '#F7EBEC',
-    },
-    {
-        text: 'Years 5/6',
-        id: 'Years 5/6',
-        color: '#DDBDD5',
-    },
-    {
-        text: 'Years 7/8',
-        id: 'Years 7/8',
-        color: '#AC9FBB',
-    },
-    {
-        text: 'Years 9/12',
-        id: 'Years 9/12',
-        color: '#59656F',
-    },
-];
-
-const appointmentResources = [
-    {
-        fieldName: 'location',
-        title: 'location',
-        instances: venueResources,
-    },
-    {
-        fieldName: 'court',
-        title: 'court',
-        instances: courtResources,
-    },
-    {
-        fieldName: 'ageGroup',
-        title: 'ageGroup',
-        instances: ageGroupResources,
-    },
-];
 
 const downloadRunsheet = async (gameId: string) => {
     const defaultFileName = `scoresheet-${gameId}.pdf`;
@@ -360,54 +224,61 @@ const CustomTooltipHeader = ({
     </AppointmentTooltip.Header>
 );
 
-const Roster = (props: PlayerDataProps) => {
-    const { ageGroups } = props;
-    const [allGames, setAllGames] = useState<Game[]>([]);
-    const [allEvents, setAllEvents] = useState<Event[]>([]);
-    const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+const Roster = (props: PlayerDataProps & RosterDataProps) => {
+    const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
 
-    // PDF rendering
-    const componentRef = useRef<HTMLDivElement>(null);
-    const handleDownloadCalendar = async () => {
-        const element = componentRef.current;
-    
-        if (!element) return;
-    
-        const canvas = await html2canvas(element, { scale: 2 });
-    
-        // Create a temporary canvas for grayscale conversion
-        const tempCanvas = document.createElement("canvas");
-        const ctx = tempCanvas.getContext("2d");
-    
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-    
-        // Draw the original canvas onto the temp canvas
-        if (ctx) {
-            ctx.drawImage(canvas, 0, 0);
-        
-            // Convert image to grayscale
-            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3; // Average RGB
-                data[i] = avg;      // Red
-                data[i + 1] = avg;  // Green
-                data[i + 2] = avg;  // Blue
-            }
-            ctx.putImageData(imageData, 0, 0);
-        }
-    
-        // Convert to image and add to PDF
-        const imgData = tempCanvas.toDataURL("image/png");
-    
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgWidth = 200; // A4 width in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-        pdf.save("Runsheet.pdf"); // Triggers save-as dialog
+    const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+    const tableRef = useRef<HTMLDivElement>(null);
+
+
+    // ####################     PDF DOWNLOADING     ########################################
+
+    const [exportingTable, setExportingTable] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<Location.ST_IVES | Location.BELROSE>(Location.ST_IVES);
+
+    const getNewTitle = (gameId: string) => {
+        const game = allGames.find((game) => game.id === gameId);
+        if (!game) return "Unknown";
+        return `${game.lightTeam.name} (W) vs ${game.darkTeam.name} (B)`;
     };
+
+    const newAllEvents = allEvents
+        .filter(event => {
+            const eventDate = new Date(event.startDate);
+            return eventDate.toDateString() === currentDate.toDateString();
+        })
+        .filter(event => !selectedLocation || event.location === selectedLocation); // Apply location filter
+
+
+    const groupedEvents: Record<string, AppointmentEvent[]> = newAllEvents.reduce((acc, event) => {
+        if (!acc[event.ageGroup]) acc[event.ageGroup] = [];
+        acc[event.ageGroup].push(event);
+        return acc;
+    }, {} as Record<string, AppointmentEvent[]>);
+
+    const handleDownloadPDF = async (location: Location.ST_IVES | Location.BELROSE) => {
+        setSelectedLocation(location);
+        // setTimeout(async () => {
+            setExportingTable(true);
+            const element = tableRef.current;
+            if (!element) return;
+    
+            await html2pdf()
+                .set({
+                    margin: 10,
+                    filename: "Runsheet.pdf",
+                    image: { type: "jpeg", quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                    pagebreak: { mode: ["css", "avoid-all"] } // Ensure proper page breaks
+                })
+                .from(element)
+                .save();
+            setExportingTable(false);
+        // }, 100);
+    };
+
+    // ####################    END OF PDF DOWNLOADING     ##################################
     
 
     const getGameCountForDate = (date: Date) => {
@@ -427,7 +298,7 @@ const Roster = (props: PlayerDataProps) => {
     };
 
     const transformGamesToEvents = (games: Game[]) => {
-        const events: Event[] = games.map((game: Game) => {
+        const events: AppointmentEvent[] = games.map((game: Game) => {
             const startDate = new Date(game.timeslot.date);
             const endDate = new Date(startDate);
             endDate.setHours(startDate.getHours() + 1);
@@ -486,7 +357,7 @@ const Roster = (props: PlayerDataProps) => {
         <PageContainer>
             <PageTitle text="Roster" />
             <div className="flex gap-6 h-full">
-                <div className="w-3/5" ref={componentRef}>
+                <div className="w-3/5">
                     <Scheduler data={allEvents}>
                         <ViewState
                             defaultCurrentDate={new Date(2025, 1, 9)}
@@ -522,8 +393,8 @@ const Roster = (props: PlayerDataProps) => {
                     </Scheduler>
                 </div>
                 <div className="inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
-                <div className="flex-col pl-8 justify-center w-2/5 pt-16">
-                    <h2 className="text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
+                <div className="flex-col pl-8 justify-center w-2/5">
+                    <h2 className="pt-16 text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
                         {getCurrentTermAndWeek(currentDate)?.term !== undefined
                             ? `Manage Games for Term ${getCurrentTermAndWeek(
                                   currentDate,
@@ -551,17 +422,74 @@ const Roster = (props: PlayerDataProps) => {
                             <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
                         </Button>
                     </div>
-                    <div className='pt-4'>
+                    <hr className='w-3/4 mt-8 mb-8'></hr>
+                    <div className=''>
                         <Button
                             variant="contained"
                             size="medium"
                             className="flex items-center"
-                            onClick={handleDownloadCalendar}
+                            onClick={() => handleDownloadPDF(Location.ST_IVES)}
                         >
-                            Download Runsheet
+                            Download St Ives Runsheet
+                        </Button>
+                    </div>
+                    <div className='pt-2'>
+                        <Button
+                            variant="contained"
+                            size="medium"
+                            className="flex items-center"
+                            onClick={() => handleDownloadPDF(Location.BELROSE)}
+                        >
+                            Download Belrose Runsheet
                         </Button>
                     </div>
                 </div>
+                
+            </div>
+            <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
+                <Typography variant="h5" className="pb-4">
+                    NSBL Runsheet &nbsp;-&nbsp; {locationToText(selectedLocation)} &nbsp;-&nbsp; {currentDate.toDateString()}
+                </Typography>
+                {Object.keys(groupedEvents).map((ageGroup) => (
+                    <div key={ageGroup} className="pb-4">
+                        <Typography variant="h6" className="pb-2 font-bold">
+                            {ageGroup}
+                        </Typography>
+                        <TableContainer component={Paper} className="shadow-md">
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow className="bg-gray-100">
+                                        <TableCell>Time</TableCell>
+                                        <TableCell>Court</TableCell>
+                                        <TableCell>Teams</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {groupedEvents[ageGroup]
+                                        .sort((a, b) => {
+                                        const timeA = new Date(a.startDate).getTime();
+                                        const timeB = new Date(b.startDate).getTime();
+                                        if (timeA !== timeB) return timeA - timeB;
+                                        return a.court - b.court;
+                                        })
+                                        .map((event) => (
+                                        <TableRow key={event.id}>
+                                            <TableCell>
+                                            {event.startDate.toLocaleTimeString("en-US", {
+                                                hour: "numeric",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                            })}
+                                            </TableCell>
+                                            <TableCell>{`Court ${event.court}`}</TableCell>
+                                            <TableCell>{getNewTitle(event.id)}</TableCell>
+                                        </TableRow>
+                                        ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
+                ))}
             </div>
         </PageContainer>
     );
