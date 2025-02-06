@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, styled } from '@mui/material';
+import { Button, Paper, styled, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import {
     Scheduler,
     DayView,
@@ -25,10 +25,10 @@ import React from 'react';
 import { AppointmentEvent, PlayerDataProps, RosterDataProps } from '../players/components/Types';
 import { toast } from 'react-toastify';
 import { ArrowDownOnSquareStackIcon, ArrowLongRightIcon } from '@heroicons/react/24/solid';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { useNavigate } from 'react-router-dom';
 import { formatTime, locationToText, toTitleCase, appointmentResources, Location, Team, Timeslot, Game } from './Resources';
+import html2pdf from "html2pdf.js";
+
 
 const downloadRunsheet = async (gameId: string) => {
     const defaultFileName = `scoresheet-${gameId}.pdf`;
@@ -226,55 +226,54 @@ const CustomTooltipHeader = ({
 
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
-    // const [allGames, setAllGames] = useState<Game[]>([]);
     console.log(allGames);
 
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+    const tableRef = useRef<HTMLDivElement>(null);
 
-    const navigate = useNavigate();
 
-    // PDF rendering
-    const componentRef = useRef<HTMLDivElement>(null);
-    const handleDownloadCalendar = async () => {
-        const element = componentRef.current;
-    
-        if (!element) return;
-    
-        const canvas = await html2canvas(element, { scale: 2 });
-    
-        // Create a temporary canvas for grayscale conversion
-        const tempCanvas = document.createElement("canvas");
-        const ctx = tempCanvas.getContext("2d");
-    
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-    
-        // Draw the original canvas onto the temp canvas
-        if (ctx) {
-            ctx.drawImage(canvas, 0, 0);
-        
-            // Convert image to grayscale
-            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3; // Average RGB
-                data[i] = avg;      // Red
-                data[i + 1] = avg;  // Green
-                data[i + 2] = avg;  // Blue
-            }
-            ctx.putImageData(imageData, 0, 0);
-        }
-    
-        // Convert to image and add to PDF
-        const imgData = tempCanvas.toDataURL("image/png");
-    
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgWidth = 200; // A4 width in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-        pdf.save("Runsheet.pdf"); // Triggers save-as dialog
+    // ####################     PDF DOWNLOADING     ########################################
+
+    const [exportingTable, setExportingTable] = useState(false);
+
+    const getNewTitle = (gameId: string) => {
+        const game = allGames.find((game) => game.id === gameId);
+        if (!game) return "Unknown";
+        return `${game.lightTeam.name} (W) vs ${game.darkTeam.name} (B)`;
     };
+
+    const newAllEvents = allEvents.filter(event => {
+        const eventDate = new Date(event.startDate);
+        return eventDate.getFullYear() === 2025 && eventDate.getMonth() === 1 && eventDate.getDate() === 9;
+    });
+
+    const groupedEvents: Record<string, AppointmentEvent[]> = newAllEvents.reduce((acc, event) => {
+        if (!acc[event.ageGroup]) acc[event.ageGroup] = [];
+        acc[event.ageGroup].push(event);
+        return acc;
+    }, {} as Record<string, AppointmentEvent[]>);
+
+    const handleDownloadPDF = async () => {
+        setExportingTable(true);
+        console.log('set visible');
+        const element = tableRef.current;
+        if (!element) return;
+
+        await html2pdf()
+            .set({
+                margin: 10,
+                filename: "Runsheet.pdf",
+                image: { type: "jpeg", quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            })
+            .from(element)
+            .save();
+        setExportingTable(false);
+        console.log('set hidden');
+    };
+
+    // ####################    END OF PDF DOWNLOADING     ##################################
     
 
     const getGameCountForDate = (date: Date) => {
@@ -353,7 +352,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
         <PageContainer>
             <PageTitle text="Roster" />
             <div className="flex gap-6 h-full">
-                <div className="w-3/5" ref={componentRef}>
+                <div className="w-3/5">
                     <Scheduler data={allEvents}>
                         <ViewState
                             defaultCurrentDate={new Date(2025, 1, 9)}
@@ -390,17 +389,6 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                 </div>
                 <div className="inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
                 <div className="flex-col pl-8 justify-center w-2/5">
-                    <div className=''>
-                        <Button
-                            variant="contained"
-                            size="medium"
-                            className="flex items-center"
-                            onClick={() => navigate('/runsheets')}
-                        >
-                            Go to Runsheets
-                            <ArrowLongRightIcon className="h-6 ml-2" />
-                        </Button>
-                    </div>
                     <h2 className="pt-16 text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
                         {getCurrentTermAndWeek(currentDate)?.term !== undefined
                             ? `Manage Games for Term ${getCurrentTermAndWeek(
@@ -434,12 +422,55 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             variant="contained"
                             size="medium"
                             className="flex items-center"
-                            onClick={handleDownloadCalendar}
+                            onClick={handleDownloadPDF}
                         >
-                            Download Runsheet
+                            Download Runsheet!!!
                         </Button>
                     </div>
                 </div>
+                
+            </div>
+            <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] h-[297mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
+                {Object.keys(groupedEvents).map((ageGroup) => (
+                    <div key={ageGroup} className="pb-4">
+                        <Typography variant="h6" className="pb-2 font-bold">
+                            {ageGroup}
+                        </Typography>
+                        <TableContainer component={Paper} className="shadow-md">
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow className="bg-gray-100">
+                                        <TableCell>Time</TableCell>
+                                        <TableCell>Court</TableCell>
+                                        <TableCell>Teams</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {groupedEvents[ageGroup]
+                                        .sort((a, b) => {
+                                        const timeA = new Date(a.startDate).getTime();
+                                        const timeB = new Date(b.startDate).getTime();
+                                        if (timeA !== timeB) return timeA - timeB;
+                                        return a.court - b.court;
+                                        })
+                                        .map((event) => (
+                                        <TableRow key={event.id}>
+                                            <TableCell>
+                                            {event.startDate.toLocaleTimeString("en-US", {
+                                                hour: "numeric",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                            })}
+                                            </TableCell>
+                                            <TableCell>{`Court ${event.court}`}</TableCell>
+                                            <TableCell>{getNewTitle(event.id)}</TableCell>
+                                        </TableRow>
+                                        ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
+                ))}
             </div>
         </PageContainer>
     );
