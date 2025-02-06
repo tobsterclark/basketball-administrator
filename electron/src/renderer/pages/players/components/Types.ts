@@ -20,6 +20,16 @@ export type GameDataResponse = Prisma.GameGetPayload<{
     include: { lightTeam: true; darkTeam: true; timeslot: true };
 }>;
 
+export type AppointmentEvent = {
+    title: string;
+    startDate: Date;
+    endDate: Date;
+    id: string;
+    location: string;
+    court: number;
+    ageGroup: string;
+};
+
 // Sub component prop interfaces
 
 export interface PlayerDataProps {
@@ -32,6 +42,11 @@ export interface PlayerDataProps {
     onCancel?: () => void;
     onValidSave?: (player: PlayerCache) => void;
     deletePlayer?: () => void;
+}
+
+export interface RosterDataProps {
+    allEvents : AppointmentEvent[];
+    setAllEvents: Dispatch<SetStateAction<AppointmentEvent[]>>;
 }
 
 export interface PlayerSearchProps {

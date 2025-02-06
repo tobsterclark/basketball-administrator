@@ -22,11 +22,12 @@ import {
 import { IpcChannels } from '../../../general/IpcChannels';
 import Terms2025 from '../data/Terms';
 import React from 'react';
-import { PlayerDataProps } from '../players/components/Types';
+import { AppointmentEvent, PlayerDataProps, RosterDataProps } from '../players/components/Types';
 import { toast } from 'react-toastify';
-import { ArrowDownOnSquareStackIcon } from '@heroicons/react/24/solid';
+import { ArrowDownOnSquareStackIcon, ArrowLongRightIcon } from '@heroicons/react/24/solid';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useNavigate } from 'react-router-dom';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -82,16 +83,6 @@ type Game = {
     lightTeam: Team;
     darkTeam: Team;
     timeslot: Timeslot;
-};
-
-type Event = {
-    title: string;
-    startDate: Date;
-    endDate: Date;
-    id: string;
-    location: string;
-    court: number;
-    ageGroup: string;
 };
 
 const courtResources = [
@@ -360,11 +351,13 @@ const CustomTooltipHeader = ({
     </AppointmentTooltip.Header>
 );
 
-const Roster = (props: PlayerDataProps) => {
-    const { ageGroups } = props;
+const Roster = (props: PlayerDataProps & RosterDataProps) => {
+    const { ageGroups, allEvents, setAllEvents } = props;
     const [allGames, setAllGames] = useState<Game[]>([]);
-    const [allEvents, setAllEvents] = useState<Event[]>([]);
+
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+
+    const navigate = useNavigate();
 
     // PDF rendering
     const componentRef = useRef<HTMLDivElement>(null);
@@ -427,7 +420,7 @@ const Roster = (props: PlayerDataProps) => {
     };
 
     const transformGamesToEvents = (games: Game[]) => {
-        const events: Event[] = games.map((game: Game) => {
+        const events: AppointmentEvent[] = games.map((game: Game) => {
             const startDate = new Date(game.timeslot.date);
             const endDate = new Date(startDate);
             endDate.setHours(startDate.getHours() + 1);
@@ -522,8 +515,19 @@ const Roster = (props: PlayerDataProps) => {
                     </Scheduler>
                 </div>
                 <div className="inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
-                <div className="flex-col pl-8 justify-center w-2/5 pt-16">
-                    <h2 className="text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
+                <div className="flex-col pl-8 justify-center w-2/5">
+                    <div className=''>
+                        <Button
+                            variant="contained"
+                            size="medium"
+                            className="flex items-center"
+                            onClick={() => navigate('/runsheets')}
+                        >
+                            Go to Runsheets
+                            <ArrowLongRightIcon className="h-6 ml-2" />
+                        </Button>
+                    </div>
+                    <h2 className="pt-16 text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
                         {getCurrentTermAndWeek(currentDate)?.term !== undefined
                             ? `Manage Games for Term ${getCurrentTermAndWeek(
                                   currentDate,

@@ -97,7 +97,8 @@ const Navbar = () => {
 
                     let fullLinkStyle = linkStyle;
                     fullLinkStyle += ` rounded-lg text-slate-950 ${
-                        locationPathName === value.link
+                        locationPathName === value.link ||
+                        (value.link === '/roster' && locationPathName === '/runsheets')
                             ? `bg-nsbl_primary shadow-sm`
                             : 'hover:bg-gray-100 bg-transparent'
                     }`;
