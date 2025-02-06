@@ -50,10 +50,10 @@ const Runsheets = (props: PlayerDataProps & RosterDataProps) => {
         return (
             <div>
                 <div className="flex justify-center p-4">
-                    <div ref={tableRef} className="w-[210mm] h-[297mm] bg-white p-8">
+                    <div ref={tableRef} className="w-[210mm] h-[297mm] bg-white px-8 pb-8">
                         {Object.keys(groupedEvents).map((ageGroup) => (
-                        <div key={ageGroup} className="mb-8">
-                            <Typography variant="h6" className="pb-4 font-bold">
+                        <div key={ageGroup} className="pb-4">
+                            <Typography variant="h6" className="pb-2 font-bold">
                             {ageGroup}
                             </Typography>
                             <TableContainer component={Paper} className="shadow-md">
