@@ -22,6 +22,7 @@ import TermSetup from './pages/termsetup/TermSetup';
 import GameSetup from './pages/gamesetup/GameSetup';
 import GameResults from './pages/gameresults/GameResults';
 import AgeGroups from './pages/agegroups/AgeGroups';
+import Admin from './pages/admin/Admin';
 
 const App = () => {
     // TODO: get players here as well
@@ -116,6 +117,10 @@ const App = () => {
                         element={
                             <AgeGroups ageGroups={ageGroups} getAgeGroups={getAgeGroups} />
                         }
+                    />
+                    <Route
+                        path="admin"
+                        element={<Admin />}
                     />
                 </Route>
             </Routes>

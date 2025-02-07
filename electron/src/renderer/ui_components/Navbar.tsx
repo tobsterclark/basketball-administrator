@@ -81,7 +81,21 @@ const Navbar = () => {
                 name: 'Age Groups',
                 link: '/agegroups',
                 icon: <CakeIcon className={iconStyle} />,
-            }
+            },
+            ...(process.env.NODE_ENV === 'development'
+                ? [
+                    {
+                        name: '',
+                        link: '',
+                        icon: <hr className='w-full border-t border-gray-300'/>,
+                    },
+                    {
+                        name: 'Admin',
+                        link: '/admin',
+                        icon: <Cog6ToothIcon className={iconStyle} />,
+                    },
+                ]
+                : []),
         ];
 
         return (
