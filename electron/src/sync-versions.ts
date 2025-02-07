@@ -18,6 +18,13 @@ filesToUpdate.forEach((filePath) => {
     const fullPath = path.resolve(filePath);
     const fileContent = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
     fileContent.version = newVersion;
-    fs.writeFileSync(fullPath, JSON.stringify(fileContent, null, 2));
+    
+    // Ensure package-lock.json's nested structure is also updated
+    if (filePath.endsWith('package-lock.json') && fileContent.packages && fileContent.packages[""]) {
+        fileContent.packages[""].version = newVersion;
+        console.log(`Updated version to ${newVersion} in ${filePath}'s nested package-lock.json`);
+    }
+    
+    fs.writeFileSync(fullPath, JSON.stringify(fileContent, null, 2) + '\n');
     console.log(`Updated version to ${newVersion} in ${filePath}`);
 });
