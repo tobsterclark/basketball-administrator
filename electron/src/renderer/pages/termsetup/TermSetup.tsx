@@ -63,6 +63,8 @@ const hourSlots = [
     { slot: 5, time: '2pm' },
     { slot: 6, time: '3pm' },
     { slot: 7, time: '4pm' },
+    { slot: 8, time: '5pm' },
+    { slot: 9, time: '6pm' },
 ];
 
 const getWeekDateFromTerm = (term: number, week: number) => {

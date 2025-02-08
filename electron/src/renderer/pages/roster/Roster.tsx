@@ -262,7 +262,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             setExportingTable(true);
             const element = tableRef.current;
             if (!element) return;
-    
+
             await html2pdf()
                 .set({
                     margin: 10,
@@ -279,7 +279,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     };
 
     // ####################    END OF PDF DOWNLOADING     ##################################
-    
+
 
     const getGameCountForDate = (date: Date) => {
         return allGames.filter((game) => {
@@ -367,7 +367,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         <WeekView
                             excludedDays={[1, 2, 3, 4, 5, 6]}
                             startDayHour={8}
-                            endDayHour={16}
+                            endDayHour={19}
                         />
                         <Toolbar
                             rootComponent={(props) => (
@@ -444,7 +444,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         </Button>
                     </div>
                 </div>
-                
+
             </div>
             <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
                 <Typography variant="h5" className="pb-4">
