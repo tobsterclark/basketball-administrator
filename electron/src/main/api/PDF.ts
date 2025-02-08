@@ -75,9 +75,9 @@ export async function saveZIP(gameIds: string[], defaultFileName: string) {
 
     // Open Save As Dialog
     const { filePath } = await dialog.showSaveDialog({
-        title: "Save zipped Pdf's",
+        title: "Save PDF",
         defaultPath: path.join(app.getPath('downloads'), defaultFileName),
-        filters: [{ name: 'ZIP Files', extensions: ['zip'] }],
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
     });
 
     return getDownload(url, filePath);

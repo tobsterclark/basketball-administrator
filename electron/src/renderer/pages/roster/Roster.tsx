@@ -97,11 +97,11 @@ const downloadRunsheet = async (gameId: string) => {
 };
 
 const downloadMultipleRunsheets = async (gameIds: string[]) => {
-    const defaultFileName = `scoresheets.zip`;
+    const defaultFileName = `AllScoresheets.pdf`;
     console.log(`downloading ${gameIds.length} scoresheets:`);
     console.log(gameIds);
 
-    const toastId = toast.loading('Downloading ZIP...');
+    const toastId = toast.loading('Downloading PDF...');
     try {
         const result = await window.electron.ipcRenderer.invoke('SaveZIP', {
             gameIds,
@@ -109,7 +109,7 @@ const downloadMultipleRunsheets = async (gameIds: string[]) => {
         });
         if (result.success) {
             toast.update(toastId, {
-                render: `ZIP saved successfully at ${result.filePath}`,
+                render: `PDF saved successfully at ${result.filePath}`,
                 type: 'success',
                 isLoading: false,
                 autoClose: 3000,
@@ -123,10 +123,10 @@ const downloadMultipleRunsheets = async (gameIds: string[]) => {
             });
         }
     } catch (error) {
-        console.error('Error saving ZIP:');
+        console.error('Error saving PDF:');
         console.error(error);
         toast.update(toastId, {
-            render: `An error occurred while saving the ZIP: ${
+            render: `An error occurred while saving the PDF: ${
                 (error as Error).message
             }`,
             type: 'error',
@@ -294,24 +294,58 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
         location: Location.ST_IVES | Location.BELROSE,
     ) => {
         setSelectedLocation(location);
-        // setTimeout(async () => {
         setExportingTable(true);
+
         const element = tableRef.current;
         if (!element) return;
 
-        await html2pdf()
-            .set({
-                margin: 10,
-                filename: 'Runsheet.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'avoid-all'] }, // Ensure proper page breaks
-            })
-            .from(element)
-            .save();
-        setExportingTable(false);
-        // }, 100);
+        const toastId = toast.loading(
+            `Downloading ${locationToText(location).replace(
+                ' ',
+                '',
+            )} Runsheet...`,
+        );
+
+        try {
+            await html2pdf()
+                .set({
+                    margin: 10,
+                    filename: `Runsheet-${locationToText(location).replace(
+                        ' ',
+                        '',
+                    )}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'portrait',
+                    },
+                    pagebreak: { mode: ['css', 'avoid-all'] },
+                })
+                .from(element)
+                .save();
+
+            toast.update(toastId, {
+                render: `${locationToText(location).replace(
+                    ' ',
+                    '',
+                )} Runsheet saved successfully!`,
+                type: 'success',
+                isLoading: false,
+                autoClose: 3000,
+            });
+        } catch (error) {
+            console.error('PDF Download Error:', error);
+            toast.update(toastId, {
+                render: 'Failed to download the runsheet.',
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000,
+            });
+        } finally {
+            setExportingTable(false);
+        }
     };
 
     // ####################    END OF PDF DOWNLOADING     ##################################
@@ -401,8 +435,8 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         />
                         <WeekView
                             excludedDays={[1, 2, 3, 4, 5, 6]}
-                            startDayHour={8}
-                            endDayHour={16}
+                            startDayHour={8.5}
+                            endDayHour={19.5}
                         />
                         <Toolbar
                             rootComponent={(props) => (

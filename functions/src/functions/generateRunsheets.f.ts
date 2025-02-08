@@ -120,39 +120,41 @@ export default onRequest(
     } 
     else if (scoreSheetResults.length > 0) {
       try {
-        const archive = archiver("zip", {
-          zlib: { level: 9 },
-        });
-
-        // const pdfBuffer = await createPdf(scoreSheetResults[0]);
-        // Set response headers
-        res.setHeader("Content-Type", "application/zip");
-        res.setHeader("Content-Disposition", `attachment; filename=scoresheets.zip`);
-
-        archive.pipe(res);
-
-        // Add each PDF file to zip
+        // Create a new PDF document
+        const mergedPdf = await PDFDocument.create();
+    
         for (const result of scoreSheetResults) {
-          const pdfBuffer = await createPdf(result);
-          if (!pdfBuffer) {
-            res.status(500).send("Error generating PDF file");
-            return;
-          }
-          console.log(`Adding scoresheet-${result.id}.pdf to ZIP`);
-          const stream = new Readable();
-          stream.push(pdfBuffer);
-          stream.push(null);
-          archive.append(stream, { name: `scoresheet-${result.id}.pdf` });
+            const pdfBuffer = await createPdf(result);
+            if (!pdfBuffer) {
+                res.status(500).send("Error generating PDF file");
+                return;
+            }
+            
+            console.log(`Merging scoresheet-${result.id}.pdf`);
+    
+            // Load the generated PDF
+            const pdfToMerge = await PDFDocument.load(pdfBuffer);
+            const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+    
+            // Append pages to the merged document
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
         }
-
-        // Finish zip
-        await archive.finalize();
-        console.log("Finished ZIP");
-
-      } catch (e) {
+    
+        // Convert the merged PDF to a buffer
+        const mergedPdfBytes = await mergedPdf.save();
+    
+        // Set response headers for a single PDF file
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=scoresheets.pdf`);
+        
+        // Send the merged PDF
+        res.send(Buffer.from(mergedPdfBytes));
+        console.log("Merged PDF sent");
+    
+    } catch (e) {
         console.error(e);
-        res.status(500).send("Error generating ZIP file");
-      }
+        res.status(500).send("Error generating merged PDF file");
+    }
     } else {
       res.status(404).send("Game not found");
     }
