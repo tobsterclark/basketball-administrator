@@ -5,7 +5,7 @@
         "build-watch": "shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/ && tsc --watch",
         "serve": "npm run build-watch | firebase emulators:start",
         "shell": "npm run build && firebase functions:shell",
-        "predeploy": "echo '//npm.pkg.github.com/:_authToken=${npm_token}' > .npmrc && npm run build",
+        "predeploy": "echo \"//npm.pkg.github.com/:_authToken=${npm_token}\" > .npmrc && npm run build",
         "deploy": "firebase deploy --only functions",
         "logs": "firebase functions:log"
     },
