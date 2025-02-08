@@ -311,6 +311,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                 .from(element)
                 .save();
             setExportingTable(false);
+    };
+
+    // ####################    END OF PDF DOWNLOADING     ##################################
 
     const getGameCountForDate = (date: Date) => {
         return allGames.filter((game) => {
