@@ -19,7 +19,7 @@ function FormatDate(date: string) {
 
 function Table(timeslots: Timeslot[]) {
 	// Group games by day and sort based on time
-	const games = [...Map.groupBy(timeslots, (item) => stripTime(item.date).getTime())].sort((a, b) => a[0] - b[0]);
+	const games = groupBy(timeslots, (item) => stripTime(item.date).getTime()).sort((a, b) => a[0] - b[0]);
 
 	return games.map(([key, value]) => {
 		// Sort subentries by time and then court
@@ -32,17 +32,24 @@ function Table(timeslots: Timeslot[]) {
 			return timeA - timeB;
 		});
 
+		// Group games by location
+		const groupedGames = groupBy(sortedGames, (game) => game.location);
+
 		return (
 			<div key={key} className="py-4 flex flex-col space-y-4">
 				<h3 className="text-lg font-bold">{new Date(key).toDateString()}</h3>
-				{GameTiles(sortedGames)}
+				<div className="flex flex-start">{groupedGames.map(([key, value]) => GameTiles(value))}</div>
 			</div>
 		);
 	});
 }
 
+function groupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Array<[K, T[]]> {
+	return [...Map.groupBy(items, keySelector)];
+}
+
 function GameTiles(games: Timeslot[]) {
-	return <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{games.map((game) => Tile(game))}</div>;
+	return <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">{games.map((game) => Tile(game))}</div>;
 }
 
 function Tile(timeslot: Timeslot) {
