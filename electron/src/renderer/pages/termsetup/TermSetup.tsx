@@ -113,7 +113,7 @@ const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
                     location: timeSlot.location,
                     date: timeSlot.date,
                     court: timeSlot.court,
-                    ageGroupId: "28bf465a-0f32-49fb-9a14-401f39f2c678",
+                    ageGroupId: '28bf465a-0f32-49fb-9a14-401f39f2c678',
                 },
                 select: {
                     id: true,
@@ -377,18 +377,22 @@ export const TermSetup = (props: PlayerDataProps) => {
         timeSlotParams[]
     >([]);
 
-    const [copyToAllWeeksConfirmation, setCopyToAllWeeksConfirmation] = useState(false);
+    const [copyToAllWeeksConfirmation, setCopyToAllWeeksConfirmation] =
+        useState(false);
 
     const copyToAllWeeks = () => {
         // Copy the current week's time slots to all other weeks.
         setCopyToAllWeeksConfirmation(false);
         console.log(modifiedTimeSlots);
-        const currentWeekDate = getWeekDateFromTerm(currentTerm, currentWeekTab);
+        const currentWeekDate = getWeekDateFromTerm(
+            currentTerm,
+            currentWeekTab,
+        );
         console.log(`Attempting to copy games from week ${currentWeekDate}`);
 
         for (let i = 1; i < Terms2025[currentTerm].weeks; i += 1) {
             upsert(currentTerm, i);
-        };
+        }
 
         const allPrismaTimeSlotsReq: PrismaCall = {
             model: ModelName.timeslot,
@@ -406,7 +410,8 @@ export const TermSetup = (props: PlayerDataProps) => {
                     (timeSlot) =>
                         Math.abs(
                             timeSlot.date.getTime() - currentWeekDate.getTime(),
-                        ) <= 24 * 60 * 60 * 1000,
+                        ) <=
+                        24 * 60 * 60 * 1000,
                 );
 
                 console.log('Current week time slots:');
@@ -415,18 +420,22 @@ export const TermSetup = (props: PlayerDataProps) => {
                 const promises = allTimeSlots
                     .filter(
                         (timeSlot) =>
-                            !(Math.abs(
-                                timeSlot.date.getTime() - currentWeekDate.getTime(),
-                            ) <= 24 * 60 * 60 * 1000),
+                            !(
+                                Math.abs(
+                                    timeSlot.date.getTime() -
+                                        currentWeekDate.getTime(),
+                                ) <=
+                                24 * 60 * 60 * 1000
+                            ),
                     )
                     .map((timeSlot) => {
                         const currentWeekTimeSlot = currentWeekTimeSlots.find(
                             (currentWeekTimeSlot) =>
                                 currentWeekTimeSlot.location ===
                                     timeSlot.location &&
-                                currentWeekTimeSlot.court === 
-                                    timeSlot.court &&
-                                currentWeekTimeSlot.date.getHours() === timeSlot.date.getHours(),
+                                currentWeekTimeSlot.court === timeSlot.court &&
+                                currentWeekTimeSlot.date.getHours() ===
+                                    timeSlot.date.getHours(),
                         );
 
                         if (currentWeekTimeSlot) {
@@ -469,10 +478,16 @@ export const TermSetup = (props: PlayerDataProps) => {
 
                 Promise.all(promises).then(() => {
                     console.log('Finished copying time slots');
-                    toast.success(`${promises.length} time slot${promises.length === 1 ? '' : 's'} created across ${promises.length/dbTimeSlots.length} weeks successfully!`);
+                    toast.success(
+                        `${promises.length} time slot${
+                            promises.length === 1 ? '' : 's'
+                        } created across ${
+                            promises.length / dbTimeSlots.length
+                        } weeks successfully!`,
+                    );
                 });
             });
-    }
+    };
 
     const uploadChanges = () => {
         const timeSlotsToUpdate = modifiedTimeSlots.filter(
@@ -523,7 +538,11 @@ export const TermSetup = (props: PlayerDataProps) => {
             setDbTimeSlots(modifiedTimeSlots);
         });
 
-        toast.success(`${promises.length} time slot${promises.length === 1 ? '' : 's'} updated successfully`);
+        toast.success(
+            `${promises.length} time slot${
+                promises.length === 1 ? '' : 's'
+            } updated successfully`,
+        );
     };
 
     const checkIfTimeSlotsEqual = () => {
@@ -551,7 +570,7 @@ export const TermSetup = (props: PlayerDataProps) => {
         // Stores into dbTimeSlots.
         // https://github.com/prisma/docs/issues/640
         // https://www.prisma.io/docs/concepts/components/prisma-client/crud#upsert
-        
+
         const dateForRequest = getWeekDateFromTerm(term, weekTab);
         const weekRequestData: timeSlotParams[] = [];
         // loop through each venue, and then iterate through each court
@@ -687,19 +706,27 @@ export const TermSetup = (props: PlayerDataProps) => {
                 />
             </div>
             {copyToAllWeeksConfirmation ? (
-                <div className='pt-4'>
+                <div className="pt-4">
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
-                            <h2 className="text-xl font-semibold mb-4">Copy to all weeks?</h2>
+                            <h2 className="text-xl font-semibold mb-4">
+                                Copy to all weeks?
+                            </h2>
                             <div>
                                 <p className="text-gray-600 pt-4 mb-4">
-                                    This will override all future events for this term. This action cannot be undone.
+                                    This will override all future events for
+                                    this term. This action cannot be undone.
                                 </p>
-                                <div className='flex gap-4 justify-center'>
-                                    <button onClick={() => setCopyToAllWeeksConfirmation(false)} className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                                <div className="flex gap-4 justify-center">
+                                    <button
+                                        onClick={() =>
+                                            setCopyToAllWeeksConfirmation(false)
+                                        }
+                                        className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                    >
                                         Cancel
                                     </button>
-                                    <button 
+                                    <button
                                         className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                                         onClick={() => {
                                             copyToAllWeeks();
