@@ -57,8 +57,10 @@ export default onRequest(
     if (!gameIdsParam && gameIdParam) {
       gameIds = [gameIdParam];
     } else if (!gameIdParam && gameIdsParam) {
-      gameIds = gameIdsParam.split(",");
+      gameIds = gameIdsParam.replace('[', '').replace(']', '').split(",");
     }
+
+    console.log(`\n\n ${gameIds.length} games requested \n\n`);
 
     if (!gameIds || gameIds.length === 0) {
       res.status(400).send("No game IDs provided");

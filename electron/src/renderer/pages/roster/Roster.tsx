@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Paper, styled, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import {
+    Button,
+    Paper,
+    styled,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import {
     Scheduler,
     DayView,
@@ -22,13 +33,28 @@ import {
 import { IpcChannels } from '../../../general/IpcChannels';
 import Terms2025 from '../data/Terms';
 import React from 'react';
-import { AppointmentEvent, PlayerDataProps, RosterDataProps } from '../players/components/Types';
+import {
+    AppointmentEvent,
+    PlayerDataProps,
+    RosterDataProps,
+} from '../players/components/Types';
 import { toast } from 'react-toastify';
-import { ArrowDownOnSquareStackIcon, ArrowLongRightIcon } from '@heroicons/react/24/solid';
+import {
+    ArrowDownOnSquareStackIcon,
+    ArrowLongRightIcon,
+} from '@heroicons/react/24/solid';
 import { useNavigate } from 'react-router-dom';
-import { formatTime, locationToText, toTitleCase, appointmentResources, Location, Team, Timeslot, Game } from './Resources';
-import html2pdf from "html2pdf.js";
-
+import {
+    formatTime,
+    locationToText,
+    toTitleCase,
+    appointmentResources,
+    Location,
+    Team,
+    Timeslot,
+    Game,
+} from './Resources';
+import html2pdf from 'html2pdf.js';
 
 const downloadRunsheet = async (gameId: string) => {
     const defaultFileName = `scoresheet-${gameId}.pdf`;
@@ -72,6 +98,8 @@ const downloadRunsheet = async (gameId: string) => {
 
 const downloadMultipleRunsheets = async (gameIds: string[]) => {
     const defaultFileName = `scoresheets.zip`;
+    console.log(`downloading ${gameIds.length} scoresheets:`);
+    console.log(gameIds);
 
     const toastId = toast.loading('Downloading ZIP...');
     try {
@@ -230,56 +258,63 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
     const tableRef = useRef<HTMLDivElement>(null);
 
-
     // ####################     PDF DOWNLOADING     ########################################
 
     const [exportingTable, setExportingTable] = useState(false);
-    const [selectedLocation, setSelectedLocation] = useState<Location.ST_IVES | Location.BELROSE>(Location.ST_IVES);
+    const [selectedLocation, setSelectedLocation] = useState<
+        Location.ST_IVES | Location.BELROSE
+    >(Location.ST_IVES);
 
     const getNewTitle = (gameId: string) => {
         const game = allGames.find((game) => game.id === gameId);
-        if (!game) return "Unknown";
+        if (!game) return 'Unknown';
         return `${game.lightTeam.name} (W) vs ${game.darkTeam.name} (B)`;
     };
 
     const newAllEvents = allEvents
-        .filter(event => {
+        .filter((event) => {
             const eventDate = new Date(event.startDate);
             return eventDate.toDateString() === currentDate.toDateString();
         })
-        .filter(event => !selectedLocation || event.location === selectedLocation); // Apply location filter
+        .filter(
+            (event) => !selectedLocation || event.location === selectedLocation,
+        ); // Apply location filter
 
+    const groupedEvents: Record<string, AppointmentEvent[]> =
+        newAllEvents.reduce(
+            (acc, event) => {
+                if (!acc[event.ageGroup]) acc[event.ageGroup] = [];
+                acc[event.ageGroup].push(event);
+                return acc;
+            },
+            {} as Record<string, AppointmentEvent[]>,
+        );
 
-    const groupedEvents: Record<string, AppointmentEvent[]> = newAllEvents.reduce((acc, event) => {
-        if (!acc[event.ageGroup]) acc[event.ageGroup] = [];
-        acc[event.ageGroup].push(event);
-        return acc;
-    }, {} as Record<string, AppointmentEvent[]>);
-
-    const handleDownloadPDF = async (location: Location.ST_IVES | Location.BELROSE) => {
+    const handleDownloadPDF = async (
+        location: Location.ST_IVES | Location.BELROSE,
+    ) => {
         setSelectedLocation(location);
         // setTimeout(async () => {
-            setExportingTable(true);
-            const element = tableRef.current;
-            if (!element) return;
-    
-            await html2pdf()
-                .set({
-                    margin: 10,
-                    filename: "Runsheet.pdf",
-                    image: { type: "jpeg", quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-                    pagebreak: { mode: ["css", "avoid-all"] } // Ensure proper page breaks
-                })
-                .from(element)
-                .save();
-            setExportingTable(false);
+        setExportingTable(true);
+        const element = tableRef.current;
+        if (!element) return;
+
+        await html2pdf()
+            .set({
+                margin: 10,
+                filename: 'Runsheet.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'avoid-all'] }, // Ensure proper page breaks
+            })
+            .from(element)
+            .save();
+        setExportingTable(false);
         // }, 100);
     };
 
     // ####################    END OF PDF DOWNLOADING     ##################################
-    
 
     const getGameCountForDate = (date: Date) => {
         return allGames.filter((game) => {
@@ -422,8 +457,8 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
                         </Button>
                     </div>
-                    <hr className='w-3/4 mt-8 mb-8'></hr>
-                    <div className=''>
+                    <hr className="w-3/4 mt-8 mb-8"></hr>
+                    <div className="">
                         <Button
                             variant="contained"
                             size="medium"
@@ -433,7 +468,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             Download St Ives Runsheet
                         </Button>
                     </div>
-                    <div className='pt-2'>
+                    <div className="pt-2">
                         <Button
                             variant="contained"
                             size="medium"
@@ -444,16 +479,28 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         </Button>
                     </div>
                 </div>
-                
             </div>
-            <div ref={tableRef} className={` ${exportingTable ? 'w-[210mm] bg-white px-8 pb-8' : 'absolute bottom-0 left-0 invisible'}`}>
+            <div
+                ref={tableRef}
+                className={` ${
+                    exportingTable
+                        ? 'w-[210mm] bg-white px-8 pb-8'
+                        : 'absolute bottom-0 left-0 invisible'
+                }`}
+            >
                 <Typography variant="h5" className="pb-4">
-                    NSBL Runsheet &nbsp;-&nbsp; {locationToText(selectedLocation)} &nbsp;-&nbsp; {currentDate.toDateString()}
+                    NSBL Runsheet &nbsp;-&nbsp;{' '}
+                    {locationToText(selectedLocation)} &nbsp;-&nbsp;{' '}
+                    {currentDate.toDateString()}
                 </Typography>
                 {Object.keys(groupedEvents)
-                    .map(ageGroup => ({
+                    .map((ageGroup) => ({
                         ageGroup,
-                        firstGameTime: Math.min(...groupedEvents[ageGroup].map(event => new Date(event.startDate).getTime()))
+                        firstGameTime: Math.min(
+                            ...groupedEvents[ageGroup].map((event) =>
+                                new Date(event.startDate).getTime(),
+                            ),
+                        ),
                     }))
                     .sort((a, b) => a.firstGameTime - b.firstGameTime) // Sort tables by first game time
                     .map(({ ageGroup }) => (
@@ -461,7 +508,10 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             <Typography variant="h6" className="pb-2 font-bold">
                                 {ageGroup}
                             </Typography>
-                            <TableContainer component={Paper} className="shadow-md">
+                            <TableContainer
+                                component={Paper}
+                                className="shadow-md"
+                            >
                                 <Table size="small">
                                     <TableHead>
                                         <TableRow className="bg-gray-100">
@@ -473,29 +523,41 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                                     <TableBody>
                                         {groupedEvents[ageGroup]
                                             .sort((a, b) => {
-                                                const timeA = new Date(a.startDate).getTime();
-                                                const timeB = new Date(b.startDate).getTime();
-                                                if (timeA !== timeB) return timeA - timeB;
+                                                const timeA = new Date(
+                                                    a.startDate,
+                                                ).getTime();
+                                                const timeB = new Date(
+                                                    b.startDate,
+                                                ).getTime();
+                                                if (timeA !== timeB)
+                                                    return timeA - timeB;
                                                 return a.court - b.court;
                                             })
-                                            .map(event => (
+                                            .map((event) => (
                                                 <TableRow key={event.id}>
                                                     <TableCell>
-                                                        {new Date(event.startDate).toLocaleTimeString("en-US", {
-                                                            hour: "numeric",
-                                                            minute: "2-digit",
-                                                            hour12: true,
-                                                        })}
+                                                        {new Date(
+                                                            event.startDate,
+                                                        ).toLocaleTimeString(
+                                                            'en-US',
+                                                            {
+                                                                hour: 'numeric',
+                                                                minute: '2-digit',
+                                                                hour12: true,
+                                                            },
+                                                        )}
                                                     </TableCell>
                                                     <TableCell>{`Court ${event.court}`}</TableCell>
-                                                    <TableCell>{getNewTitle(event.id)}</TableCell>
+                                                    <TableCell>
+                                                        {getNewTitle(event.id)}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
                         </div>
-                ))}
+                    ))}
             </div>
         </PageContainer>
     );
