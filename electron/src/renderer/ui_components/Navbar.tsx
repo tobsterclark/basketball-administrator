@@ -50,7 +50,7 @@ const Navbar = () => {
             {
                 name: '',
                 link: '',
-                icon: <hr className='w-full border-t border-gray-300'/>,
+                icon: <hr className="w-full border-t border-gray-300" />,
             },
             {
                 name: 'Term Setup',
@@ -65,7 +65,7 @@ const Navbar = () => {
             {
                 name: '',
                 link: '',
-                icon: <hr className='w-full border-t border-gray-300'/>,
+                icon: <hr className="w-full border-t border-gray-300" />,
             },
             {
                 name: 'Players',
@@ -84,17 +84,19 @@ const Navbar = () => {
             },
             ...(process.env.NODE_ENV === 'development'
                 ? [
-                    {
-                        name: '',
-                        link: '',
-                        icon: <hr className='w-full border-t border-gray-300'/>,
-                    },
-                    {
-                        name: 'Admin',
-                        link: '/admin',
-                        icon: <Cog6ToothIcon className={iconStyle} />,
-                    },
-                ]
+                      {
+                          name: '',
+                          link: '',
+                          icon: (
+                              <hr className="w-full border-t border-gray-300" />
+                          ),
+                      },
+                      {
+                          name: 'Admin',
+                          link: '/admin',
+                          icon: <Cog6ToothIcon className={iconStyle} />,
+                      },
+                  ]
                 : []),
         ];
 
@@ -112,7 +114,8 @@ const Navbar = () => {
                     let fullLinkStyle = linkStyle;
                     fullLinkStyle += ` rounded-lg text-slate-950 ${
                         locationPathName === value.link ||
-                        (value.link === '/roster' && locationPathName === '/runsheets')
+                        (value.link === '/roster' &&
+                            locationPathName === '/runsheets')
                             ? `bg-nsbl_primary shadow-sm`
                             : 'hover:bg-gray-100 bg-transparent'
                     }`;
@@ -139,7 +142,7 @@ const Navbar = () => {
         <div className="hidden text-md xl:flex flex-col justify-between h-full pt-20 pb-5 px-5 w-fit min-w-fit border-r-2 border-dashed">
             <div className="flex-col gap-2 items-center justify-start">
                 {/* <LogoSVG className="h-16" /> */}
-                
+
                 {/* <h1 className="text-lg font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue pb-4">
                     NSBL
                 </h1> */}
@@ -166,7 +169,7 @@ const Navbar = () => {
         <div className="hidden md:flex flex-col justify-between items-center px-1 h-full pt-20 pb-5 w-fit min-w-fit text-xs border-r-2 border-dashed relative dark:bg-darkbg dark:border-darkgray">
             {/* <LogoSVG className="h-16" /> */}
             {links(
-                'flex flex-col gap-6 mx-2 dark:text-darktext',
+                'flex flex-col mx-2 dark:text-darktext',
                 'w-20 h-16 flex flex-col gap-1 justify-center items-center',
                 'w-6 h-6',
                 '',
