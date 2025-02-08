@@ -1,0 +1,560 @@
+{
+	"Wolves-3/4": [],
+	"Eagles-3/4": [
+		["Isaiah Z", 8.0],
+		["Eser T", 3.0],
+		["Lucas Z", 26.0],
+		["Edward Y", 43.0],
+		["Aidan X", 17.0],
+		["Ben D.B", 5.0],
+		["Jerry W", null],
+		["Bella B", null]
+	],
+	"Bulls-3/4": [
+		["Huxley F", 33.0],
+		["Benji V", 4.0],
+		["Michael L", 27.0],
+		["Oliver B", null],
+		["Charlie G", 21.0],
+		["Ishaan G", 8.0],
+		["Alex W", null],
+		["Aiden L", null]
+	],
+	"Dunkers-3/4": [
+		["Miles L", 6.0],
+		["Zac L", 9.0],
+		["Bodhi T.J", 6.0],
+		["Juliet B", null],
+		["Isabelle B", null],
+		["Lara G", null],
+		["Gili D", 4.0],
+		["Lachlan C", null]
+	],
+	"Rebels-3/4": [
+		["Hugh H", null],
+		["Andre C", 6.0],
+		["Lucas N", 38.0],
+		["Raymond L", 4.0],
+		["Monty A", 30.0],
+		["Congmin X", 2.0],
+		["Maverick H", null],
+		["Alfie A", null]
+	],
+	"Flames-3/4": [
+		["Liam C", null],
+		["Heejon C", null],
+		["Jasper F", null],
+		["Gabe W", 31.0],
+		["Brian L", null],
+		["Rohan A", null],
+		["Nathan M", null],
+		["Harrison N", null]
+	],
+	"Warriors-5/6": [
+		["Charlie M", null],
+		["Alex C", 31.0],
+		["Albert C", 3.0],
+		["Isaac H", 1.0],
+		["Daniel H", 29.0],
+		["Ivan Q", 10.0],
+		["Antoine F", 32.0],
+		["Wesley T", 15.0]
+	],
+	"Champions-5/6": [
+		["Anderson Y", 28.0],
+		["Christian F", null],
+		["Oryah D", 16.0],
+		["Zach O", null],
+		["Eitan G", 54.0],
+		["Blake R", null],
+		["Edward S", null],
+		["*", null]
+	],
+	"Travellers-5/6": [
+		["Fox H", 85.0],
+		["Aidan C", 3.0],
+		["Calix Z", 1.0],
+		["Clayton C", 8.0],
+		["Dom R", 21.0],
+		["Harvey H", 12.0],
+		["Michael M", 15.0],
+		["Marcus T", null]
+	],
+	"NBA 2K-5/6": [
+		["Connor F", 22.0],
+		["Tommy H", 18.0],
+		["Will H", 2.0],
+		["Lachlan S", 4.0],
+		["Alex K", 9.0],
+		["Miller H", 11.0],
+		["Lachie D", 13.0],
+		["George J", 12.0]
+	],
+	"Monkeys-5/6": [
+		["Alya B", 11.0],
+		["Sam D", 5.0],
+		["Aidan C", 3.0],
+		["Aiden Z", 29.0],
+		["Roland S", null],
+		["Ian G", 21.0],
+		["Reid M", 13.0],
+		["Leo C", null]
+	],
+	"Bounce-5/6": [
+		["Aliana B", 3.0],
+		["Myra P", 16.0],
+		["Selena F", 4.0],
+		["Marcus L", 24.0],
+		["Evie S", null],
+		["Hemish O", null],
+		["Dylan F", 7.0],
+		["Ashton C", 6.0]
+	],
+	"Superstars-5/6": [
+		["Oliver C", 24.0],
+		["Ethan W", 14.0],
+		["Riley L", 52.0],
+		["Luo", 34.0],
+		["Lachlan T.A", 41.0],
+		["Tom C", 4.0],
+		["Lionel L", null],
+		["Emmett M", null]
+	],
+	"Fireball-5/6": [
+		["Austin W", 23.0],
+		["Zachary W", 5.0],
+		["Henry W", 17.0],
+		["Ryan S", null],
+		["Tommy H", 8.0],
+		["Harry H", 10.0],
+		["Woody H", 2.0],
+		["Van L", null]
+	],
+	"Hawks-5/6": [
+		["Christian D", 4.0],
+		["Jordan S", 52.0],
+		["Christian P", null],
+		["Lincoln W", 19.0],
+		["Tom O.B", 22.0],
+		["Ryker H", 5.0],
+		["James C", null],
+		["Alex S", null]
+	],
+	"Kobe-5/6": [
+		["Adam L", 25.0],
+		["Joe C", null],
+		["Jackson T", 6.0],
+		["Ben I", 10.0],
+		["Hongyi L", 18.0],
+		["Otto T", null],
+		["Anson", 22.0],
+		["Harry B", 27.0]
+	],
+	"Tornadoes-7/9": [
+		["Nathan Y", 10.0],
+		["Stavros L", 18.0],
+		["Ryan L", 22.0],
+		["Jacob B", 14.0],
+		["Aaron R", 10.0],
+		["Rory D", 35.0],
+		["Mauris L", 19.0],
+		["Austin L", 4.0]
+	],
+	"Clippers-7/9": [
+		["Archie D", 33.0],
+		["Charlie S", 27.0],
+		["Oliver R", null],
+		["Oscar H", null],
+		["Adrian G", 42.0],
+		["Dennis Z", 10.0],
+		["Ben T", 4.0],
+		["Atom I", null]
+	],
+	"Hoopers-7/9": [
+		["Emile Z", 9.0],
+		["Yoon N", 7.0],
+		["Simeon B", null],
+		["Sijun A", 20.0],
+		["Oliver T", 2.0],
+		["Christian E", 34.0],
+		["Aprilia L", 1.0]
+	],
+	"Buckets-7/9": [
+		["Daniel K", 3.0],
+		["Anay P", 52.0],
+		["Alfred A", 23.0],
+		["Ben D", 14.0],
+		["Lorenzo G", 6.0],
+		["Harry H", 6.0],
+		["Jamie L", 12.0],
+		["Hugo J", 16.0],
+		["Oliver H", 2.0]
+	],
+	"Ninjas-7/9": [
+		["Leon T", 16.0],
+		["Justin W", null],
+		["Eamon L", 10.0],
+		["Sid B", null],
+		["Zachary H", 12.0],
+		["Koryo K", null],
+		["Ivan C", null],
+		["Eli K", 3.0]
+	],
+	"AND1-7/9": [
+		["Charlie S", null],
+		["Liam W", 44.0],
+		["Baidyn M", 4.0],
+		["Harry S", 35.0],
+		["Ricky C", 9.0],
+		["Aref F", 1.0],
+		["Gabriel J", 17.0],
+		["Joe Y", 5.0]
+	],
+	"Dribblers-7/9": [
+		["Sam T", 5.0],
+		["Ben T", 6.0],
+		["Ryan F", 7.0],
+		["Harry K", 2.0],
+		["Alex W", 4.0],
+		["Micah B", 9.0],
+		["Daniel H", 1.0],
+		["Kobe T", 3.0],
+		["Matthew T", 95.0]
+	],
+	"Splash Brothers-7/9": [
+		["Ziv D", 10.0],
+		["Aiden B", 24.0],
+		["Gavi T", 3.0],
+		["Heath F", 6.0],
+		["Adrian L", 2.0],
+		["Jerry Z", 13.0],
+		["Jonathan Z", 19.0],
+		["Aaroush S", 27.0]
+	],
+	"Breakers-7/9": [
+		["William D", 1.0],
+		["Sage O", null],
+		["Cody C", 11.0],
+		["Campbell W", 20.0],
+		["Ray W", 6.0],
+		["Jack R", 3.0],
+		["Skye R", 2.0],
+		["Agam T", 58.0]
+	],
+	"Bucks-7/9": [
+		["Whit G", 54.0],
+		["Ethan L", 37.0],
+		["Fletcher S", 11.0],
+		["Daniel R", null],
+		["Alexander N", 37.0],
+		["Ted E", 1.0],
+		["Yuka Y", null],
+		["Barrett Y", 2.0]
+	],
+	"Phoenix-7/9": [
+		["Noam Z", 20.0],
+		["Ilya R", 8.0],
+		["Eli L", 1.0],
+		["Sadie W", null],
+		["Amelia O", null],
+		["Avery M", null],
+		["Anastasia M", null],
+		["Elaine W", null]
+	],
+	"Defenders-7/9": [
+		["Ari S", 59.0],
+		["Jayden W", 44.0],
+		["Ethan Z", 11.0],
+		["Marcus W", 15.0],
+		["Liam C", 45.0],
+		["Lincoln S", 7.0],
+		["Maxwell", 32.0],
+		["Jacen T", 23.0]
+	],
+	"Lakers-7/9": [
+		["Quintus L", null],
+		["Jayden H", null],
+		["Gabriel H", null],
+		["Zachary Y", 3.0],
+		["Warren H", null],
+		["Amneet S", 4.0],
+		["Ethan T.B", 25.0]
+	],
+	"Wildcats-7/9": [
+		["Veervrat S", null],
+		["Yuchen H", null],
+		["Angus T", null],
+		["Alex Z", null],
+		["Alex I", null],
+		["Yuvi G", 8.0],
+		["Seb B", null]
+	],
+	"Redream-9/12": [
+		["Ethan T", 21.0],
+		["Joshua M", 17.0],
+		["Adam S", 3.0],
+		["Fintan M", 22.0],
+		["Liam W", 32.0],
+		["Dempsey R", 21.0],
+		["Ryan B", 12.0],
+		["Nathan Z", 43.0]
+	],
+	"Tsunamis-9/12": [
+		["Joshua W", 23.0],
+		["Mac C", 41.0],
+		["Nate H", 8.0],
+		["Charlie M", 9.0],
+		["Jake D", 21.0],
+		["Zen C.Y.", 4.0],
+		["Cameron G", 12.0],
+		["Chris G.Y", 9.0]
+	],
+	"Swish-9/12": [
+		["Amman K", 14.0],
+		["Cedric C", 13.0],
+		["Daragh M", 11.0],
+		["Harry C", 25.0],
+		["Finn S", 13.0],
+		["Cooper M", 8.0],
+		["Cadan S.P", null],
+		["Jared C", null]
+	],
+	"Knicks-9/12": [
+		["Wayne S", 53.0],
+		["Kai B", 26.0],
+		["Nicholas W", 2.0],
+		["Hayden L", 5.0],
+		["Alec S", 28.0],
+		["Will H.J", 6.0],
+		["Sam C", 3.0],
+		["Zack W", 17.0]
+	],
+	"Zombies-9/12": [
+		["Bodhi", 13.0],
+		["Alex E", 7.0],
+		["Cameron P", 6.0],
+		["Joshua L", 10.0],
+		["Tom B", 54.0],
+		["Callum S", 0.0],
+		["Declan", 55.0],
+		["James L", 1.0]
+	],
+	"Jewels-9/12": [
+		["Will A", 34.0],
+		["Santiago M", 21.0],
+		["Ben J", 14.0],
+		["Alex C", 13.0],
+		["Marcus V", 30.0],
+		["Mobin Z", 4.0],
+		["Kealan G", null],
+		["Salman H", null],
+		["Liam W", 33.0]
+	],
+	"Stubbed-9/12": [
+		["Tidhar D", 24.0],
+		["Yam T", 5.0],
+		["Xavier T", 31.0],
+		["Ryan B", null],
+		["Ethan W", null],
+		["Calvin G", null],
+		["Sam L", null],
+		["Orson R", null]
+	],
+	"Stingrays-9/12": [
+		["Austin K", 50.0],
+		["Matthew W", 4.0],
+		["Cato L", 8.0],
+		["Nathan L", 9.0],
+		["Yuchan A", 34.0],
+		["Nathan C", 29.0],
+		["Ryan S", 26.0],
+		["Oliver L", null]
+	],
+	"Houston Humpbacks-9/12": [
+		["Patrick W", null],
+		["Alex L", null],
+		["Zac P", null],
+		["Rylan K", null],
+		["Hamish W", null],
+		["Callum M", null],
+		["Jack H", null],
+		["Will B", null]
+	],
+	"Magic-9/12": [
+		["Henry M", 34.0],
+		["Luca B", 32.0],
+		["Red S", 22.0],
+		["Axle C", null],
+		["Lachlan B", null],
+		["Samson S", null],
+		["Tom P", null],
+		["Ned A", null],
+		["Liam M", null]
+	],
+	"Jordans-9/12": [
+		["Arj G", 17.0],
+		["George T", 24.0],
+		["Jeremy Y", 8.0],
+		["Nathan F", 26.0],
+		["Xavier C", 10.0],
+		["Rohan E", 24.0],
+		["Dhylan D", 30.0],
+		["Tom K", 29.0],
+		["Kaito J", 5.0]
+	],
+	"Whales-9/12": [
+		["Russel B", 23.0],
+		["Thomas G", 1.0],
+		["Lucas R", 33.0],
+		["Isaac K", 10.0],
+		["Tom R", 34.0],
+		["Liam H", 10.0],
+		["Dylan M", 6.0],
+		["Connor O.S", 8.0]
+	],
+	"Wombats-9/12": [
+		["Gabe F", 10.0],
+		["Oliver R", 7.0],
+		["Charles H", 21.0],
+		["Oakley S", 53.0],
+		["Archie S", 11.0],
+		["Harry H", 11.0],
+		["Lucas M", 19.0],
+		["Jasper R", null]
+	],
+	"Gorillas-9/12": [
+		["Justin C", 35.0],
+		["Chris C", 32.0],
+		["Jason Wo", 13.0],
+		["Dario H", 14.0],
+		["Hunter C", 21.0],
+		["Brandan B", 4.0],
+		["Monty B", 3.0],
+		["Alex X", 22.0],
+		["Julian G", 25.0]
+	],
+	"Bricks-9/12": [
+		["Gabriel C.D", null],
+		["Harry L", null],
+		["Zac C", null],
+		["Ariyan K", null],
+		["Roman H", 34.0],
+		["Zach R", 18.0],
+		["Will R", 5.0],
+		["Batu P", 15.0]
+	],
+	"Tigers-9/12": [
+		["Alex M", 3.0],
+		["Ben R", 40.0],
+		["Lucca H", 14.0],
+		["Arlo H", null],
+		["Owen H", 25.0],
+		["Zac J.H", 14.0],
+		["Toby W", 31.0],
+		["James B", 8.0]
+	],
+	"Minions-9/12": [
+		["Declan C", 18.0],
+		["Matthew C", 3.0],
+		["Max F", 17.0],
+		["Jerry C", 1.0],
+		["Jason C", 12.0],
+		["Max L", 32.0],
+		["Yicen S", 7.0],
+		["Rafael A.T", 9.0]
+	],
+	"Donkeys-9/12": [
+		["Curtis R", 33.0],
+		["Hugh W", 51.0],
+		["Gautam S", 18.0],
+		["Sam R", 29.0],
+		["Jaiden S", 2.0],
+		["Julian B", 51.0],
+		["Dexten M", 1.0],
+		["Jiwon P", null]
+	],
+	"Black-adults": [
+		["Brian", null],
+		["Dong", null],
+		["Haofei", null],
+		["Reggie", null],
+		["Tony", null],
+		["Vince", null],
+		["Yoshi", null]
+	],
+	"Blue-adults": [
+		["Andrew M", null],
+		["Andrew S", null],
+		["Jason", null],
+		["Leo", null],
+		["Samantha", null],
+		["Stephen", null],
+		["Tim E", null]
+	],
+	"Green-adults": [
+		["Allan", null],
+		["Huyen", null],
+		["Kevin", null],
+		["Lauren", null],
+		["Mikal", null],
+		["Lachlan", null],
+		["Shane", null],
+		["Peter", null]
+	],
+	"Orange-adults": [
+		["Arnie", null],
+		["Damian K", null],
+		["Hamish", null],
+		["John", null],
+		["Martin", null],
+		["Matthew", null],
+		["Tim B", null]
+	],
+	"Pink-adults": [
+		["Jordan X", null],
+		["Chris Y", null],
+		["Joe", null],
+		["Ryan C", null],
+		["Richard C", null],
+		["Sagar", null],
+		["Tim Y", null],
+		["Will D", null]
+	],
+	"Purple-adults": [
+		["Andy", null],
+		["Craig", null],
+		["Daniel S", null],
+		["Daniel Sl", null],
+		["Jamie", null],
+		["Jared B", null],
+		["Tegan", null],
+		["Tony L", null]
+	],
+	"Red-adults": [
+		["Chris W", null],
+		["Desmond", null],
+		["George", null],
+		["Jarod G", null],
+		["Jessica", null],
+		["Simon T", null],
+		["Toby ", null]
+	],
+	"White-adults": [
+		["Cedric", null],
+		["Chau", null],
+		["Damian", null],
+		["Rob", null],
+		["Roland", null],
+		["Tanya", null],
+		["*", null]
+	],
+	"Yellow-adults": [
+		["Albert", null],
+		["Bernard", null],
+		["Lionel", null],
+		["Maki", null],
+		["Phuong", null],
+		["Ray", null],
+		["Tim S", null]
+	]
+}

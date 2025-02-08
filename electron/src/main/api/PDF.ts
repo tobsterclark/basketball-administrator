@@ -13,8 +13,8 @@ const devTargetAudience =
 const isDebug =
     process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
-// const targetAudience = isDebug ? devTargetAudience : prodTargetAudience;
-const targetAudience = prodTargetAudience;
+const targetAudience = isDebug ? devTargetAudience : prodTargetAudience;
+// const targetAudience = prodTargetAudience;
 
 // Get file from cloud run function (either zip or pdf)
 async function getDownload(url: string, filePath: string | undefined) {
