@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import Moment from 'react-moment';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import {
@@ -592,6 +592,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                         minute: time.minutes(),
                         second: 0,
                     });
+                    finalMoment = finalMoment.tz('Australia/Sydney');
 
                     const dbLocation =
                         venue === 'St Ives' ? 'ST_IVES' : 'BELROSE';
