@@ -172,6 +172,8 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 		timeZone: "Australia/Sydney",
 	});
 
+	const formattedDate = date.toLocaleDateString("en-us", { month: "short", day: "numeric" });
+
 	// Fill in general info
 	form.getTextField("Team A").setText(game.lightTeam.name);
 	form.getTextField("Team A 2").setText(game.lightTeam.name);
@@ -179,7 +181,7 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 	form.getTextField("Team B 2").setText(game.darkTeam.name);
 	form.getTextField("Venue").setText(formatString(game.timeslot.location));
 	form.getTextField("Court").setText(game.timeslot.court.toString());
-	form.getTextField("Date").setText("14th March");
+	form.getTextField("Date").setText(formattedDate);
 	form.getTextField("Time").setText(gameTime);
 	form.getTextField("AgeGroup").setText(formatString(game.ageGroup.displayName));
 
