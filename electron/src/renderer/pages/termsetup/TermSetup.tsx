@@ -10,6 +10,7 @@ import {
     MenuItem,
     Select,
     SelectChangeEvent,
+    Switch,
     Tab,
     Table,
     TableBody,
@@ -52,6 +53,8 @@ type WeekTabPanelProps = {
     term: number;
     ageGroups: AgeGroupDataResponse[];
     dbTimeSlots: timeSlotParams[];
+    isSundayComp: boolean;
+    setIsSundayComp: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const hourSlots = [
@@ -317,6 +320,8 @@ const WeekTabPanel = (
         dbTimeSlots,
         setModifiedTimeSlots,
         modifiedTimeSlots,
+        isSundayComp,
+        setIsSundayComp,
     } = props;
 
     const stIvesTimeSlots = dbTimeSlots.filter(
@@ -336,31 +341,43 @@ const WeekTabPanel = (
         >
             {value === index && (
                 <div>
-                    <h2>{getWeekDate(term, index)}</h2>
-                    <div className="pt-4">
-                        <h3 className="text-xl font-bold">St Ives</h3>
-                        {renderWeekTable(
-                            term,
-                            index,
-                            'St Ives',
-                            ageGroups,
-                            stIvesTimeSlots,
-                            setModifiedTimeSlots,
-                            modifiedTimeSlots,
-                        )}
+                    <div>
+                        <h2>Add a game</h2>
                     </div>
-                    <div className="pt-8">
-                        <h3 className="text-xl font-bold">Belrose</h3>
-                        {renderWeekTable(
-                            term,
-                            index,
-                            'Belrose',
-                            ageGroups,
-                            belroseTimeSlots,
-                            setModifiedTimeSlots,
-                            modifiedTimeSlots,
-                        )}
-                    </div>
+                    {
+                        isSundayComp ? (
+                            <div>
+                                <h2>{getWeekDate(term, index)}</h2>
+                                    <div className="pt-4">
+                                        <h3 className="text-xl font-bold">St Ives</h3>
+                                        {renderWeekTable(
+                                            term,
+                                            index,
+                                            'St Ives',
+                                            ageGroups,
+                                            stIvesTimeSlots,
+                                            setModifiedTimeSlots,
+                                            modifiedTimeSlots,
+                                        )}
+                                    </div>
+                                    <div className="pt-8">
+                                        <h3 className="text-xl font-bold">Belrose</h3>
+                                        {renderWeekTable(
+                                            term,
+                                            index,
+                                            'Belrose',
+                                            ageGroups,
+                                            belroseTimeSlots,
+                                            setModifiedTimeSlots,
+                                            modifiedTimeSlots,
+                                        )}
+                                    </div>
+                            </div>
+                        ) : (
+                            <div>
+                            </div>
+                        )
+                    }
                 </div>
             )}
         </div>
@@ -372,6 +389,7 @@ export const TermSetup = (props: PlayerDataProps) => {
 
     const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
+    const [isSundayComp, setIsSundayComp] = useState(true);
     const [loading, setLoading] = useState(true);
 
     const [dbTimeSlots, setDbTimeSlots] = useState<timeSlotParams[]>([]); // For storing fetched time slots
@@ -659,7 +677,33 @@ export const TermSetup = (props: PlayerDataProps) => {
                     <ArrowRightCircleIcon className="h-8 w-8 hover:text-red-400" />
                 </button>
             </div>
-            <div className="pt-12">
+            <div className="pt-2">
+                <div className="pt-4 flex items-center font-bold w-1/3">
+                    <p>Adults Competition</p>
+                    <Switch
+                        checked={isSundayComp}
+                        onChange={(e) =>
+                            setIsSundayComp(e.target.checked)
+                        }
+                        size="medium"
+                        sx={{
+                            '& .MuiSwitch-track': {
+                                backgroundColor: '#8cbae8',
+                            },
+                            '& .MuiSwitch-thumb': {
+                                color: '#1976d2',
+                            },
+                            '&.Mui-checked .MuiSwitch-track': {
+                                backgroundColor: '#8cbae8',
+                            },
+                            '&.Mui-checked .MuiSwitch-thumb': {
+                                color: '#1976d2',
+                            },
+                        }}
+                    />
+                    <p>Sunday Competition</p>
+                </div>
+                <hr className="h-[0.5px] w-full my-4 bg-gray-300 border-0" />
                 <Box sx={{ width: '100%' }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs
@@ -685,6 +729,8 @@ export const TermSetup = (props: PlayerDataProps) => {
                                 dbTimeSlots={dbTimeSlots}
                                 setModifiedTimeSlots={setModifiedTimeSlots}
                                 modifiedTimeSlots={modifiedTimeSlots}
+                                isSundayComp={isSundayComp}
+                                setIsSundayComp={setIsSundayComp}
                             />
                         ))}
                     </div>
