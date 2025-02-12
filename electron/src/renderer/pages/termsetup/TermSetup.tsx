@@ -38,6 +38,9 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import FormCancelSave from '../../ui_components/FormCancelSave';
 import Terms2025 from '../data/Terms';
 import { toast } from 'react-toastify';
+import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
+import { enAU } from 'date-fns/locale';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 type timeSlotParams = {
     id?: string;
@@ -70,12 +73,12 @@ const hourSlots = [
     { slot: 9, time: '6pm' },
 ];
 
-const getWeekDateFromTerm = (term: number, week: number) => {
+const getWeekDateFromTerm = (term: number, week: number, isSundayComp: boolean = true) => {
     const termDate = Terms2025[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7,
+        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
     );
     return newDate;
 };
@@ -224,12 +227,12 @@ const renderSelectInput = (
     );
 };
 
-const getWeekDate = (term: number, week: number) => {
+const getWeekDate = (term: number, week: number, isSundayComp: boolean = true) => {
     const termDate = Terms2025[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7,
+        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
     );
     return <Moment format="dddd[,] MMMM Do YYYY">{newDate}</Moment>;
 };
@@ -244,8 +247,9 @@ const renderWeekTable = (
         React.SetStateAction<timeSlotParams[]>
     >,
     modifiedTimeSlots: timeSlotParams[],
+    isSundayComp: boolean,
 ) => {
-    const currentDate = getWeekDateFromTerm(term, week);
+    const currentDate = getWeekDateFromTerm(term, week, isSundayComp);
 
     const findEntryByDateTime = (courtIndex: number, timeSlot: number) => {
         const time = moment(hourSlots[timeSlot].time, 'hha');
@@ -332,6 +336,8 @@ const WeekTabPanel = (
         (timeSlot) => timeSlot.location === 'BELROSE',
     );
 
+    let timeToAdd: Date = new Date();
+
     return (
         <div
             role="tabpanel"
@@ -341,10 +347,24 @@ const WeekTabPanel = (
         >
             {value === index && (
                 <div>
-                    <div>
-                        <h2>Add a game</h2>
+                    <div className='pb-16'>
+                        <h2 className='font-bold text-lg pb-4'>Add a game</h2>
+                        <div className='flex items-center gap-4'>
+                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enAU}>
+                                <TimePicker
+                                    label="Time"
+                                    value={timeToAdd}
+                                    onChange={(date) => {timeToAdd = date ?? new Date()}}
+                                />
+                            </LocalizationProvider>
+                            <Button
+                                variant="contained"
+                            >
+                                Add
+                            </Button>
+                        </div>
                     </div>
-                    {
+                    {/* {
                         isSundayComp ? (
                             <div>
                                 <h2>{getWeekDate(term, index)}</h2>
@@ -358,6 +378,7 @@ const WeekTabPanel = (
                                             stIvesTimeSlots,
                                             setModifiedTimeSlots,
                                             modifiedTimeSlots,
+                                            isSundayComp,
                                         )}
                                     </div>
                                     <div className="pt-8">
@@ -370,6 +391,7 @@ const WeekTabPanel = (
                                             belroseTimeSlots,
                                             setModifiedTimeSlots,
                                             modifiedTimeSlots,
+                                            isSundayComp,
                                         )}
                                     </div>
                             </div>
@@ -377,7 +399,36 @@ const WeekTabPanel = (
                             <div>
                             </div>
                         )
-                    }
+                    } */}
+                    <div>
+                        <h2>{getWeekDate(term, index, isSundayComp)}</h2>
+                            <div className="pt-4">
+                                <h3 className="text-xl font-bold">St Ives</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'St Ives',
+                                    ageGroups,
+                                    stIvesTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                )}
+                            </div>
+                            <div className="pt-8">
+                                <h3 className="text-xl font-bold">Belrose</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'Belrose',
+                                    ageGroups,
+                                    belroseTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                )}
+                            </div>
+                    </div>
                 </div>
             )}
         </div>
@@ -586,6 +637,7 @@ export const TermSetup = (props: PlayerDataProps) => {
         term: number = currentTerm,
         weekTab: number = currentWeekTab,
     ) => {
+        if (!isSundayComp) return;
         // Fetches or creates all time slots for the current week and term.
         // Stores into dbTimeSlots.
         // https://github.com/prisma/docs/issues/640
