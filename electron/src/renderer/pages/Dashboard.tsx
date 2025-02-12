@@ -47,7 +47,7 @@ const Dashboard = () => {
                                 </p>
                                 <p className="font-semibold text-md">
                                     You are running on the bleeding edge of
-                                    technology!! !! !
+                                    technology!
                                 </p>
                                 {updateAvailable ? (
                                     <div className="pt-4">

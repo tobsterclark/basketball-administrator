@@ -73,7 +73,11 @@ const hourSlots = [
     { slot: 9, time: '6pm' },
 ];
 
-const getWeekDateFromTerm = (term: number, week: number, isSundayComp: boolean = true) => {
+const getWeekDateFromTerm = (
+    term: number,
+    week: number,
+    isSundayComp: boolean = true,
+) => {
     const termDate = Terms2025[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
@@ -227,7 +231,11 @@ const renderSelectInput = (
     );
 };
 
-const getWeekDate = (term: number, week: number, isSundayComp: boolean = true) => {
+const getWeekDate = (
+    term: number,
+    week: number,
+    isSundayComp: boolean = true,
+) => {
     const termDate = Terms2025[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
@@ -347,23 +355,24 @@ const WeekTabPanel = (
         >
             {value === index && (
                 <div>
-                    <div className='pb-16'>
-                        <h2 className='font-bold text-lg pb-4'>Add a game</h2>
-                        <div className='flex items-center gap-4'>
-                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enAU}>
+                    {/* <div className="pb-16">
+                        <h2 className="font-bold text-lg pb-4">Add a game</h2>
+                        <div className="flex items-center gap-4">
+                            <LocalizationProvider
+                                dateAdapter={AdapterDateFns}
+                                adapterLocale={enAU}
+                            >
                                 <TimePicker
                                     label="Time"
                                     value={timeToAdd}
-                                    onChange={(date) => {timeToAdd = date ?? new Date()}}
+                                    onChange={(date) => {
+                                        timeToAdd = date ?? new Date();
+                                    }}
                                 />
                             </LocalizationProvider>
-                            <Button
-                                variant="contained"
-                            >
-                                Add
-                            </Button>
+                            <Button variant="contained">Add</Button>
                         </div>
-                    </div>
+                    </div> */}
                     {/* {
                         isSundayComp ? (
                             <div>
@@ -402,32 +411,32 @@ const WeekTabPanel = (
                     } */}
                     <div>
                         <h2>{getWeekDate(term, index, isSundayComp)}</h2>
-                            <div className="pt-4">
-                                <h3 className="text-xl font-bold">St Ives</h3>
-                                {renderWeekTable(
-                                    term,
-                                    index,
-                                    'St Ives',
-                                    ageGroups,
-                                    stIvesTimeSlots,
-                                    setModifiedTimeSlots,
-                                    modifiedTimeSlots,
-                                    isSundayComp,
-                                )}
-                            </div>
-                            <div className="pt-8">
-                                <h3 className="text-xl font-bold">Belrose</h3>
-                                {renderWeekTable(
-                                    term,
-                                    index,
-                                    'Belrose',
-                                    ageGroups,
-                                    belroseTimeSlots,
-                                    setModifiedTimeSlots,
-                                    modifiedTimeSlots,
-                                    isSundayComp,
-                                )}
-                            </div>
+                        <div className="pt-4">
+                            <h3 className="text-xl font-bold">St Ives</h3>
+                            {renderWeekTable(
+                                term,
+                                index,
+                                'St Ives',
+                                ageGroups,
+                                stIvesTimeSlots,
+                                setModifiedTimeSlots,
+                                modifiedTimeSlots,
+                                isSundayComp,
+                            )}
+                        </div>
+                        <div className="pt-8">
+                            <h3 className="text-xl font-bold">Belrose</h3>
+                            {renderWeekTable(
+                                term,
+                                index,
+                                'Belrose',
+                                ageGroups,
+                                belroseTimeSlots,
+                                setModifiedTimeSlots,
+                                modifiedTimeSlots,
+                                isSundayComp,
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -730,7 +739,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                 </button>
             </div>
             <div className="pt-2">
-                <div className="pt-4 flex items-center font-bold w-1/3">
+                {/* <div className="pt-4 flex items-center font-bold w-1/3">
                     <p>Adults Competition</p>
                     <Switch
                         checked={isSundayComp}
@@ -755,7 +764,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                     />
                     <p>Sunday Competition</p>
                 </div>
-                <hr className="h-[0.5px] w-full my-4 bg-gray-300 border-0" />
+                <hr className="h-[0.5px] w-full my-4 bg-gray-300 border-0" /> */}
                 <Box sx={{ width: '100%' }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs
