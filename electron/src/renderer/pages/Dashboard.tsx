@@ -21,14 +21,14 @@ const Dashboard = () => {
         window.electron.ipcRenderer.removeAllListeners('update_available');
         setUpdateAvailable(true);
         setNewUpdateVersion(updateInfo.version);
-        console.info("New update available:");
+        console.info('New update available:');
         console.info(updateInfo);
     });
 
     window.electron.ipcRenderer.on('update_downloaded', () => {
         window.electron.ipcRenderer.removeAllListeners('update_downloaded');
         setUpdateDownloaded(true);
-        console.info("Update downloaded");
+        console.info('Update downloaded');
     });
 
     return (
@@ -42,39 +42,56 @@ const Dashboard = () => {
 						<hr className="w-[125px]"></hr> */}
                         <div className="absolute w-full ">
                             <div className="overflow-x-auto gap-6 pt-4 pb-4 min-width-max pr-[200px]">
-                                <p className='font-bold text-lg'>Version {appVersion}</p>
-                                <p className='font-bold text-xl'>Wow omg this is the new version</p>
+                                <p className="font-bold text-xl">
+                                    Version {appVersion}
+                                </p>
+                                <p className="font-semibold text-md">
+                                    You are running on the bleeding edge of
+                                    technology!! !! !
+                                </p>
                                 {updateAvailable ? (
-                                    <div className='pt-4'>
+                                    <div className="pt-4">
                                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                             <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
-                                                <h2 className="text-xl font-semibold mb-4">Update available!</h2>
+                                                <h2 className="text-xl font-semibold mb-4">
+                                                    Update available!
+                                                </h2>
                                                 <p className="text-gray-600">
-                                                    Current version {`-->`} {appVersion}
+                                                    Current version {`-->`}{' '}
+                                                    {appVersion}
                                                 </p>
                                                 <p className="text-gray-600 pt-1">
-                                                    New version {`-->`} {newUpdateVersion === "0" ? "?" : newUpdateVersion}
+                                                    New version {`-->`}{' '}
+                                                    {newUpdateVersion === '0'
+                                                        ? '?'
+                                                        : newUpdateVersion}
                                                 </p>
-                                                
 
                                                 {!updateDownloaded ? (
-                                                    <div className='font-bold flex justify-center pt-4 gap-2'>
-                                                        <p>Update downloading...</p>
+                                                    <div className="font-bold flex justify-center pt-4 gap-2">
+                                                        <p>
+                                                            Update
+                                                            downloading...
+                                                        </p>
                                                         <ArrowPathIcon className="animate-spin h-6 w-6" />
                                                     </div>
                                                 ) : (
                                                     <div>
                                                         <p className="text-gray-600 pt-4 mb-4">
-                                                            Update downloaded. Would you like to update now?
+                                                            Update downloaded.
+                                                            Would you like to
+                                                            update now?
                                                         </p>
-                                                        <div className='flex gap-4 justify-center'>
+                                                        <div className="flex gap-4 justify-center">
                                                             <button className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600">
                                                                 Cancel
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                                                                 onClick={() => {
-                                                                    window.electron.ipcRenderer.send('restart_app');
+                                                                    window.electron.ipcRenderer.send(
+                                                                        'restart_app',
+                                                                    );
                                                                 }}
                                                             >
                                                                 Update

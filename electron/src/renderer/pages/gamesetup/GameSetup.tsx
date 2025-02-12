@@ -531,16 +531,6 @@ export const GameSetup = (props: PlayerDataProps) => {
                         Save
                     </Button>
                 </div>
-                {/* <div className="w-1/5">
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        onClick={deleteAllGames}
-                    >
-                        DELETE ALL GAMES
-                    </Button>
-                </div> */}
             </div>
             <div className="pt-8">
                 {belroseGames ? (
