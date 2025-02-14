@@ -33,6 +33,7 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
 import { toast } from 'react-toastify';
+import { env } from 'process';
 
 const toTitleCase = (str: string) => {
     return str
@@ -45,7 +46,7 @@ const toTitleCase = (str: string) => {
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
-        '40bed308-a36e-4e20-8f5e-2c3e1aa02e9f',
+        'e20c91d4-06c9-4896-b2ea-0232250067f3', // years 3-4
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
@@ -107,6 +108,58 @@ export const GameSetup = (props: PlayerDataProps) => {
         getDbGames();
     }, [selectedAgeGroupId]);
 
+    const formatter = new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Sydney",
+        hour: "numeric",
+        hour12: false,
+    });
+
+    // const getTimesFromSlots = (timeSlots: timeSlotParams[], venue: string = 'ST_IVES') => {
+    //     const timesCount: { [key: number]: number } = {};
+    
+    //     for (const timeSlot of timeSlots) {
+    //         if (timeSlot.location === venue) {
+    //             const hour = new Intl.DateTimeFormat('en-AU', {
+    //                 timeZone: 'Australia/Sydney',
+    //                 hour: 'numeric',
+    //                 hour12: false,
+    //             }).format(timeSlot.date);
+    
+    //             const hourNumber = parseInt(hour, 10);
+    //             timesCount[hourNumber] = (timesCount[hourNumber] || 0) + 1;
+    //         }
+    //     }
+    
+    //     return timesCount;
+    // };
+    
+
+    // const getTimesFromSlots = (
+    //     timeSlots: timeSlotParams[],
+    //     venue: string = 'ST_IVES',
+    // ) => {
+    //     const timesAndCourts: { [key: number]: number[] } = {};
+    //     for (let i = 0; i < timeSlots.length; i += 1) {
+    //         const timeSlot = timeSlots[i];
+    //         const sydneyHourOfDay = parseInt(formatter.format(timeSlot.date), 10);
+
+    //         if (timeSlot.location !== venue) {
+    //             continue;
+    //         }
+    //         if (timesAndCourts[sydneyHourOfDay]) {
+    //             if (!timesAndCourts[sydneyHourOfDay].includes(timeSlot.court)) {
+    //                 timesAndCourts[sydneyHourOfDay].push(timeSlot.court);
+    //                 console.log(`sydneyHourOfDay: ${sydneyHourOfDay}, court: ${timeSlot.court}`);
+    //             }
+    //         } else {
+    //             timesAndCourts[sydneyHourOfDay] = [timeSlot.court];
+    //         }
+    //     }
+        
+    //     // Sort the value array for each key in ascending numerical order
+    //     return timesAndCourts;
+    // };
+
     const getTimesFromSlots = (
         timeSlots: timeSlotParams[],
         venue: string = 'ST_IVES',
@@ -123,6 +176,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 }
             }
         }
+        console.log(timesCount);
         return timesCount;
     };
 
@@ -740,41 +794,46 @@ export const GameSetup = (props: PlayerDataProps) => {
             ) : (
                 <div />
             )}
-            <div className="flex gap-8">
-                <button type="button" onClick={getTimeSlots}>
-                    Get Timeslots
-                </button>
-                <button
-                    type="button"
-                    onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
-                >
-                    getTeamsFromAgeGroup
-                </button>
+            {
+                process.env.NODE_ENV === 'development' ? (
+                    <div className="flex gap-8">
+                        <button type="button" onClick={getTimeSlots}>
+                            Get Timeslots
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
+                        >
+                            getTeamsFromAgeGroup
+                        </button>
 
-                <button
-                    type="button"
-                    onClick={() => {
-                        console.log('created games:');
-                        console.log(createdGames);
-                    }}
-                >
-                    Log created games
-                </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log('created games:');
+                                console.log(createdGames);
+                            }}
+                        >
+                            Log created games
+                        </button>
 
-                <button type="button" onClick={doTourney}>
-                    Generate Tournament
-                </button>
+                        <button type="button" onClick={doTourney}>
+                            Generate Tournament
+                        </button>
 
-                <button
-                    type="button"
-                    onClick={() => {
-                        console.log('Teams:');
-                        console.log(ageGroupTeams);
-                    }}
-                >
-                    Print teams
-                </button>
-            </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log('Teams:');
+                                console.log(ageGroupTeams);
+                            }}
+                        >
+                            Print teams
+                        </button>
+                    </div>
+                ) : (null)
+            }
+            
         </PageContainer>
     );
 };

@@ -39,6 +39,9 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
+// FORCING SYDNEY LOCALE
+app.commandLine.appendSwitch('lang', 'en-AU');
+
 // ipc handlers get defined here
 // implementation should be in a separate file
 ipcMain.handle(IpcChannels.PrismaClient, handleIpcPrismaCalls);

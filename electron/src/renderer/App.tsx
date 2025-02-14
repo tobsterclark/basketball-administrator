@@ -19,11 +19,11 @@ import {
 import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
 import TermSetup from './pages/termsetup/TermSetup';
-import GameSetup from './pages/gamesetup/GameSetup';
 import GameResults from './pages/gameresults/GameResults';
 import AgeGroups from './pages/agegroups/AgeGroups';
 import Admin from './pages/admin/Admin';
 import GameSetupNew from './pages/gamesetup/GameSetupNew';
+import { GameSetup } from './pages/gamesetup/GameSetup';
 
 const App = () => {
     // TODO: get players here as well
