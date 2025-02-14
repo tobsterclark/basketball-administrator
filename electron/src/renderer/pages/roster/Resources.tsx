@@ -24,6 +24,12 @@ export const locationToText = (location: Location) => {
 
 export const formatTime = (date: Date) => {
     // format time in <HH:mm> AM/PM format
+    // const formattedTime = new Date(date).toLocaleTimeString('en-AU', {
+    //     timeZone: 'Australia/Sydney',
+    //     hour: 'numeric',
+    //     minute: '2-digit',
+    //     hour12: true,
+    // })
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 };
 
@@ -125,3 +131,4 @@ export const appointmentResources = [
         instances: ageGroupResources,
     },
 ];
+

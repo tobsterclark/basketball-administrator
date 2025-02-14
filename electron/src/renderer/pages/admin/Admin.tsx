@@ -1,7 +1,7 @@
 import { useState } from "react";
 import PageContainer from "../../ui_components/PageContainer";
 import PageTitle from "../../ui_components/PageTitle";
-import { PlayerDataProps } from "../players/components/Types";
+import { PlayerDataProps, Timeslot } from "../players/components/Types";
 import { TextField, Button, MenuItem, Select } from "@mui/material";
 import { IpcChannels } from "../../../general/IpcChannels";
 import { PrismaCall, ModelName, CrudOperations } from "../../../general/prismaTypes";
@@ -91,6 +91,67 @@ const Admin = () => {
         }
     };
 
+    const decrementAllTimeslotsByOneHour = async () => {
+        // 1. Get all timeslots
+        let originalTimeslots;
+        try {
+            const prismaRequest: PrismaCall = {
+                model: ModelName.timeslot, // Change model as needed
+                operation: CrudOperations.findMany,
+                data: {},
+            };
+            const data = await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+            originalTimeslots = data as Timeslot[];
+            console.log("Step 1 done. Here are all timeslots:");
+            console.log(originalTimeslots);
+        } catch (error) {
+            console.error("Error decrementing timeslots:", error);
+        }
+
+        // 2. Decrement all timeslots by 1 hour
+        if (!originalTimeslots) return;
+        let newTimeslots = originalTimeslots.map((timeslot) => {
+            const newDate = new Date(timeslot.date);
+            newDate.setUTCHours(newDate.getUTCHours() - 1);
+            return {
+                ...timeslot,
+                date: newDate.toISOString(),
+            };
+        });
+
+        console.log('Step 2: Decrementing all timeslots by 1 hour');
+        console.log(newTimeslots);
+
+        // 3. Delete all timeslots
+        try {
+            const prismaRequest: PrismaCall = {
+                model: ModelName.timeslot, // Change model as needed
+                operation: CrudOperations.deleteMany,
+                data: {},
+            };
+            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+            console.log("Step 3 done. All timeslots deleted.");
+        } catch (error) {
+            console.error("Error deleting timeslots:", error);
+        }
+
+
+        // 4. Create new timeslots
+        try {
+            const prismaRequest: PrismaCall = {
+                model: ModelName.timeslot, // Change model as needed
+                operation: CrudOperations.createManyAndReturn,
+                data: { data: newTimeslots },
+            };
+            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+            console.log("Step 4 done. New timeslots created.");
+        } catch (error) {
+            console.error("Error uploading new timeslots:", error);
+        }
+    };
+    
+        
+
     return (
         <PageContainer>
             <PageTitle text="Admin Panel" />
@@ -159,6 +220,15 @@ const Admin = () => {
                             }}
                         >
                             Delete ALL ENTRIES
+                        </Button>
+                        <Button
+                            variant="contained" 
+                            color="error" 
+                            onClick={() => {
+                                decrementAllTimeslotsByOneHour();
+                            }}
+                        >
+                            decrement
                         </Button>
                     </div>
                 </div>
