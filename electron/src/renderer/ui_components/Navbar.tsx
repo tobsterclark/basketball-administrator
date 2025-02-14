@@ -62,6 +62,11 @@ const Navbar = () => {
                 link: '/game-setup',
                 icon: <LifebuoyIcon className={iconStyle} />,
             },
+            // {
+            //     name: 'Game Setup New',
+            //     link: '/game-setup-new',
+            //     icon: <LifebuoyIcon className={iconStyle} />,
+            // },
             {
                 name: '',
                 link: '',

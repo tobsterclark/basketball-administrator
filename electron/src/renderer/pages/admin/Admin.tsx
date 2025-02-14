@@ -221,7 +221,7 @@ const Admin = () => {
                         >
                             Delete ALL ENTRIES
                         </Button>
-                        <Button
+                        {/* <Button
                             variant="contained" 
                             color="error" 
                             onClick={() => {
@@ -229,7 +229,7 @@ const Admin = () => {
                             }}
                         >
                             decrement
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
             </div>
