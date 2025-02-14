@@ -165,7 +165,7 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 	const form = pdfTemplate.getForm();
 
 	const date = new Date(game.timeslot.date);
-	date.setHours(game.timeslot.date.getHours() - 1);
+	date.setHours(game.timeslot.date.getHours());
 	const gameTime = date.toLocaleTimeString(["en-AU"], {
 		hour: "numeric",
 		minute: "2-digit",
