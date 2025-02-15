@@ -9,6 +9,7 @@ const Dashboard = () => {
     const [newUpdateVersion, setNewUpdateVersion] = useState('0');
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
+    const [releaseNotes, setReleaseNotes] = useState('');
 
     window.electron.ipcRenderer.send('app_version');
     window.electron.ipcRenderer.on('app_version', (event, arg) => {
@@ -21,6 +22,7 @@ const Dashboard = () => {
         window.electron.ipcRenderer.removeAllListeners('update_available');
         setUpdateAvailable(true);
         setNewUpdateVersion(updateInfo.version);
+        setReleaseNotes(updateInfo.releaseNotes);
         console.info('New update available:');
         console.info(updateInfo);
     });
@@ -65,6 +67,14 @@ const Dashboard = () => {
                                                     {newUpdateVersion === '0'
                                                         ? '?'
                                                         : newUpdateVersion}
+                                                </p>
+                                                <p>
+                                                    <span className="font-semibold">
+                                                        Release notes:{' '}
+                                                    </span>
+                                                    {releaseNotes === ''
+                                                        ? 'No release notes available'
+                                                        : releaseNotes}
                                                 </p>
 
                                                 {!updateDownloaded ? (

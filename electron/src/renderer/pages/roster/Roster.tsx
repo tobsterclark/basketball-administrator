@@ -41,8 +41,13 @@ import {
 import { toast } from 'react-toastify';
 import {
     ArrowDownOnSquareStackIcon,
-    ArrowLongRightIcon,
+    ArrowLeftIcon,
 } from '@heroicons/react/24/solid';
+import {
+    ArrowLongRightIcon,
+    ArrowRightIcon,
+    ExclamationCircleIcon,
+} from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import {
     formatTime,
@@ -498,6 +503,20 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         venues and courts.
                     </p>
                     <div>
+                        <div className="pt-2 pb-4">
+                            <div className="flex gap-1 text-gray-500">
+                                <ExclamationCircleIcon className="h-6 w-6 inline-block" />
+                                <h3>Note on Scoresheet Order</h3>
+                            </div>
+                            <div className="flex gap-2 pl-2">
+                                <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                <p className="text-sm text-gray-600 pt-1">
+                                    <span>
+                                        {`Pages are sorted in order of time (earliest to latest) first, and by court second.`}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
                         <Button
                             variant="contained"
                             size="medium"
