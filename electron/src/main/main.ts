@@ -41,6 +41,7 @@ let mainWindow: BrowserWindow | null = null;
 
 // FORCING SYDNEY LOCALE
 app.commandLine.appendSwitch('lang', 'en-AU');
+process.env.TZ = "Australia/Sydney";
 
 // ipc handlers get defined here
 // implementation should be in a separate file

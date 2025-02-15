@@ -55,6 +55,7 @@ import {
     Game,
 } from './Resources';
 import html2pdf from 'html2pdf.js';
+import moment from 'moment';
 
 const downloadRunsheet = async (gameId: string) => {
     const defaultFileName = `scoresheet-${gameId}.pdf`;
@@ -255,8 +256,15 @@ const CustomTooltipHeader = ({
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
 
-    const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+    // Set this to Week 1 Term 1 in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
+    const [currentDate, setCurrentDate] = React.useState(
+        moment.tz([2025, 1, 9, 10], 'Australia/Sydney').toDate(),
+    );
+
     const tableRef = useRef<HTMLDivElement>(null);
+
+    console.log('current date:');
+    console.log(currentDate.toISOString());
 
     // ####################     PDF DOWNLOADING     ########################################
 
@@ -368,9 +376,11 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
 
     const transformGamesToEvents = (games: Game[]) => {
         const events: AppointmentEvent[] = games.map((game: Game) => {
-            const startDate = new Date(game.timeslot.date);
-            const endDate = new Date(startDate);
-            endDate.setHours(startDate.getHours() + 1);
+            const startDateUTC = moment.utc(game.timeslot.date);
+            const startDate = startDateUTC.tz('Australia/Sydney').toDate();
+
+            const endDate = moment(startDate).add(1, 'hour').toDate();
+
             const ageGroupIdStr: string = game.lightTeam.ageGroupId;
             const ageGroupName = ageGroups.find(
                 (ageGroup) => ageGroup.id === ageGroupIdStr,
@@ -429,9 +439,20 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                 <div className="w-3/5">
                     <Scheduler data={allEvents}>
                         <ViewState
-                            defaultCurrentDate={new Date(2025, 1, 9)}
-                            currentDate={currentDate}
-                            onCurrentDateChange={setCurrentDate}
+                            // Only use dates rather than including time. FUCK TIMEZONES!!!
+                            defaultCurrentDate={moment
+                                .tz([2025, 1, 9], 'Australia/Sydney')
+                                .format('YYYY-MM-DD')}
+                            currentDate={moment
+                                .tz(currentDate, 'Australia/Sydney')
+                                .format('YYYY-MM-DD')}
+                            onCurrentDateChange={(date) =>
+                                setCurrentDate(
+                                    moment
+                                        .tz(date, 'Australia/Sydney')
+                                        .toDate(),
+                                )
+                            }
                         />
                         <WeekView
                             excludedDays={[1, 2, 3, 4, 5, 6]}

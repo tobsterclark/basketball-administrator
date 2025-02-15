@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 export enum Location {
     ST_IVES = 'ST_IVES',
     BELROSE = 'BELROSE',
@@ -24,13 +26,8 @@ export const locationToText = (location: Location) => {
 
 export const formatTime = (date: Date) => {
     // format time in <HH:mm> AM/PM format
-    // const formattedTime = new Date(date).toLocaleTimeString('en-AU', {
-    //     timeZone: 'Australia/Sydney',
-    //     hour: 'numeric',
-    //     minute: '2-digit',
-    //     hour12: true,
-    // })
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    //return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return moment(date).tz('Australia/Sydney').format('h:mm A');
 };
 
 export type Team = {
@@ -131,4 +128,3 @@ export const appointmentResources = [
         instances: ageGroupResources,
     },
 ];
-

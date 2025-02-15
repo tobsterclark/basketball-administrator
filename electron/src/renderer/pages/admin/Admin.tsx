@@ -1,14 +1,18 @@
-import { useState } from "react";
-import PageContainer from "../../ui_components/PageContainer";
-import PageTitle from "../../ui_components/PageTitle";
-import { PlayerDataProps, Timeslot } from "../players/components/Types";
-import { TextField, Button, MenuItem, Select } from "@mui/material";
-import { IpcChannels } from "../../../general/IpcChannels";
-import { PrismaCall, ModelName, CrudOperations } from "../../../general/prismaTypes";
+import { useState } from 'react';
+import PageContainer from '../../ui_components/PageContainer';
+import PageTitle from '../../ui_components/PageTitle';
+import { PlayerDataProps, Timeslot } from '../players/components/Types';
+import { TextField, Button, MenuItem, Select } from '@mui/material';
+import { IpcChannels } from '../../../general/IpcChannels';
+import {
+    PrismaCall,
+    ModelName,
+    CrudOperations,
+} from '../../../general/prismaTypes';
 
 const Admin = () => {
-    const [entryId, setEntryId] = useState("");
-    const [entryData, setEntryData] = useState("");
+    const [entryId, setEntryId] = useState('');
+    const [entryData, setEntryData] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [modelName, setModelName] = useState<ModelName>(ModelName.player);
 
@@ -20,27 +24,32 @@ const Admin = () => {
                 const prismaRequest: PrismaCall = {
                     model: modelName, // Change model as needed
                     operation: CrudOperations.findMany,
-                    data: { },
+                    data: {},
                 };
-                
-                const data = await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+
+                const data = await window.electron.ipcRenderer.invoke(
+                    IpcChannels.PrismaClient,
+                    prismaRequest,
+                );
                 setEntryData(JSON.stringify(data, null, 2));
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error('Error fetching data:', error);
             }
-        }
-        else {
+        } else {
             try {
                 const prismaRequest: PrismaCall = {
                     model: modelName, // Change model as needed
                     operation: CrudOperations.findUnique,
                     data: { where: { id: entryId } },
                 };
-                
-                const data = await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+
+                const data = await window.electron.ipcRenderer.invoke(
+                    IpcChannels.PrismaClient,
+                    prismaRequest,
+                );
                 setEntryData(JSON.stringify(data, null, 2));
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error('Error fetching data:', error);
             }
         }
         setIsFetching(false);
@@ -54,10 +63,13 @@ const Admin = () => {
                 operation: CrudOperations.update,
                 data: { where: { id: entryId }, data: parsedData },
             };
-            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
-            alert("Entry updated successfully!");
+            await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
+            alert('Entry updated successfully!');
         } catch (error) {
-            console.error("Error updating data:", error);
+            console.error('Error updating data:', error);
         }
     };
 
@@ -68,11 +80,14 @@ const Admin = () => {
                 operation: CrudOperations.delete,
                 data: { where: { id: entryId } },
             };
-            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
-            setEntryData("");
-            alert("Entry deleted successfully!");
+            await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
+            setEntryData('');
+            alert('Entry deleted successfully!');
         } catch (error) {
-            console.error("Error deleting entry:", error);
+            console.error('Error deleting entry:', error);
         }
     };
 
@@ -83,11 +98,14 @@ const Admin = () => {
                 operation: CrudOperations.deleteMany,
                 data: {},
             };
-            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
-            setEntryData("");
-            alert("ALL ENTRIES deleted successfully!");
+            await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
+            setEntryData('');
+            alert('ALL ENTRIES deleted successfully!');
         } catch (error) {
-            console.error("Error deleting entries:", error);
+            console.error('Error deleting entries:', error);
         }
     };
 
@@ -100,12 +118,15 @@ const Admin = () => {
                 operation: CrudOperations.findMany,
                 data: {},
             };
-            const data = await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
+            const data = await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
             originalTimeslots = data as Timeslot[];
-            console.log("Step 1 done. Here are all timeslots:");
+            console.log('Step 1 done. Here are all timeslots:');
             console.log(originalTimeslots);
         } catch (error) {
-            console.error("Error decrementing timeslots:", error);
+            console.error('Error decrementing timeslots:', error);
         }
 
         // 2. Decrement all timeslots by 1 hour
@@ -129,12 +150,14 @@ const Admin = () => {
                 operation: CrudOperations.deleteMany,
                 data: {},
             };
-            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
-            console.log("Step 3 done. All timeslots deleted.");
+            await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
+            console.log('Step 3 done. All timeslots deleted.');
         } catch (error) {
-            console.error("Error deleting timeslots:", error);
+            console.error('Error deleting timeslots:', error);
         }
-
 
         // 4. Create new timeslots
         try {
@@ -143,14 +166,15 @@ const Admin = () => {
                 operation: CrudOperations.createManyAndReturn,
                 data: { data: newTimeslots },
             };
-            await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, prismaRequest);
-            console.log("Step 4 done. New timeslots created.");
+            await window.electron.ipcRenderer.invoke(
+                IpcChannels.PrismaClient,
+                prismaRequest,
+            );
+            console.log('Step 4 done. New timeslots created.');
         } catch (error) {
-            console.error("Error uploading new timeslots:", error);
+            console.error('Error uploading new timeslots:', error);
         }
     };
-    
-        
 
     return (
         <PageContainer>
@@ -159,13 +183,17 @@ const Admin = () => {
                 <div>
                     <Select
                         value={modelName}
-                        onChange={(e) => setModelName(e.target.value as ModelName)}
+                        onChange={(e) =>
+                            setModelName(e.target.value as ModelName)
+                        }
                     >
                         <MenuItem value={ModelName.player}>Players</MenuItem>
                         <MenuItem value={ModelName.team}>Teams</MenuItem>
                         <MenuItem value={ModelName.game}>Games</MenuItem>
                         <MenuItem value={ModelName.timeslot}>Timeslot</MenuItem>
-                        <MenuItem value={ModelName.ageGroup}>Age Groups</MenuItem>
+                        <MenuItem value={ModelName.ageGroup}>
+                            Age Groups
+                        </MenuItem>
                     </Select>
                 </div>
                 <div className="pt-8">
@@ -178,11 +206,11 @@ const Admin = () => {
                             onChange={(e) => setEntryId(e.target.value)}
                             fullWidth
                         />
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             onClick={() => {
                                 fetchEntryData();
-                            }} 
+                            }}
                             disabled={isFetching}
                         >
                             Fetch Data
@@ -194,27 +222,27 @@ const Admin = () => {
                         onChange={(e) => setEntryData(e.target.value)}
                     />
                     <div className="flex flex-row gap-16">
-                        <Button 
-                            variant="contained" 
-                            color="primary" 
+                        <Button
+                            variant="contained"
+                            color="primary"
                             onClick={() => {
                                 updateEntryData();
                             }}
                         >
                             Submit Updates
                         </Button>
-                        <Button 
-                            variant="contained" 
-                            color="error" 
+                        <Button
+                            variant="contained"
+                            color="error"
                             onClick={() => {
                                 deleteEntry();
                             }}
                         >
                             Delete Entry
                         </Button>
-                        <Button 
-                            variant="contained" 
-                            color="error" 
+                        <Button
+                            variant="contained"
+                            color="error"
                             onClick={() => {
                                 deleteAllEntries();
                             }}

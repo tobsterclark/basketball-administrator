@@ -4,6 +4,7 @@ import { PDFDocument, TextAlignment } from "pdf-lib";
 import { Prisma, PrismaClient } from "@prisma/client";
 import path from "path";
 import { Readable } from "stream";
+import moment from "moment-timezone";
 const archiver = require("archiver");
 
 const db = new PrismaClient();
@@ -120,7 +121,15 @@ export default onRequest({ region: "australia-southeast1", labels: { test: "test
 			// Create a new PDF document
 			const mergedPdf = await PDFDocument.create();
 
-			// TODO: Sort results properly for pdf
+			// Sort scoreSheetResults by timeslot.date, then timeslot.court
+			scoreSheetResults.sort((a, b) => {
+				if (a.timeslot.date < b.timeslot.date) return -1;
+				if (a.timeslot.date > b.timeslot.date) return 1;
+				if (a.timeslot.court < b.timeslot.court) return -1;
+				if (a.timeslot.court > b.timeslot.court) return 1;
+				return 0;
+			});
+
 			for (const result of scoreSheetResults) {
 				const pdfBuffer = await createPdf(result);
 				if (!pdfBuffer) {
@@ -164,15 +173,13 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 	const pdfTemplate = await PDFDocument.load(pdfTemplateFs);
 	const form = pdfTemplate.getForm();
 
-	const date = new Date(game.timeslot.date);
-	date.setHours(game.timeslot.date.getHours());
-	const gameTime = date.toLocaleTimeString(["en-AU"], {
-		hour: "numeric",
-		minute: "2-digit",
-		timeZone: "Australia/Sydney",
-	});
+	const date = new Date(game.timeslot.date); // in UTC time
 
-	const formattedDate = date.toLocaleDateString("en-us", { month: "short", day: "numeric" });
+	// Using moment, set newFormattedTime to the time in Australia/Sydney in h:mm A format
+	const newFormattedTime = moment(date).tz("Australia/Sydney").format("h:mm A");
+
+	// Using moment, set newFormattedDate to the date in Australia/Sydney in `Feb 2` format
+	const newFormattedDate = moment(date).tz("Australia/Sydney").format("MMM D");
 
 	// Fill in general info
 	form.getTextField("Team A").setText(game.lightTeam.name);
@@ -181,8 +188,8 @@ const createPdf = async (game: ScoresheetResult): Promise<Buffer | null> => {
 	form.getTextField("Team B 2").setText(game.darkTeam.name);
 	form.getTextField("Venue").setText(formatString(game.timeslot.location));
 	form.getTextField("Court").setText(game.timeslot.court.toString());
-	form.getTextField("Date").setText(formattedDate);
-	form.getTextField("Time").setText(gameTime);
+	form.getTextField("Date").setText(newFormattedDate);
+	form.getTextField("Time").setText(newFormattedTime);
 	form.getTextField("AgeGroup").setText(formatString(game.ageGroup.displayName));
 
 	// Fill in light players
