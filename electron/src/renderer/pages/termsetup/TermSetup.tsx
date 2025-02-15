@@ -240,7 +240,7 @@ const getWeekDate = (
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
+        termDate.getDate() + week * 7 + (!isSundayComp ? -4 : 0), // If wednesday, minus 3 days
     );
     return <Moment format="dddd[,] MMMM Do YYYY">{newDate}</Moment>;
 };
@@ -344,7 +344,48 @@ const WeekTabPanel = (
         (timeSlot) => timeSlot.location === 'BELROSE',
     );
 
-    let timeToAdd: Date = new Date();
+    const [timeToAdd, setTimeToAdd] = useState<Date>(new Date());
+    // let timeToAdd: Date = new Date();
+    const [courtToAdd, setCourtToAdd] = useState<string>('St Ives-1');
+    // let courtToAdd: string = 'St Ives-1';
+
+    const adultsStartTime = 19.0; // 7:00 PM in decimal hours
+    const adultsEndTime = 20.75; // 8:45 PM in decimal hours
+    const interval = 0.25; // 15-minute increments
+
+    const timeSlots: number[] = [];
+    for (
+        let time: number = adultsStartTime;
+        time <= adultsEndTime;
+        time += interval
+    ) {
+        timeSlots.push(time);
+    }
+
+    const formatTime = (decimalTime: number): string => {
+        const hours: number = Math.floor(decimalTime);
+        const minutes: number = (decimalTime % 1) * 60;
+        return `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')}${
+            hours >= 12 ? 'pm' : 'am'
+        }`;
+    };
+
+    const [games, setGames] = useState<{ row: number; startTime: number }[]>(
+        [],
+    );
+
+    const addGame = (row: number, startTime: number): void => {
+        setGames([...games, { row, startTime }]);
+    };
+
+    const isBlocked = (row: number, time: number): boolean => {
+        return games.some(
+            (game) =>
+                game.row === row &&
+                time >= game.startTime &&
+                time < game.startTime + 0.75,
+        );
+    };
 
     return (
         <div
@@ -355,61 +396,217 @@ const WeekTabPanel = (
         >
             {value === index && (
                 <div>
-                    {/* <div className="pb-16">
-                        <h2 className="font-bold text-lg pb-4">Add a game</h2>
-                        <div className="flex items-center gap-4">
-                            <LocalizationProvider
-                                dateAdapter={AdapterDateFns}
-                                adapterLocale={enAU}
-                            >
-                                <TimePicker
-                                    label="Time"
-                                    value={timeToAdd}
-                                    onChange={(date) => {
-                                        timeToAdd = date ?? new Date();
-                                    }}
-                                />
-                            </LocalizationProvider>
-                            <Button variant="contained">Add</Button>
+                    {
+                        <div className="pb-16">
+                            <h1 className="font-bold text-xl">
+                                Adults Competition
+                            </h1>
+                            <h2 className="pb-4">
+                                {getWeekDate(term, index, false)}
+                            </h2>
+                            <h2 className="font-bold text-lg pb-4">
+                                Add a game
+                            </h2>
+                            <div className="flex items-center gap-4">
+                                <div>
+                                    <LocalizationProvider
+                                        dateAdapter={AdapterDateFns}
+                                        adapterLocale={enAU}
+                                    >
+                                        <TimePicker
+                                            label="Time"
+                                            value={timeToAdd}
+                                            onChange={(date) => {
+                                                setTimeToAdd(
+                                                    date ?? new Date(),
+                                                );
+                                            }}
+                                        />
+                                    </LocalizationProvider>
+                                </div>
+
+                                <div>
+                                    <FormControl fullWidth>
+                                        <InputLabel id="court-label">
+                                            Court
+                                        </InputLabel>
+                                        <Select
+                                            labelId="court-label"
+                                            id="court-select"
+                                            label="Court"
+                                            name="court"
+                                            value={courtToAdd}
+                                            onChange={(e) => {
+                                                setCourtToAdd(e.target.value);
+                                                console.log(e.target.value);
+                                                console.log(courtToAdd);
+                                            }}
+                                        >
+                                            {Object.entries(venueCourts).map(
+                                                ([venue, courts]) =>
+                                                    Array.from(
+                                                        { length: courts },
+                                                        (_, i) => (
+                                                            <MenuItem
+                                                                key={`${venue}-${
+                                                                    i + 1
+                                                                }`}
+                                                                value={`${venue}-${
+                                                                    i + 1
+                                                                }`}
+                                                            >
+                                                                {`${toTitleCase(
+                                                                    venue,
+                                                                )} - Court ${
+                                                                    i + 1
+                                                                }`}
+                                                            </MenuItem>
+                                                        ),
+                                                    ),
+                                            )}
+                                        </Select>
+                                    </FormControl>
+                                </div>
+
+                                <div>
+                                    <Button variant="contained">Add</Button>
+                                </div>
+                            </div>
+                            <div>
+                                <TableContainer>
+                                    <Table aria-label={`test table`}>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell padding="none">
+                                                    Court
+                                                </TableCell>
+                                                {timeSlots.map(
+                                                    (time: number) => (
+                                                        <TableCell key={time}>
+                                                            {formatTime(time)}
+                                                        </TableCell>
+                                                    ),
+                                                )}
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {Array.from(
+                                                { length: 3 },
+                                                (_, rowIndex: number) => (
+                                                    <TableRow key={rowIndex}>
+                                                        <TableCell>
+                                                            {rowIndex + 1}
+                                                        </TableCell>
+                                                        {timeSlots.map(
+                                                            (
+                                                                time: number,
+                                                                colIndex: number,
+                                                            ) => {
+                                                                const game =
+                                                                    games.find(
+                                                                        (
+                                                                            game,
+                                                                        ) =>
+                                                                            game.row ===
+                                                                                rowIndex &&
+                                                                            game.startTime ===
+                                                                                time,
+                                                                    );
+                                                                if (game) {
+                                                                    return (
+                                                                        <TableCell
+                                                                            key={
+                                                                                colIndex
+                                                                            }
+                                                                            colSpan={
+                                                                                3
+                                                                            }
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    '#ddd',
+                                                                                textAlign:
+                                                                                    'center',
+                                                                            }}
+                                                                        >
+                                                                            Game
+                                                                        </TableCell>
+                                                                    );
+                                                                }
+                                                                if (
+                                                                    isBlocked(
+                                                                        rowIndex,
+                                                                        time,
+                                                                    )
+                                                                ) {
+                                                                    return null;
+                                                                }
+                                                                return (
+                                                                    <TableCell
+                                                                        key={
+                                                                            colIndex
+                                                                        }
+                                                                    >
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                addGame(
+                                                                                    rowIndex,
+                                                                                    time,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            +
+                                                                        </button>
+                                                                    </TableCell>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </TableRow>
+                                                ),
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </div>
                         </div>
-                    </div> */}
-                    {/* {
-                        isSundayComp ? (
-                            <div>
-                                <h2>{getWeekDate(term, index)}</h2>
-                                    <div className="pt-4">
-                                        <h3 className="text-xl font-bold">St Ives</h3>
-                                        {renderWeekTable(
-                                            term,
-                                            index,
-                                            'St Ives',
-                                            ageGroups,
-                                            stIvesTimeSlots,
-                                            setModifiedTimeSlots,
-                                            modifiedTimeSlots,
-                                            isSundayComp,
-                                        )}
-                                    </div>
-                                    <div className="pt-8">
-                                        <h3 className="text-xl font-bold">Belrose</h3>
-                                        {renderWeekTable(
-                                            term,
-                                            index,
-                                            'Belrose',
-                                            ageGroups,
-                                            belroseTimeSlots,
-                                            setModifiedTimeSlots,
-                                            modifiedTimeSlots,
-                                            isSundayComp,
-                                        )}
-                                    </div>
+                    }
+                    <hr className="pb-4" />
+                    {isSundayComp ? (
+                        <div>
+                            <h1 className="font-bold text-xl pb-4">
+                                Sunday Competition
+                            </h1>
+                            <h2>{getWeekDate(term, index)}</h2>
+                            <div className="pt-4">
+                                <h3 className="text-xl font-bold">St Ives</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'St Ives',
+                                    ageGroups,
+                                    stIvesTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                )}
                             </div>
-                        ) : (
-                            <div>
+                            <div className="pt-8">
+                                <h3 className="text-xl font-bold">Belrose</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'Belrose',
+                                    ageGroups,
+                                    belroseTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                )}
                             </div>
-                        )
-                    } */}
-                    <div>
+                        </div>
+                    ) : (
+                        <div></div>
+                    )}
+                    {/* <div>
                         <h2>{getWeekDate(term, index, isSundayComp)}</h2>
                         <div className="pt-4">
                             <h3 className="text-xl font-bold">St Ives</h3>
@@ -437,7 +634,7 @@ const WeekTabPanel = (
                                 isSundayComp,
                             )}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             )}
         </div>

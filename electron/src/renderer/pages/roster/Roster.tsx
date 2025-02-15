@@ -199,11 +199,52 @@ const getCurrentTermAndWeek = (currentDate: Date) => {
     return null; // Outside of term dates
 };
 
-const CustomToolbar = ({
+const CustomNavigationButton = ({
     currentDate,
+    onNavigate,
+    type,
     ...restProps
 }: {
     currentDate: Date;
+    onNavigate: (date: Date) => void;
+    type: 'back' | 'forward';
+}) => {
+    const getNextValidDate = (date: Date, direction: 1 | -1): Date => {
+        let nextDate = new Date(date);
+        do {
+            nextDate.setDate(nextDate.getDate() + direction);
+        } while (![3, 0].includes(nextDate.getDay())); // 3 = Wednesday, 0 = Sunday
+        return nextDate;
+    };
+
+    return (
+        <div className="flex-col items-center justify-center">
+            <button
+                {...restProps}
+                onClick={() => {
+                    const direction = type === 'forward' ? 1 : -1;
+                    const newDate = getNextValidDate(currentDate, direction);
+                    console.log('Navigating to:', newDate);
+                    onNavigate(newDate);
+                }}
+            >
+                {type === 'forward' ? (
+                    <ArrowRightIcon className="h-6 w-6 mr-4 ml-4 mt-1.5 text-blue-700" />
+                ) : (
+                    <ArrowLeftIcon className="h-6 w-6 mt-1.5 text-blue-700" />
+                )}
+            </button>
+        </div>
+    );
+};
+
+const CustomToolbar = ({
+    currentDate,
+    onNavigate,
+    ...restProps
+}: {
+    currentDate: Date;
+    onNavigate: (date: Date) => void;
     children?: React.ReactNode;
 }) => {
     const termAndWeek = useMemo(
@@ -215,7 +256,20 @@ const CustomToolbar = ({
         <Toolbar.Root {...restProps}>
             <div className="flex items-center justify-between px-4 py-2">
                 {/* Original Toolbar Functionality */}
-                {restProps.children}
+                {/* {restProps.children} */}
+                {/* Custom Navigation Buttons Wrapper */}
+                <div className="flex gap-2">
+                    <CustomNavigationButton
+                        type="back"
+                        currentDate={currentDate}
+                        onNavigate={onNavigate}
+                    />
+                    <CustomNavigationButton
+                        type="forward"
+                        currentDate={currentDate}
+                        onNavigate={onNavigate}
+                    />
+                </div>
 
                 {/* Custom Text */}
                 {termAndWeek ? (
@@ -459,20 +513,30 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                                 )
                             }
                         />
-                        <WeekView
-                            excludedDays={[1, 2, 3, 4, 5, 6]}
+                        {/* <WeekView
+                            excludedDays={[1, 2, 3, 5, 6]}
                             startDayHour={8.5}
                             endDayHour={19.5}
-                        />
+                        /> */}
+                        <DayView startDayHour={8.5} endDayHour={19.5} />
                         <Toolbar
                             rootComponent={(props) => (
                                 <CustomToolbar
                                     currentDate={currentDate}
+                                    onNavigate={setCurrentDate}
                                     {...props}
                                 />
                             )}
                         />
-                        <DateNavigator />
+                        <DateNavigator
+                            navigationButtonComponent={(props) => (
+                                <CustomNavigationButton
+                                    {...props}
+                                    currentDate={currentDate}
+                                    onNavigate={setCurrentDate}
+                                />
+                            )}
+                        />
                         <Appointments
                             appointmentComponent={CustomAppointment}
                         />
