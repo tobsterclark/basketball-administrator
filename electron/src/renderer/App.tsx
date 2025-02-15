@@ -14,7 +14,7 @@ import {
     AgeGroupDataResponse,
     AppointmentEvent,
     TeamDataResponse,
-    Game
+    Game,
 } from './pages/players/components/Types';
 import { IpcChannels } from '../general/IpcChannels';
 import Roster from './pages/roster/Roster';
@@ -65,9 +65,13 @@ const App = () => {
                             }
                             return 0; // Default value for non-matching displayNames
                         };
-                    
-                        const aYear = a.displayName ? parseYear(a.displayName) : 0;
-                        const bYear = b.displayName ? parseYear(b.displayName) : 0;
+
+                        const aYear = a.displayName
+                            ? parseYear(a.displayName)
+                            : 0;
+                        const bYear = b.displayName
+                            ? parseYear(b.displayName)
+                            : 0;
                         return aYear - bYear;
                     });
                     setAgeGroups(sorted);
@@ -84,8 +88,7 @@ const App = () => {
                 const dataAllTeamNames = data as TeamDataResponse[];
                 setTeams(dataAllTeamNames);
             });
-
-    }
+    };
     useEffect(() => {
         getAgeGroups();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,8 +99,26 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Inlet />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="results" element={<GameResults ageGroups={ageGroups} teams={teams} />} />
-                    <Route path="roster" element={<Roster {...{ ageGroups, allEvents, setAllEvents, allGames, setAllGames }} />} />
+                    <Route
+                        path="results"
+                        element={
+                            <GameResults ageGroups={ageGroups} teams={teams} />
+                        }
+                    />
+                    <Route
+                        path="roster"
+                        element={
+                            <Roster
+                                {...{
+                                    ageGroups,
+                                    allEvents,
+                                    setAllEvents,
+                                    allGames,
+                                    setAllGames,
+                                }}
+                            />
+                        }
+                    />
                     <Route
                         path="term-setup"
                         element={<TermSetup ageGroups={ageGroups} />}
@@ -106,10 +127,13 @@ const App = () => {
                         path="game-setup"
                         element={<GameSetup ageGroups={ageGroups} />}
                     />
-                    {/* <Route
-                        path="game-setup-new"
-                        element={<GameSetupNew ageGroups={ageGroups} />}
-                    /> */}
+                    {process.env.NODE_ENV === 'development' ? (
+                        <Route
+                            path="game-setup-new"
+                            element={<GameSetupNew ageGroups={ageGroups} />}
+                        />
+                    ) : null}
+
                     <Route
                         path="players"
                         element={
@@ -120,13 +144,13 @@ const App = () => {
                     <Route
                         path="agegroups"
                         element={
-                            <AgeGroups ageGroups={ageGroups} getAgeGroups={getAgeGroups} />
+                            <AgeGroups
+                                ageGroups={ageGroups}
+                                getAgeGroups={getAgeGroups}
+                            />
                         }
                     />
-                    <Route
-                        path="admin"
-                        element={<Admin />}
-                    />
+                    <Route path="admin" element={<Admin />} />
                 </Route>
             </Routes>
             <ToastContainer autoClose={3500} />

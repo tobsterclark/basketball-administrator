@@ -62,11 +62,6 @@ const Navbar = () => {
                 link: '/game-setup',
                 icon: <LifebuoyIcon className={iconStyle} />,
             },
-            // {
-            //     name: 'Game Setup New',
-            //     link: '/game-setup-new',
-            //     icon: <LifebuoyIcon className={iconStyle} />,
-            // },
             {
                 name: '',
                 link: '',
@@ -87,23 +82,27 @@ const Navbar = () => {
                 link: '/agegroups',
                 icon: <CakeIcon className={iconStyle} />,
             },
-            ...(process.env.NODE_ENV === 'development'
-                ? [
-                      {
-                          name: '',
-                          link: '',
-                          icon: (
-                              <hr className="w-full border-t border-gray-300" />
-                          ),
-                      },
-                      {
-                          name: 'Admin',
-                          link: '/admin',
-                          icon: <Cog6ToothIcon className={iconStyle} />,
-                      },
-                  ]
-                : []),
         ];
+
+        if (process.env.NODE_ENV === 'development') {
+            linkList.push(
+                {
+                    name: '',
+                    link: '',
+                    icon: <hr className="w-full border-t border-gray-300" />,
+                },
+                {
+                    name: 'Game Setup New',
+                    link: '/game-setup-new',
+                    icon: <LifebuoyIcon className={iconStyle} />,
+                },
+                {
+                    name: 'Admin',
+                    link: '/admin',
+                    icon: <Cog6ToothIcon className={iconStyle} />,
+                },
+            );
+        }
 
         return (
             <div className={divStyle}>
