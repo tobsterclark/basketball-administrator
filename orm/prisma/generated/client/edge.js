@@ -164,7 +164,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/tobyclark/dev/nsbl/basketball-administrator/orm/prisma/generated/client",
+      "value": "/Users/jamiecole/Documents/basketball-administrator/orm/prisma/generated/client",
       "fromEnvVar": null
     },
     "config": {
@@ -186,7 +186,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/tobyclark/dev/nsbl/basketball-administrator/orm/prisma/schema.prisma",
+    "sourceFilePath": "/Users/jamiecole/Documents/basketball-administrator/orm/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
