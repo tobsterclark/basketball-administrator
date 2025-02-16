@@ -41,6 +41,8 @@ import { toast } from 'react-toastify';
 import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
 import { enAU } from 'date-fns/locale';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { Location } from '../roster/Resources';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 type timeSlotParams = {
     id?: string;
@@ -82,7 +84,7 @@ const getWeekDateFromTerm = (
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
+        termDate.getDate() + week * 7 + (!isSundayComp ? -4 : 0), // If wednesday, minus 3 days
     );
     return newDate;
 };
@@ -344,47 +346,89 @@ const WeekTabPanel = (
         (timeSlot) => timeSlot.location === 'BELROSE',
     );
 
+    const currentDate = getWeekDateFromTerm(term, index, false);
+
     const [timeToAdd, setTimeToAdd] = useState<Date>(new Date());
     // let timeToAdd: Date = new Date();
-    const [courtToAdd, setCourtToAdd] = useState<string>('St Ives-1');
-    // let courtToAdd: string = 'St Ives-1';
-
-    const adultsStartTime = 19.0; // 7:00 PM in decimal hours
-    const adultsEndTime = 20.75; // 8:45 PM in decimal hours
-    const interval = 0.25; // 15-minute increments
-
-    const timeSlots: number[] = [];
-    for (
-        let time: number = adultsStartTime;
-        time <= adultsEndTime;
-        time += interval
-    ) {
-        timeSlots.push(time);
-    }
-
-    const formatTime = (decimalTime: number): string => {
-        const hours: number = Math.floor(decimalTime);
-        const minutes: number = (decimalTime % 1) * 60;
-        return `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')}${
-            hours >= 12 ? 'pm' : 'am'
-        }`;
-    };
-
-    const [games, setGames] = useState<{ row: number; startTime: number }[]>(
-        [],
+    const [courtToAdd, setCourtToAdd] = useState<number>(1);
+    const [venueToAdd, setVenueToAdd] = useState<Location>(Location.ST_IVES);
+    const [adultsRows, setAdultsRows] = useState<RowData[]>(
+        modifiedTimeSlots
+            .filter(
+                (timeSlot) =>
+                    timeSlot.ageGroupId ===
+                    'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+            )
+            .map((timeSlot) => ({
+                time: moment(timeSlot.date).format('h:mm A'),
+                court: timeSlot.court,
+                venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
+            })),
     );
 
-    const addGame = (row: number, startTime: number): void => {
-        setGames([...games, { row, startTime }]);
+    type RowData = {
+        time: string;
+        court: number;
+        venue: string;
     };
 
-    const isBlocked = (row: number, time: number): boolean => {
-        return games.some(
-            (game) =>
-                game.row === row &&
-                time >= game.startTime &&
-                time < game.startTime + 0.75,
-        );
+    const handlePushAdult = () => {
+        // add a row entry with the timeToAdd, courtToAdd and venueToAdd
+        const time = moment(timeToAdd);
+        let finalMoment = moment(currentDate);
+        finalMoment = finalMoment.set({
+            hour: time.hours(),
+            minute: time.minutes(),
+            second: 0,
+        });
+        finalMoment = finalMoment.tz('Australia/Sydney');
+
+        const newGameStart = finalMoment;
+        const newGameEnd = moment(newGameStart).add(45, 'minutes');
+
+        const isConflict = adultsRows.some((row) => {
+            const existingGameStart = moment(currentDate)
+                .set({
+                    hour: moment(row.time, 'h:mm A').hours(),
+                    minute: moment(row.time, 'h:mm A').minutes(),
+                    second: 0,
+                })
+                .tz('Australia/Sydney');
+            const existingGameEnd = moment(existingGameStart).add(
+                45,
+                'minutes',
+            );
+
+            return (
+                row.court === courtToAdd &&
+                row.venue ===
+                    (venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose') &&
+                ((newGameStart.isSameOrAfter(existingGameStart) &&
+                    newGameStart.isBefore(existingGameEnd)) ||
+                    (newGameEnd.isAfter(existingGameStart) &&
+                        newGameEnd.isSameOrBefore(existingGameEnd)))
+            );
+        });
+
+        if (isConflict) {
+            console.error('Cannot add game: Time conflict with existing game.');
+            toast.error('Cannot add game: Time conflict with existing game.');
+            return;
+        }
+
+        const x = {
+            time: time.format('h:mm A'),
+            court: courtToAdd,
+            venue: venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
+        };
+
+        setAdultsRows([...adultsRows, x]);
+    };
+
+    const handleDeleteAdultRow = (index: number) => {
+        const newRows = [...adultsRows];
+        newRows.splice(index, 1);
+        setAdultsRows(newRows);
     };
 
     return (
@@ -437,132 +481,122 @@ const WeekTabPanel = (
                                             name="court"
                                             value={courtToAdd}
                                             onChange={(e) => {
-                                                setCourtToAdd(e.target.value);
-                                                console.log(e.target.value);
-                                                console.log(courtToAdd);
+                                                setCourtToAdd(
+                                                    e.target.value as number,
+                                                );
                                             }}
                                         >
-                                            {Object.entries(venueCourts).map(
-                                                ([venue, courts]) =>
-                                                    Array.from(
-                                                        { length: courts },
-                                                        (_, i) => (
-                                                            <MenuItem
-                                                                key={`${venue}-${
-                                                                    i + 1
-                                                                }`}
-                                                                value={`${venue}-${
-                                                                    i + 1
-                                                                }`}
-                                                            >
-                                                                {`${toTitleCase(
-                                                                    venue,
-                                                                )} - Court ${
-                                                                    i + 1
-                                                                }`}
-                                                            </MenuItem>
+                                            {Array.from(
+                                                {
+                                                    length: Math.max(
+                                                        ...Object.values(
+                                                            venueCourts,
                                                         ),
                                                     ),
+                                                },
+                                                (_, i) => (
+                                                    <MenuItem
+                                                        key={i + 1}
+                                                        value={i + 1}
+                                                    >
+                                                        {`Court ${i + 1}`}
+                                                    </MenuItem>
+                                                ),
                                             )}
                                         </Select>
                                     </FormControl>
                                 </div>
 
                                 <div>
-                                    <Button variant="contained">Add</Button>
+                                    <FormControl fullWidth>
+                                        <InputLabel id="venue-label">
+                                            Venue
+                                        </InputLabel>
+                                        <Select
+                                            labelId="venue-label"
+                                            id="venue-select"
+                                            label="Venue"
+                                            name="venue"
+                                            value={venueToAdd}
+                                            onChange={(e) => {
+                                                setVenueToAdd(
+                                                    e.target.value as Location,
+                                                );
+                                            }}
+                                        >
+                                            {Object.values(Location).map(
+                                                (location) => (
+                                                    <MenuItem
+                                                        key={location}
+                                                        value={location}
+                                                    >
+                                                        {toTitleCase(
+                                                            location.replace(
+                                                                '_',
+                                                                ' ',
+                                                            ),
+                                                        )}
+                                                    </MenuItem>
+                                                ),
+                                            )}
+                                        </Select>
+                                    </FormControl>
+                                </div>
+
+                                <div>
+                                    <Button
+                                        variant="contained"
+                                        onClick={handlePushAdult}
+                                    >
+                                        Add
+                                    </Button>
                                 </div>
                             </div>
-                            <div>
-                                <TableContainer>
-                                    <Table aria-label={`test table`}>
-                                        <TableHead>
+
+                            <div className="pt-8 w-1/2">
+                                <TableContainer className="shadow-lg rounded-lg">
+                                    <Table>
+                                        <TableHead className="bg-gray-200">
                                             <TableRow>
-                                                <TableCell padding="none">
-                                                    Court
+                                                <TableCell className="font-bold">
+                                                    Time
                                                 </TableCell>
-                                                {timeSlots.map(
-                                                    (time: number) => (
-                                                        <TableCell key={time}>
-                                                            {formatTime(time)}
-                                                        </TableCell>
-                                                    ),
-                                                )}
+                                                <TableCell className="font-bold">
+                                                    Court Number
+                                                </TableCell>
+                                                <TableCell className="font-bold">
+                                                    Venue
+                                                </TableCell>
+                                                <TableCell className="font-bold" />
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {Array.from(
-                                                { length: 3 },
-                                                (_, rowIndex: number) => (
-                                                    <TableRow key={rowIndex}>
-                                                        <TableCell>
-                                                            {rowIndex + 1}
-                                                        </TableCell>
-                                                        {timeSlots.map(
-                                                            (
-                                                                time: number,
-                                                                colIndex: number,
-                                                            ) => {
-                                                                const game =
-                                                                    games.find(
-                                                                        (
-                                                                            game,
-                                                                        ) =>
-                                                                            game.row ===
-                                                                                rowIndex &&
-                                                                            game.startTime ===
-                                                                                time,
-                                                                    );
-                                                                if (game) {
-                                                                    return (
-                                                                        <TableCell
-                                                                            key={
-                                                                                colIndex
-                                                                            }
-                                                                            colSpan={
-                                                                                3
-                                                                            }
-                                                                            style={{
-                                                                                backgroundColor:
-                                                                                    '#ddd',
-                                                                                textAlign:
-                                                                                    'center',
-                                                                            }}
-                                                                        >
-                                                                            Game
-                                                                        </TableCell>
-                                                                    );
-                                                                }
-                                                                if (
-                                                                    isBlocked(
-                                                                        rowIndex,
-                                                                        time,
-                                                                    )
-                                                                ) {
-                                                                    return null;
-                                                                }
-                                                                return (
-                                                                    <TableCell
-                                                                        key={
-                                                                            colIndex
-                                                                        }
-                                                                    >
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                addGame(
-                                                                                    rowIndex,
-                                                                                    time,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            +
-                                                                        </button>
-                                                                    </TableCell>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </TableRow>
-                                                ),
-                                            )}
+                                            {adultsRows.map((row, index) => (
+                                                <TableRow
+                                                    key={index}
+                                                    className="hover:bg-gray-100"
+                                                >
+                                                    <TableCell>
+                                                        {row.time}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {row.court}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {row.venue}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <TrashIcon
+                                                            className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
+                                                            onClick={() =>
+                                                                handleDeleteAdultRow(
+                                                                    index,
+                                                                )
+                                                            }
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
