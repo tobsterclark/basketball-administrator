@@ -1,7 +1,7 @@
 import { onCall, onRequest } from "firebase-functions/v2/https";
 import { promises as fs } from "fs";
 import { PDFDocument, TextAlignment } from "pdf-lib";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "../../orm/client";
 import path from "path";
 import { Readable } from "stream";
 import moment from "moment-timezone";

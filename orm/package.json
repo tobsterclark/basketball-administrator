@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"types": "index.d.ts",
 	"scripts": {
-		"generate": "npx prisma generate && cp -r prisma/generated ../functions/node_modules/.prisma && cp -r prisma/generated ../electron/node_modules/.prisma && cp -r prisma/generated ../fixtures/node_modules/.prisma",
+		"generate": "npx prisma generate && cp -r prisma/generated ../functions/orm && cp -r prisma/generated ../electron/node_modules/.prisma && cp -r prisma/generated ../fixtures/orm",
 		"postinstall": "npx prisma generate"
 	},
 	"keywords": [],
