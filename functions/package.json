@@ -1,34 +1,33 @@
 {
-    "name": "functions",
-    "scripts": {
-        "build": "tsc && shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/",
-        "build-watch": "shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/ && tsc --watch",
-        "serve": "npm run build-watch | firebase emulators:start",
-        "shell": "npm run build && firebase functions:shell",
-        "predeploy": "echo \"//npm.pkg.github.com/:_authToken=${npm_token}\" > .npmrc && npm run build",
-        "deploy": "firebase deploy --only functions",
-        "logs": "firebase functions:log"
-    },
-    "engines": {
-        "node": "18"
-    },
-    "main": "lib/index.js",
-    "dependencies": {
-        "@prisma/client": "^5.14.0",
-        "@tobsterclark/prisma-orm": ">=1.1.1",
-        "archiver": "^7.0.1",
-        "better-firebase-functions": "^6.0.0",
-        "build": "^0.1.4",
-        "firebase-admin": "^11.11.1",
-        "firebase-functions": "^4.6.0",
-        "moment": "^2.30.1",
-        "moment-timezone": "^0.5.47",
-        "pdf-lib": "^1.17.1"
-    },
-    "devDependencies": {
-        "firebase-functions-test": "^3.1.0",
-        "shx": "^0.3.4",
-        "typescript": "^4.9.0"
-    },
-    "private": true
+	"name": "functions",
+	"scripts": {
+		"build": "tsc && shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/",
+		"build-watch": "shx mkdir -p lib/resources && shx cp -R src/resources/* lib/resources/ && tsc --watch",
+		"serve": "npm run build-watch | firebase emulators:start",
+		"shell": "npm run build && firebase functions:shell",
+		"predeploy": "echo \"//npm.pkg.github.com/:_authToken=${npm_token}\" > .npmrc && npm run build",
+		"deploy": "firebase deploy --only functions",
+		"logs": "firebase functions:log"
+	},
+	"engines": {
+		"node": "18"
+	},
+	"main": "lib/index.js",
+	"dependencies": {
+		"@prisma/client": "^6.3.1",
+		"archiver": "^7.0.1",
+		"better-firebase-functions": "^6.0.0",
+		"build": "^0.1.4",
+		"firebase-admin": "^11.11.1",
+		"firebase-functions": "^4.6.0",
+		"moment": "^2.30.1",
+		"moment-timezone": "^0.5.47",
+		"pdf-lib": "^1.17.1"
+	},
+	"devDependencies": {
+		"firebase-functions-test": "^3.1.0",
+		"shx": "^0.3.4",
+		"typescript": "^5.7.3"
+	},
+	"private": true
 }
