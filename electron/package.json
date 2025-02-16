@@ -1,6 +1,6 @@
 {
   "name": "nsbl-manager",
-  "version": "0.1.7-alpha.3",
+  "version": "0.1.7-alpha.4",
   "description": "Management Application for North Shore Basketball League.",
   "keywords": [
     "electron",
@@ -67,9 +67,6 @@
       }
     ]
   },
-  "prisma": {
-    "schema": "./node_modules/.prisma/client/schema.prisma"
-  },
   "jest": {
     "moduleDirectories": [
       "node_modules",
@@ -113,8 +110,7 @@
     "@mui/material": "^5.16.13",
     "@mui/x-data-grid": "^7.5.0",
     "@mui/x-date-pickers": "^7.22.2",
-    "@prisma/client": "^5.14.0",
-    "@tobsterclark/prisma-orm": ">=1.1.1",
+    "@prisma/client": "^6.3.1",
     "caniuse-lite": "^1.0.30001692",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",

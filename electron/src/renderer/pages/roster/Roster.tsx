@@ -314,10 +314,10 @@ const CustomTooltipHeader = ({
 
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
-
-    // Set this to Week 1 Term 1 in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
+    
+    // Set this to closest sunday in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
     const [currentDate, setCurrentDate] = React.useState(
-        moment.tz([2025, 1, 9, 10], 'Australia/Sydney').toDate(),
+        moment.tz(new Date(), 'Australia/Sydney').toDate(),
     );
 
     const tableRef = useRef<HTMLDivElement>(null);
