@@ -353,7 +353,7 @@ const WeekTabPanel = (
     const [courtToAdd, setCourtToAdd] = useState<number>(1);
     const [venueToAdd, setVenueToAdd] = useState<Location>(Location.ST_IVES);
     const [adultsRows, setAdultsRows] = useState<RowData[]>(
-        modifiedTimeSlots
+        dbTimeSlots
             .filter(
                 (timeSlot) =>
                     timeSlot.ageGroupId ===
@@ -365,6 +365,13 @@ const WeekTabPanel = (
                 venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
             })),
     );
+
+    const efe = dbTimeSlots.filter(
+        (timeSlot) =>
+            timeSlot.ageGroupId === 'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+    );
+
+    console.log(efe);
 
     type RowData = {
         time: string;
@@ -416,19 +423,43 @@ const WeekTabPanel = (
             return;
         }
 
-        const x = {
+        const newRow = {
             time: time.format('h:mm A'),
             court: courtToAdd,
             venue: venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
         };
 
-        setAdultsRows([...adultsRows, x]);
+        setAdultsRows([...adultsRows, newRow]);
+
+        const newTimeSlot: timeSlotParams = {
+            date: finalMoment.toDate(),
+            location: venueToAdd,
+            court: courtToAdd,
+            ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+        };
+
+        setModifiedTimeSlots([...modifiedTimeSlots, newTimeSlot]);
     };
 
     const handleDeleteAdultRow = (index: number) => {
         const newRows = [...adultsRows];
         newRows.splice(index, 1);
         setAdultsRows(newRows);
+    };
+
+    const checkSlots = () => {
+        const timeSlotsToUpdate = modifiedTimeSlots.filter(
+            (timeSlot) =>
+                !dbTimeSlots.find(
+                    (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
+                ) ||
+                dbTimeSlots.find(
+                    (dbTimeSlot) =>
+                        dbTimeSlot.id === timeSlot.id &&
+                        dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                ),
+        );
+        console.log(timeSlotsToUpdate);
     };
 
     return (
@@ -549,6 +580,14 @@ const WeekTabPanel = (
                                         onClick={handlePushAdult}
                                     >
                                         Add
+                                    </Button>
+                                </div>
+                                <div>
+                                    <Button
+                                        variant="contained"
+                                        onClick={checkSlots}
+                                    >
+                                        Check
                                     </Button>
                                 </div>
                             </div>
@@ -801,19 +840,62 @@ export const TermSetup = (props: PlayerDataProps) => {
     };
 
     const uploadChanges = () => {
-        const timeSlotsToUpdate = modifiedTimeSlots.filter(
+        const sundayTimeSlotsToUpdate = modifiedTimeSlots.filter(
             (timeSlot) =>
-                !dbTimeSlots.find(
+                timeSlot.ageGroupId !==
+                    'abb0356d-cf46-486b-bfb0-1165693f9f8f' && // Exclude adults age group
+                (!dbTimeSlots.find(
                     (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ) ||
-                dbTimeSlots.find(
-                    (dbTimeSlot) =>
-                        dbTimeSlot.id === timeSlot.id &&
-                        dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                    dbTimeSlots.find(
+                        (dbTimeSlot) =>
+                            dbTimeSlot.id === timeSlot.id &&
+                            dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                    )),
+        );
+
+        const adultsToCreate = modifiedTimeSlots.filter(
+            (timeSlot) =>
+                timeSlot.ageGroupId ===
+                    'abb0356d-cf46-486b-bfb0-1165693f9f8f' && // Only include adults age group
+                !dbTimeSlots.find(
+                    (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ),
         );
 
-        const promises = timeSlotsToUpdate.map((timeSlot) => {
+        // ### begin creating adult games ###
+        const adultPromises = adultsToCreate.map((timeSlot) => {
+            const timeSlotRequest: PrismaCall = {
+                model: ModelName.timeslot,
+                operation: CrudOperations.create,
+                data: {
+                    data: {
+                        location: timeSlot.location,
+                        date: timeSlot.date,
+                        court: timeSlot.court,
+                        ageGroupId: timeSlot.ageGroupId,
+                    },
+                },
+            };
+
+            return window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+                .then(() => {
+                    console.log(`Created time slot for ${timeSlot.location}`);
+                })
+                .catch((error: Error) => {
+                    console.error(
+                        `Error creating time slot for ${timeSlot.location}:`,
+                        error,
+                    );
+                });
+        });
+
+        // ### end creating adult games ###
+
+        // ### begin handling sunday games ###
+
+        const promises = sundayTimeSlotsToUpdate.map((timeSlot) => {
             const timeSlotRequest: PrismaCall = {
                 model: ModelName.timeslot,
                 operation: CrudOperations.update,
@@ -845,7 +927,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                 });
         });
 
-        Promise.all(promises).then(() => {
+        Promise.all([...promises, ...adultPromises]).then(() => {
             setDbTimeSlots(modifiedTimeSlots);
         });
 
