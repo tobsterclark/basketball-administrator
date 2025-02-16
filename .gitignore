@@ -138,3 +138,9 @@ dist
 
 # MacOS files
 .DS_Store
+
+# Firebase Build output
+.firebase
+
+# ORM files
+**/orm/client/**
