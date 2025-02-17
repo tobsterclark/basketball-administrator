@@ -39,10 +39,17 @@ import FormCancelSave from '../../ui_components/FormCancelSave';
 import Terms2025 from '../data/Terms';
 import { toast } from 'react-toastify';
 import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
-import { enAU } from 'date-fns/locale';
+import { enAU, is } from 'date-fns/locale';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { Location } from '../roster/Resources';
 import { TrashIcon } from '@heroicons/react/24/outline';
+
+type RowData = {
+    time: string;
+    court: number;
+    venue: string;
+    id: string;
+};
 
 type timeSlotParams = {
     id?: string;
@@ -258,6 +265,7 @@ const renderWeekTable = (
     >,
     modifiedTimeSlots: timeSlotParams[],
     isSundayComp: boolean,
+    isLoading: boolean,
 ) => {
     const currentDate = getWeekDateFromTerm(term, week, isSundayComp);
 
@@ -315,7 +323,41 @@ const renderWeekTable = (
             </Table>
         </TableContainer>
     );
-    return table;
+
+    const loadingTable = (
+        <TableContainer>
+            <Table aria-label={`${venue} table`}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell padding="none">Court</TableCell>
+                        {hourSlots.map((hour) => (
+                            <TableCell key={hour.slot}>{hour.time}</TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {Array.from({ length: venueCourts[venue] }, (_, i) => (
+                        <TableRow key={i}>
+                            <TableCell>{i + 1}</TableCell>
+                            {hourSlots.map((hour) => (
+                                <TableCell key={hour.slot}>
+                                    <div
+                                        role="status"
+                                        className="space-y-2.5 animate-pulse max-w-lg"
+                                    >
+                                        <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+                                        <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+                                    </div>
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+    // return loadingTable;
+    return isLoading ? loadingTable : table;
 };
 
 const WeekTabPanel = (
@@ -324,6 +366,9 @@ const WeekTabPanel = (
             React.SetStateAction<timeSlotParams[]>
         >;
         modifiedTimeSlots: timeSlotParams[];
+        adultsRows: RowData[];
+        setAdultsRows: React.Dispatch<React.SetStateAction<RowData[]>>;
+        isLoading: boolean;
     },
 ) => {
     const {
@@ -336,6 +381,9 @@ const WeekTabPanel = (
         modifiedTimeSlots,
         isSundayComp,
         setIsSundayComp,
+        adultsRows,
+        setAdultsRows,
+        isLoading,
     } = props;
 
     const stIvesTimeSlots = dbTimeSlots.filter(
@@ -352,32 +400,6 @@ const WeekTabPanel = (
     // let timeToAdd: Date = new Date();
     const [courtToAdd, setCourtToAdd] = useState<number>(1);
     const [venueToAdd, setVenueToAdd] = useState<Location>(Location.ST_IVES);
-    const [adultsRows, setAdultsRows] = useState<RowData[]>(
-        dbTimeSlots
-            .filter(
-                (timeSlot) =>
-                    timeSlot.ageGroupId ===
-                    'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
-            )
-            .map((timeSlot) => ({
-                time: moment(timeSlot.date).format('h:mm A'),
-                court: timeSlot.court,
-                venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
-            })),
-    );
-
-    const efe = dbTimeSlots.filter(
-        (timeSlot) =>
-            timeSlot.ageGroupId === 'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
-    );
-
-    console.log(efe);
-
-    type RowData = {
-        time: string;
-        court: number;
-        venue: string;
-    };
 
     const handlePushAdult = () => {
         // add a row entry with the timeToAdd, courtToAdd and venueToAdd
@@ -427,6 +449,7 @@ const WeekTabPanel = (
             time: time.format('h:mm A'),
             court: courtToAdd,
             venue: venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
+            id: 'new',
         };
 
         setAdultsRows([...adultsRows, newRow]);
@@ -438,16 +461,64 @@ const WeekTabPanel = (
             ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
         };
 
-        setModifiedTimeSlots([...modifiedTimeSlots, newTimeSlot]);
+        // upload to prisma
+        const timeSlotRequest: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.create,
+            data: {
+                data: newTimeSlot,
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+            .then((data) => {
+                console.log(`Created time slot for ${venueToAdd}`);
+                console.log(data);
+            })
+            .catch((error: Error) => {
+                console.error(`Error creating time slot for ${venueToAdd}:`);
+                console.error(error);
+            });
+
+        // setModifiedTimeSlots([...modifiedTimeSlots, newTimeSlot]);
     };
 
     const handleDeleteAdultRow = (index: number) => {
+        // get id to delete
+        const idToDelete = adultsRows[index].id;
+
+        // remove row
         const newRows = [...adultsRows];
         newRows.splice(index, 1);
         setAdultsRows(newRows);
+
+        // remove time slot from prisma
+        const delReq: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.delete,
+            data: {
+                where: {
+                    id: idToDelete,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, delReq)
+            .then(() => {
+                console.log(`Deleted time slot for ${idToDelete}`);
+            })
+            .catch((error: Error) => {
+                console.error(`Error deleting time slot for ${idToDelete}:`);
+                console.error(error);
+            });
     };
 
     const checkSlots = () => {
+        console.log('adultrows');
+        console.log(adultsRows);
+        console.log(dbTimeSlots);
         const timeSlotsToUpdate = modifiedTimeSlots.filter(
             (timeSlot) =>
                 !dbTimeSlots.find(
@@ -460,7 +531,17 @@ const WeekTabPanel = (
                 ),
         );
         console.log(timeSlotsToUpdate);
+        console.log(
+            `${modifiedTimeSlots.length} modified time slots - ${dbTimeSlots.length} db time slots `,
+        );
     };
+
+    const loadingDiv = (
+        <div role="status" className="space-y-2.5 animate-pulse max-w-lg">
+            <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+            <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+        </div>
+    );
 
     return (
         <div
@@ -609,34 +690,58 @@ const WeekTabPanel = (
                                                 <TableCell className="font-bold" />
                                             </TableRow>
                                         </TableHead>
-                                        <TableBody>
-                                            {adultsRows.map((row, index) => (
+                                        {isLoading ? (
+                                            <TableBody>
                                                 <TableRow
                                                     key={index}
                                                     className="hover:bg-gray-100"
                                                 >
                                                     <TableCell>
-                                                        {row.time}
+                                                        <div>{loadingDiv}</div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {row.court}
+                                                        <div>{loadingDiv}</div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {row.venue}
+                                                        <div>{loadingDiv}</div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <TrashIcon
-                                                            className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
-                                                            onClick={() =>
-                                                                handleDeleteAdultRow(
-                                                                    index,
-                                                                )
-                                                            }
-                                                        />
+                                                        <div className="w-6"></div>
                                                     </TableCell>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
+                                            </TableBody>
+                                        ) : (
+                                            <TableBody>
+                                                {adultsRows.map(
+                                                    (row, index) => (
+                                                        <TableRow
+                                                            key={index}
+                                                            className="hover:bg-gray-100"
+                                                        >
+                                                            <TableCell>
+                                                                {row.time}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {row.court}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {row.venue}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <TrashIcon
+                                                                    className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
+                                                                    onClick={() =>
+                                                                        handleDeleteAdultRow(
+                                                                            index,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ),
+                                                )}
+                                            </TableBody>
+                                        )}
                                     </Table>
                                 </TableContainer>
                             </div>
@@ -660,6 +765,7 @@ const WeekTabPanel = (
                                     setModifiedTimeSlots,
                                     modifiedTimeSlots,
                                     isSundayComp,
+                                    isLoading,
                                 )}
                             </div>
                             <div className="pt-8">
@@ -673,6 +779,7 @@ const WeekTabPanel = (
                                     setModifiedTimeSlots,
                                     modifiedTimeSlots,
                                     isSundayComp,
+                                    isLoading,
                                 )}
                             </div>
                         </div>
@@ -729,6 +836,21 @@ export const TermSetup = (props: PlayerDataProps) => {
 
     const [copyToAllWeeksConfirmation, setCopyToAllWeeksConfirmation] =
         useState(false);
+
+    const [adultsRows, setAdultsRows] = useState<RowData[]>(
+        dbTimeSlots
+            .filter(
+                (timeSlot) =>
+                    timeSlot.ageGroupId ===
+                    'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+            )
+            .map((timeSlot) => ({
+                time: moment(timeSlot.date).format('h:mm A'),
+                court: timeSlot.court,
+                venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
+                id: timeSlot.id ?? '',
+            })),
+    );
 
     const copyToAllWeeks = () => {
         // Copy the current week's time slots to all other weeks.
@@ -864,32 +986,33 @@ export const TermSetup = (props: PlayerDataProps) => {
         );
 
         // ### begin creating adult games ###
-        const adultPromises = adultsToCreate.map((timeSlot) => {
-            const timeSlotRequest: PrismaCall = {
-                model: ModelName.timeslot,
-                operation: CrudOperations.create,
-                data: {
-                    data: {
-                        location: timeSlot.location,
-                        date: timeSlot.date,
-                        court: timeSlot.court,
-                        ageGroupId: timeSlot.ageGroupId,
-                    },
-                },
-            };
+        // const adultPromises = adultsToCreate.map((timeSlot) => {
+        //     const timeSlotRequest: PrismaCall = {
+        //         model: ModelName.timeslot,
+        //         operation: CrudOperations.create,
+        //         data: {
+        //             data: {
+        //                 location: timeSlot.location,
+        //                 date: timeSlot.date,
+        //                 court: timeSlot.court,
+        //                 ageGroupId: timeSlot.ageGroupId,
+        //             },
+        //         },
+        //     };
 
-            return window.electron.ipcRenderer
-                .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-                .then(() => {
-                    console.log(`Created time slot for ${timeSlot.location}`);
-                })
-                .catch((error: Error) => {
-                    console.error(
-                        `Error creating time slot for ${timeSlot.location}:`,
-                        error,
-                    );
-                });
-        });
+        //     return window.electron.ipcRenderer
+        //         .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+        //         .then((data) => {
+        //             console.log(`Created time slot for ${timeSlot.location}`);
+        //             console.log(data);
+        //         })
+        //         .catch((error: Error) => {
+        //             console.error(
+        //                 `Error creating time slot for ${timeSlot.location}:`,
+        //                 error,
+        //             );
+        //         });
+        // });
 
         // ### end creating adult games ###
 
@@ -927,9 +1050,13 @@ export const TermSetup = (props: PlayerDataProps) => {
                 });
         });
 
-        Promise.all([...promises, ...adultPromises]).then(() => {
+        Promise.all(promises).then(() => {
             setDbTimeSlots(modifiedTimeSlots);
         });
+
+        // Promise.all([...promises, ...adultPromises]).then(() => {
+        //     setDbTimeSlots(modifiedTimeSlots);
+        // });
 
         toast.success(
             `${promises.length} time slot${
@@ -959,7 +1086,9 @@ export const TermSetup = (props: PlayerDataProps) => {
         term: number = currentTerm,
         weekTab: number = currentWeekTab,
     ) => {
+        setLoading(true);
         if (!isSundayComp) return;
+
         // Fetches or creates all time slots for the current week and term.
         // Stores into dbTimeSlots.
         // https://github.com/prisma/docs/issues/640
@@ -1005,15 +1134,52 @@ export const TermSetup = (props: PlayerDataProps) => {
         if (dataWithIds.length > 0) {
             setLoading(false);
         }
+        getAdultGames();
+    };
+
+    const getAdultGames = () => {
+        const minDate = getWeekDateFromTerm(currentTerm, currentWeekTab, false);
+        const maxDate = moment(minDate).add(1, 'day').toDate();
+        const req: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f',
+                    date: {
+                        lte: maxDate,
+                        gte: minDate,
+                    },
+                },
+            },
+        };
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data: timeSlotParams[]) => {
+                const adultsTimeSlots = data;
+                if (adultsTimeSlots) {
+                    setAdultsRows(
+                        adultsTimeSlots.map((timeSlot) => ({
+                            time: moment(timeSlot.date).format('h:mm A'),
+                            court: timeSlot.court,
+                            venue:
+                                timeSlot.location === 'ST_IVES'
+                                    ? 'St Ives'
+                                    : 'Belrose',
+                            id: timeSlot.id ? timeSlot.id : '',
+                        })),
+                    );
+                }
+            });
     };
 
     useEffect(() => {
         upsert();
     }, [currentTerm, currentWeekTab]);
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
+    // if (loading) {
+    //     return <div>Loading...</div>;
+    // }
 
     const { weeks } = Terms2025[currentTerm];
 
@@ -1105,6 +1271,9 @@ export const TermSetup = (props: PlayerDataProps) => {
                                 modifiedTimeSlots={modifiedTimeSlots}
                                 isSundayComp={isSundayComp}
                                 setIsSundayComp={setIsSundayComp}
+                                adultsRows={adultsRows}
+                                setAdultsRows={setAdultsRows}
+                                isLoading={loading}
                             />
                         ))}
                     </div>
