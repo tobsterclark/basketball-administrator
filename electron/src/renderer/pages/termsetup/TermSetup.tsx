@@ -1,6 +1,8 @@
 import {
     ArrowLeftCircleIcon,
+    ArrowLongRightIcon,
     ArrowRightCircleIcon,
+    ExclamationCircleIcon,
 } from '@heroicons/react/24/solid';
 import {
     Box,
@@ -38,7 +40,12 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import FormCancelSave from '../../ui_components/FormCancelSave';
 import Terms2025 from '../data/Terms';
 import { toast } from 'react-toastify';
-import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
+import {
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    LocalizationProvider,
+    TimePicker,
+} from '@mui/x-date-pickers';
 import { enAU, is } from 'date-fns/locale';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { Location } from '../roster/Resources';
@@ -445,15 +452,6 @@ const WeekTabPanel = (
             return;
         }
 
-        const newRow = {
-            time: time.format('h:mm A'),
-            court: courtToAdd,
-            venue: venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
-            id: 'new',
-        };
-
-        setAdultsRows([...adultsRows, newRow]);
-
         const newTimeSlot: timeSlotParams = {
             date: finalMoment.toDate(),
             location: venueToAdd,
@@ -472,9 +470,19 @@ const WeekTabPanel = (
 
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-            .then((data) => {
+            .then((data: timeSlotParams) => {
                 console.log(`Created time slot for ${venueToAdd}`);
                 console.log(data);
+                toast.success(`Created time slot successfully!`);
+                const newRow = {
+                    time: time.format('h:mm A'),
+                    court: courtToAdd,
+                    venue:
+                        venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
+                    id: data.id,
+                };
+
+                setAdultsRows([...adultsRows, newRow as RowData]);
             })
             .catch((error: Error) => {
                 console.error(`Error creating time slot for ${venueToAdd}:`);
@@ -484,22 +492,14 @@ const WeekTabPanel = (
         // setModifiedTimeSlots([...modifiedTimeSlots, newTimeSlot]);
     };
 
-    const handleDeleteAdultRow = (index: number) => {
-        // get id to delete
-        const idToDelete = adultsRows[index].id;
-
-        // remove row
-        const newRows = [...adultsRows];
-        newRows.splice(index, 1);
-        setAdultsRows(newRows);
-
+    const handleDeleteAdultRow = (gameId: string) => {
         // remove time slot from prisma
         const delReq: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.delete,
             data: {
                 where: {
-                    id: idToDelete,
+                    id: gameId,
                 },
             },
         };
@@ -507,12 +507,99 @@ const WeekTabPanel = (
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, delReq)
             .then(() => {
-                console.log(`Deleted time slot for ${idToDelete}`);
+                console.log(`Deleted time slot for ${gameId}`);
+                toast.info(`Deleted time slot successfully!`);
+                // remove from adultsRows
+                setAdultsRows(adultsRows.filter((row) => row.id !== gameId));
             })
             .catch((error: Error) => {
-                console.error(`Error deleting time slot for ${idToDelete}:`);
+                console.error(`Error deleting time slot for ${gameId}:`);
                 console.error(error);
             });
+    };
+
+    const handleCopyToAllWeeks = () => {
+        // create an array of this week's adult games fetching from prisma
+        const minDate = getWeekDateFromTerm(term, index, false);
+        const maxDate = moment(minDate).add(1, 'day').toDate();
+
+        const req: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f',
+                    date: {
+                        lte: maxDate,
+                        gte: minDate,
+                    },
+                },
+            },
+        };
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data: timeSlotParams[]) => {
+                const adultsTimeSlots = data;
+                if (adultsTimeSlots) {
+                    const promises = [];
+
+                    for (
+                        let weekOffset = 1;
+                        weekOffset < Terms2025[term].weeks - index;
+                        weekOffset++
+                    ) {
+                        adultsTimeSlots.forEach((game) => {
+                            const newDate = moment(game.date)
+                                .add(weekOffset, 'week')
+                                .toDate();
+                            const newGame: timeSlotParams = {
+                                date: newDate,
+                                location: game.location,
+                                court: game.court,
+                                ageGroupId: game.ageGroupId,
+                            };
+
+                            const timeSlotRequest: PrismaCall = {
+                                model: ModelName.timeslot,
+                                operation: CrudOperations.create,
+                                data: {
+                                    data: newGame,
+                                },
+                            };
+
+                            promises.push(
+                                window.electron.ipcRenderer
+                                    .invoke(
+                                        IpcChannels.PrismaClient,
+                                        timeSlotRequest,
+                                    )
+                                    .then(() => {
+                                        console.log(
+                                            `Created time slot for ${newGame.location}`,
+                                        );
+                                        toast.success(
+                                            `Copied timeslots successfully!`,
+                                        );
+                                    })
+                                    .catch((error: Error) => {
+                                        console.error(
+                                            `Error creating time slot for ${newGame.location}:`,
+                                        );
+                                        console.error(error);
+                                        console.error(newGame);
+                                        toast.error(
+                                            `Something went wrong copying some or all timeslots.`,
+                                        );
+                                    }),
+                            );
+                        });
+                    }
+                } else {
+                    return;
+                }
+            });
+
+        // create a list of promises. For each game, create a new game in the same court and venue and time of day, but add one week to the date
     };
 
     const checkSlots = () => {
@@ -553,189 +640,259 @@ const WeekTabPanel = (
             {value === index && (
                 <div>
                     {
-                        <div className="pb-16">
-                            <h1 className="font-bold text-xl">
-                                Adults Competition
-                            </h1>
-                            <h2 className="pb-4">
-                                {getWeekDate(term, index, false)}
-                            </h2>
-                            <h2 className="font-bold text-lg pb-4">
-                                Add a game
-                            </h2>
-                            <div className="flex items-center gap-4">
-                                <div>
-                                    <LocalizationProvider
-                                        dateAdapter={AdapterDateFns}
-                                        adapterLocale={enAU}
-                                    >
-                                        <TimePicker
-                                            label="Time"
-                                            value={timeToAdd}
-                                            onChange={(date) => {
-                                                setTimeToAdd(
-                                                    date ?? new Date(),
-                                                );
-                                            }}
-                                        />
-                                    </LocalizationProvider>
-                                </div>
-
-                                <div>
-                                    <FormControl fullWidth>
-                                        <InputLabel id="court-label">
-                                            Court
-                                        </InputLabel>
-                                        <Select
-                                            labelId="court-label"
-                                            id="court-select"
-                                            label="Court"
-                                            name="court"
-                                            value={courtToAdd}
-                                            onChange={(e) => {
-                                                setCourtToAdd(
-                                                    e.target.value as number,
-                                                );
-                                            }}
+                        <div className="flex flex-row gap-16">
+                            <div className="pb-8 w-1/2">
+                                <h1 className="font-bold text-xl">
+                                    Adults Competition
+                                </h1>
+                                <h2 className="pb-4">
+                                    {getWeekDate(term, index, false)}
+                                </h2>
+                                <h2 className="font-bold text-lg pb-4">
+                                    Add a game
+                                </h2>
+                                <div className="flex items-center gap-4">
+                                    <div>
+                                        <LocalizationProvider
+                                            dateAdapter={AdapterDateFns}
+                                            adapterLocale={enAU}
                                         >
-                                            {Array.from(
-                                                {
-                                                    length: Math.max(
-                                                        ...Object.values(
-                                                            venueCourts,
-                                                        ),
-                                                    ),
-                                                },
-                                                (_, i) => (
-                                                    <MenuItem
-                                                        key={i + 1}
-                                                        value={i + 1}
-                                                    >
-                                                        {`Court ${i + 1}`}
-                                                    </MenuItem>
-                                                ),
-                                            )}
-                                        </Select>
-                                    </FormControl>
-                                </div>
+                                            <TimePicker
+                                                label="Time"
+                                                value={timeToAdd}
+                                                onChange={(date) => {
+                                                    setTimeToAdd(
+                                                        date ?? new Date(),
+                                                    );
+                                                }}
+                                            />
+                                        </LocalizationProvider>
+                                    </div>
 
-                                <div>
-                                    <FormControl fullWidth>
-                                        <InputLabel id="venue-label">
-                                            Venue
-                                        </InputLabel>
-                                        <Select
-                                            labelId="venue-label"
-                                            id="venue-select"
-                                            label="Venue"
-                                            name="venue"
-                                            value={venueToAdd}
-                                            onChange={(e) => {
-                                                setVenueToAdd(
-                                                    e.target.value as Location,
-                                                );
-                                            }}
-                                        >
-                                            {Object.values(Location).map(
-                                                (location) => (
-                                                    <MenuItem
-                                                        key={location}
-                                                        value={location}
-                                                    >
-                                                        {toTitleCase(
-                                                            location.replace(
-                                                                '_',
-                                                                ' ',
+                                    <div>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="court-label">
+                                                Court
+                                            </InputLabel>
+                                            <Select
+                                                labelId="court-label"
+                                                id="court-select"
+                                                label="Court"
+                                                name="court"
+                                                value={courtToAdd}
+                                                onChange={(e) => {
+                                                    setCourtToAdd(
+                                                        e.target
+                                                            .value as number,
+                                                    );
+                                                }}
+                                            >
+                                                {Array.from(
+                                                    {
+                                                        length: Math.max(
+                                                            ...Object.values(
+                                                                venueCourts,
                                                             ),
-                                                        )}
-                                                    </MenuItem>
-                                                ),
-                                            )}
-                                        </Select>
-                                    </FormControl>
+                                                        ),
+                                                    },
+                                                    (_, i) => (
+                                                        <MenuItem
+                                                            key={i + 1}
+                                                            value={i + 1}
+                                                        >
+                                                            {`Court ${i + 1}`}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                    </div>
+
+                                    <div>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="venue-label">
+                                                Venue
+                                            </InputLabel>
+                                            <Select
+                                                labelId="venue-label"
+                                                id="venue-select"
+                                                label="Venue"
+                                                name="venue"
+                                                value={venueToAdd}
+                                                onChange={(e) => {
+                                                    setVenueToAdd(
+                                                        e.target
+                                                            .value as Location,
+                                                    );
+                                                }}
+                                            >
+                                                {Object.values(Location).map(
+                                                    (location) => (
+                                                        <MenuItem
+                                                            key={location}
+                                                            value={location}
+                                                        >
+                                                            {toTitleCase(
+                                                                location.replace(
+                                                                    '_',
+                                                                    ' ',
+                                                                ),
+                                                            )}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                    </div>
+
+                                    <div>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handlePushAdult}
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
                                 </div>
 
-                                <div>
+                                <div className="pt-8 w-full">
+                                    <TableContainer className="shadow-lg rounded-lg">
+                                        <Table>
+                                            <TableHead className="bg-gray-200">
+                                                <TableRow>
+                                                    <TableCell className="font-bold">
+                                                        Time
+                                                    </TableCell>
+                                                    <TableCell className="font-bold">
+                                                        Court Number
+                                                    </TableCell>
+                                                    <TableCell className="font-bold">
+                                                        Venue
+                                                    </TableCell>
+                                                    <TableCell className="font-bold" />
+                                                </TableRow>
+                                            </TableHead>
+                                            {isLoading ? (
+                                                <TableBody>
+                                                    <TableRow
+                                                        key={index}
+                                                        className="hover:bg-gray-100"
+                                                    >
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="w-6"></div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            ) : (
+                                                <TableBody>
+                                                    {adultsRows
+                                                        .slice()
+                                                        .sort((a, b) => {
+                                                            const timeA =
+                                                                moment(
+                                                                    a.time,
+                                                                    'h:mm A',
+                                                                );
+                                                            const timeB =
+                                                                moment(
+                                                                    b.time,
+                                                                    'h:mm A',
+                                                                );
+                                                            if (
+                                                                timeA.isSame(
+                                                                    timeB,
+                                                                )
+                                                            ) {
+                                                                return (
+                                                                    a.court -
+                                                                    b.court
+                                                                );
+                                                            }
+                                                            return timeA.isBefore(
+                                                                timeB,
+                                                            )
+                                                                ? -1
+                                                                : 1;
+                                                        })
+                                                        .map((row, index) => (
+                                                            <TableRow
+                                                                key={index}
+                                                                className="hover:bg-gray-100"
+                                                            >
+                                                                <TableCell>
+                                                                    {row.time}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {row.court}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {row.venue}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <TrashIcon
+                                                                        className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
+                                                                        onClick={() =>
+                                                                            handleDeleteAdultRow(
+                                                                                row.id,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                </TableBody>
+                                            )}
+                                        </Table>
+                                    </TableContainer>
+                                </div>
+
+                                <div className="pt-4">
                                     <Button
                                         variant="contained"
-                                        onClick={handlePushAdult}
+                                        onClick={() => {
+                                            handleCopyToAllWeeks();
+                                        }}
                                     >
-                                        Add
+                                        Copy to all weeks
                                     </Button>
                                 </div>
                             </div>
-
-                            <div className="pt-8 w-1/2">
-                                <TableContainer className="shadow-lg rounded-lg">
-                                    <Table>
-                                        <TableHead className="bg-gray-200">
-                                            <TableRow>
-                                                <TableCell className="font-bold">
-                                                    Time
-                                                </TableCell>
-                                                <TableCell className="font-bold">
-                                                    Court Number
-                                                </TableCell>
-                                                <TableCell className="font-bold">
-                                                    Venue
-                                                </TableCell>
-                                                <TableCell className="font-bold" />
-                                            </TableRow>
-                                        </TableHead>
-                                        {isLoading ? (
-                                            <TableBody>
-                                                <TableRow
-                                                    key={index}
-                                                    className="hover:bg-gray-100"
-                                                >
-                                                    <TableCell>
-                                                        <div>{loadingDiv}</div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div>{loadingDiv}</div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div>{loadingDiv}</div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="w-6"></div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableBody>
-                                        ) : (
-                                            <TableBody>
-                                                {adultsRows.map(
-                                                    (row, index) => (
-                                                        <TableRow
-                                                            key={index}
-                                                            className="hover:bg-gray-100"
-                                                        >
-                                                            <TableCell>
-                                                                {row.time}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {row.court}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {row.venue}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <TrashIcon
-                                                                    className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
-                                                                    onClick={() =>
-                                                                        handleDeleteAdultRow(
-                                                                            index,
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ),
-                                                )}
-                                            </TableBody>
-                                        )}
-                                    </Table>
-                                </TableContainer>
+                            <div>
+                                <div className="pt-24">
+                                    <div className="flex gap-1 text-gray-500">
+                                        <ExclamationCircleIcon className="h-6 w-6 inline-block" />
+                                        <h3>Quick tip</h3>
+                                    </div>
+                                    <div className="flex gap-2 pl-2">
+                                        <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                        <p className="text-sm text-gray-600 pt-1">
+                                            Adult games are automatically saved
+                                            as you create or delete them.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 pl-2 pt-2">
+                                        <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                        <p className="text-sm text-gray-600 pt-1">
+                                            Sunday games must be saved manually
+                                            with the button below.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     }
@@ -1271,7 +1428,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                     </div>
                 </Box>
             </div>
-            <div className="w-1/3 pt-4">
+            <div className="w-1/3 pt-4 pb-16">
                 <div className="w-1/2 flex flex-col pb-8">
                     <Button
                         variant="contained"

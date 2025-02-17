@@ -315,18 +315,16 @@ const CustomTooltipHeader = ({
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
 
-    const closestSunday = moment
-        .tz(new Date(), 'Australia/Sydney')
-        .startOf('week')
-        .add(7, 'days')
-        .toDate();
     // Set this to closest sunday in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
-    const [currentDate, setCurrentDate] = useState<Date>(closestSunday);
+    const [currentDate, setCurrentDate] = useState<Date>(
+        moment
+            .tz(new Date(), 'Australia/Sydney')
+            .startOf('week')
+            .add(7, 'days')
+            .toDate(),
+    );
 
     const tableRef = useRef<HTMLDivElement>(null);
-
-    console.log('current date:');
-    console.log(currentDate.toISOString());
 
     // ####################     PDF DOWNLOADING     ########################################
 
