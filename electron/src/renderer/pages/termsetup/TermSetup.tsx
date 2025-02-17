@@ -663,14 +663,6 @@ const WeekTabPanel = (
                                         Add
                                     </Button>
                                 </div>
-                                <div>
-                                    <Button
-                                        variant="contained"
-                                        onClick={checkSlots}
-                                    >
-                                        Check
-                                    </Button>
-                                </div>
                             </div>
 
                             <div className="pt-8 w-1/2">
