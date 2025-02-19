@@ -53,7 +53,7 @@ export const PlayerData = (props: PlayerDataProps) => {
             value = value.substring(0, 6);
         }
 
-        updatePlayer({ ...player, [e.target.name]: value });
+        updatePlayer!({ ...player, [e.target.name]: value });
     };
 
     // Takes input from a selection and updates selected player
@@ -62,7 +62,7 @@ export const PlayerData = (props: PlayerDataProps) => {
         if (!player) return;
         const { name, value } = e.target;
 
-        updatePlayer({ ...player, [name]: value });
+        updatePlayer!({ ...player, [name]: value });
     };
 
     const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
@@ -125,7 +125,7 @@ export const PlayerData = (props: PlayerDataProps) => {
                                 disabled={player === null}
                                 onChange={handleSelectInput}
                             >
-                                {teams.map((team) => (
+                                {teams!.map((team) => (
                                     <MenuItem key={team.id} value={team.id}>
                                         {team.name}
                                     </MenuItem>
@@ -229,8 +229,8 @@ export const PlayerData = (props: PlayerDataProps) => {
                         onCancelClick={onCancel}
                         onSaveClick={() => {
                             // TODO: Error handling
-                            if (newPlayerIsValid() && player !== null)
-                                onValidSave(player);
+                            if (newPlayerIsValid() && player !== null && player !== undefined)
+                                onValidSave!(player);
                             else {
                                 console.warn('new player not valid');
                                 toast.warn('Please fill in all fields');
