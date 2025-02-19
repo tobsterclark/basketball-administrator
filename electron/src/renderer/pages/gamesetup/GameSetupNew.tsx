@@ -46,7 +46,7 @@ const toTitleCase = (str: string) => {
 export const GameSetupNew = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
-        '40bed308-a36e-4e20-8f5e-2c3e1aa02e9f',
+        'e20c91d4-06c9-4896-b2ea-0232250067f3',
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
@@ -205,88 +205,261 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         return null;
     };
 
+    const getTimeSlotFromWeekTimeCourtNew = (
+        week: number,
+        time: string,
+        court: number,
+        venue: string = 'ST_IVES',
+    ) => {
+        // time will be passed in as "HH:MM"
+        if (!ageGroupsTimeSlots) return null;
+        const dateToFind = new Date(Terms2025[currentTerm].date);
+        dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
+        let [hours, minutes] = time.split(':').map(Number);
+
+        // Adjust for AM/PM if necessary
+        if (hours < 12 && !time.includes('AM') && !time.includes('PM')) {
+            hours += 12; // Convert to 24-hour format if it's PM
+        }
+
+        dateToFind.setUTCHours(hours, minutes, 0, 0); // Set the time component in UTC
+
+        for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
+            const timeSlot = ageGroupsTimeSlots[i];
+            const slotDate = new Date(timeSlot.date);
+            
+            if (
+                slotDate.getTime() === dateToFind.getTime() &&
+                timeSlot.court === court &&
+                timeSlot.location === venue
+            ) {
+                return timeSlot;
+            }
+        }
+        return null;
+    }
+
     const getTeamIdFromName = (teamName: string) => {
         if (!ageGroupTeams) return '';
         const theTeam = ageGroupTeams.find((tean) => tean.name === teamName);
         return theTeam?.id || '';
     };
 
+    const getWeekNumberFromDate = (date: Date) => {
+        const termStart = new Date(Terms2025[currentTerm].date);
+        const diffTime = Math.abs(date.getTime() - termStart.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.floor(diffDays / 7);
+    };
+
     // ############## BEGIN Data Grid Config ##############
 
-    const GetTimesAndCourts = () => {
+    const GetTimesAndCourts = (isStIves: boolean = true) => {
         /**
-         * Returns a dict of times with an array of court numbers used at that time
-         *  {
-         *      10: [2],     --> 10:00am, court 2
-         *      11: [1, 2],  --> 11:00am, courts 1 and 2
-         *      12: [1, 2],  --> 12:00pm, courts 1 and 2
-         *  }
+         * Returns an array of times with an array of court numbers used at that time
+         *  [
+         *     {
+         *        time: new Date(), // Moment -> date, will contain date and time
+         *        courts: [1, 2]    // Array of court numbers used at that date and time
+         *     },
+         *  ]
          * 
          */
 
-        // Formats the hour of day to ALWAYS be in Sydney Time regardless of daylight savings or user locale
-        const formatter = new Intl.DateTimeFormat("en-AU", {
-            timeZone: "Australia/Sydney",
-            hour: "numeric",
-            hour12: false,
-        });
-
-        if (!ageGroupsTimeSlots) return {};
-        const timesAndCourts: { [key: number]: number[] } = {};
-        for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
-            const timeSlot = ageGroupsTimeSlots[i];
-            const sydneyHourOfDay = parseInt(formatter.format(timeSlot.date), 10);
-
-            if (timesAndCourts[sydneyHourOfDay]) {
-                if (!timesAndCourts[sydneyHourOfDay].includes(timeSlot.court)) {
-                    timesAndCourts[sydneyHourOfDay].push(timeSlot.court);
-                    console.log(`sydneyHourOfDay: ${sydneyHourOfDay}, court: ${timeSlot.court}`);
-                }
-            } else {
-                timesAndCourts[sydneyHourOfDay] = [timeSlot.court];
-            }
-        }
+        const timeSlots = ageGroupsTimeSlots;
+        const timesAndCourts: { time: Date, courts: number[] }[] = [];
         
-        // Sort the value array for each key in ascending numerical order
-        Object.keys(timesAndCourts).forEach((hour) => {
-            timesAndCourts[parseInt(hour)].sort((a, b) => a - b);
+        // Loop through all time slots, compare the time and date, and add to timesAndCourts if not already added
+        timeSlots?.forEach((timeSlot) => {
+            const time = timeSlot.date;
+            const court = timeSlot.court;
+            const venue = timeSlot.location;
+            const timeAndCourt = timesAndCourts.find(
+                (timeAndCourt) => timeAndCourt.time.getTime() === time.getTime() && venue === (isStIves ? 'ST_IVES' : 'BELROSE')
+            );
+            if (timeAndCourt) {
+                timeAndCourt.courts.push(court);
+            } else {
+                timesAndCourts.push({ time, courts: [court] });
+            }
         });
-        return timesAndCourts;
+
+        // get a list of times in HH:MM format, 
+        const times = [...new Set(timesAndCourts.map((timeAndCourt) => {
+            const hours = timeAndCourt.time.getHours();
+            const minutes = timeAndCourt.time.getMinutes();
+            return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+        }))];
+
+        /** now given a list ['9:00', '10:00'], we need to figure out which courts are possibly used at each time across all weeks,
+         *  in order to figure out how many columns we need in the data grid. Create a new array of objects in the following format:
+         *
+         * [
+         *   {
+         *     time: '9:00',
+         *     courts: [1, 2]
+         *   },
+         *   {
+         *     time: '10:00',
+         *     courts: [1, 3]
+         *   },
+         * ]
+         * 
+         * Ensure that the array is sorted by time, and the courts are sorted in ascending order
+         */
+        const possibleTimesAndCourts: { time: string, courts: number[] }[] = [];
+        times.forEach((time) => {
+            const timeAndCourt = timesAndCourts.find((timeAndCourt) => {
+                const hours = timeAndCourt.time.getHours();
+                const minutes = timeAndCourt.time.getMinutes();
+                return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}` === time;
+            });
+            if (timeAndCourt) {
+                possibleTimesAndCourts.push({
+                    time,
+                    courts: timeAndCourt.courts.sort((a, b) => a - b),
+                });
+            }
+        });
+
+        return possibleTimesAndCourts;
     }
 
-    const logAllGames = () => {
-        // filter out games not matching selected age group id
-        const filteredGames = dbGames.filter((game) => game.timeSlotId);
-        console.log(filteredGames);
+    const generateDataGridCols = (timesAndCourts: { time: string, courts: number[] }[]) => {
+        /**
+         * Returns the following data type based on what courts are used. If courts 1, 2, and 3 are used, the following will be returned:
+         *      const DataGrid_cols: GridColDef[] = [
+         *          { field: 'week', headerName: 'Week', width: 100 },
+         *          { field: 'time', headerName: 'Time', width: 100 },
+         *          { field: 'court1', headerName: 'Court 1', width: 100 },
+         *          { field: 'court2', headerName: 'Court 2', width: 100 },
+         *          { field: 'court3', headerName: 'Court 3', width: 100 },
+         *          { field: 'test', headerName: 'dropdowns', width: 200 },
+         *      ];
+         *  
+         * If only courts 1 and 2 are used, the returned cols will not have a court3 field
+         */
+        const DataGrid_cols: GridColDef[] = [
+            { field: 'week', headerName: 'Week', width: 100 },
+        ];
     
-    };
+        const addedCourtTimes = new Set<string>();
+        timesAndCourts.forEach((timeAndCourt) => {
+            timeAndCourt.courts.forEach((court) => {
+                const courtTimeKey = `court${court}-${timeAndCourt.time}`;
+                if (!addedCourtTimes.has(courtTimeKey)) {
+                    DataGrid_cols.push({
+                        field: courtTimeKey,
+                        headerName: `Court ${court}`,
+                        width: 100,
+                    });
+                    addedCourtTimes.add(courtTimeKey);
+                }
+            });
+        });
+        
+        // Sort the court columns by time and then by court number
+        DataGrid_cols.sort((a, b) => {
+            if (a.field === 'week' || a.field === 'test') return 0;
+            if (b.field === 'week' || b.field === 'test') return 0;
+    
+            const [courtA, timeA] = a.field.split('-');
+            const [courtB, timeB] = b.field.split('-');
+    
+            const [hoursA, minutesA] = timeA.split(':').map(Number);
+            const [hoursB, minutesB] = timeB.split(':').map(Number);
+    
+            if (hoursA !== hoursB) return hoursA - hoursB;
+            if (minutesA !== minutesB) return minutesA - minutesB;
+    
+            const courtNumA = parseInt(courtA.replace('court', ''), 10);
+            const courtNumB = parseInt(courtB.replace('court', ''), 10);
+    
+            return courtNumA - courtNumB;
+        });
+    
+        return DataGrid_cols;
+    }
 
-    const DataGrid_cols: GridColDef[] = [
-        { field: 'week', headerName: 'Week', width: 100 },
-        { field: 'time', headerName: 'Time', width: 100 },
-        { field: 'court1', headerName: 'Court 1', width: 100 },
-        { field: 'court2', headerName: 'Court 2', width: 100 },
-        { field: 'court3', headerName: 'Court 3', width: 100 },
-        { field: 'test', headerName: 'dropdowns', width: 200 },
-    ];
+    const generateDataGridRows = (isStIves: boolean = true) => {
+        const timesAndCourts = GetTimesAndCourts(isStIves);
+        const rows: { [key: string]: any; }[] = [];
+        let id = 1;
 
-    const DataGrid_rows = [
-        { id: 1, week: 1, time: 10, court1: 1, court2: null, court3: null, test: 'x' },
-        { id: 2, week: 1, time: 10, court1: null, court2: 2, court3: null, test: 'x' },
-        { id: 3, week: 1, time: 11, court1: 1, court2: null, court3: null, test: 'x' },
-        { id: 4, week: 1, time: 11, court1: null, court2: 2, court3: null, test: 'x' },
-        { id: 5, week: 1, time: 12, court1: 1, court2: null, court3: null, test: 'x' },
-        { id: 6, week: 1, time: 12, court1: null, court2: 2, court3: null, test: 'x' },
-        { id: 7, week: 2, time: 10, court1: 1, court2: null, court3: null, test: 'x' },
-        { id: 8, week: 2, time: 10, court1: null, court2: 2, court3: null, test: 'x' },
-        { id: 9, week: 2, time: 11, court1: 1, court2: null, court3: null, test: 'x' },
-    ];
+        for (let week = 1; week <= 10; week += 1) {
+            const row: { [key: string]: any } = { id, week, time: 9, test: 'x' };
+            
+            timesAndCourts.forEach((timeAndCourt) => {
+                const { time, courts } = timeAndCourt;
+                courts.forEach((court) => {
+                    const field = `court${court}-${time}`;
+                    if (!row.hasOwnProperty(field)) {
+                        row[field] = null;
+                    }
+                    row[field] = 'x';
+                });
+            });
+
+            rows.push(row);
+            id += 1;
+        }
+
+        return rows;
+    }
+
+    const generateDataGridGroupingModel = (timesAndCourts: { time: string, courts: number[] }[]) => {
+        /**
+         * Creates a Column Grouping Model for the Data Grid based on the times and courts used.
+         * Based on the times and courts used, the following will be returned:
+         *     const DataGrid_colGroupingModel: GridColumnGroupingModel = [
+         *        {
+         *           groupId: '10:00',
+         *          children: [ { field: 'court1-10:00' }, { field: 'court2-10:00' }, { field: 'court3-10:00' } ]
+         *       }
+         *    ]
+         */
+        const DataGrid_colGroupingModel: GridColumnGroupingModel = [];
+        const addedCourtTimes = new Set<string>();
+
+        timesAndCourts.forEach((timeAndCourt) => {
+            const { time, courts } = timeAndCourt;
+            const children: GridColDef[] = [];
+            courts.forEach((court) => {
+                const courtTimeKey = `court${court}-${time}`;
+                if (!addedCourtTimes.has(courtTimeKey)) {
+                    children.push({ field: courtTimeKey });
+                    addedCourtTimes.add(courtTimeKey);
+                }
+            });
+
+            DataGrid_colGroupingModel.push({
+                groupId: time,
+                children,
+            });
+        });
+
+        // Sort the entries by time
+        DataGrid_colGroupingModel.sort((a, b) => {
+            const timeA = a.groupId.split(':').map(Number);
+            const timeB = b.groupId.split(':').map(Number);
+            return timeA[0] - timeB[0] || timeA[1] - timeB[1];
+        });
+
+        return DataGrid_colGroupingModel;
+    }
+
 
     const DataGrid_colGroupingModel: GridColumnGroupingModel = [
         {
-            groupId: '10am',
+            groupId: '10:00',
             children: [
-                {field: 'court1'}, {field: 'court2'}, {field: 'court3'}
+                {field: 'court1-10:00'}, {field: 'court2-10:00'}, {field: 'court3-10:00'}
+            ]
+        },
+        {
+            groupId: '9:00',
+            children: [
+                {field: 'court1-9:00'}, {field: 'court2-9:00'}, {field: 'court3-9:00'}
             ]
         }
     ]
@@ -567,64 +740,35 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                 </div>
             </div>
             <div className="pt-8">
-                {belroseGames ? (
-                    <h3 className="text-xl font-bold pb-4">St Ives</h3>
-                ) : (
-                    <div />
-                )}
+                <h3 className="text-xl font-bold pb-4">St Ives</h3>
+                <div className='flex gap-8'>
+                    <Button
+                        variant="contained"
+                        onClick={() => console.log(getTimeSlotFromWeekTimeCourtNew(1, "10:00", 1))}
+                    >
+                        get timeslot test
+                    </Button>
+                </div>
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
                     <DataGrid 
-                        rows={DataGrid_rows} 
-                        columns={DataGrid_cols} 
-                        columnGroupingModel={DataGrid_colGroupingModel}
+                        rows={generateDataGridRows(true)} 
+                        columns={generateDataGridCols(GetTimesAndCourts(true))} 
+                        columnGroupingModel={generateDataGridGroupingModel(GetTimesAndCourts(true))}
                         disableRowSelectionOnClick
+                        sx={{
+                            '& .MuiDataGrid-columnHeaderTitle': {
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                            },
+                            '& .MuiDataGrid-columnHeaderTitleContainer': {
+                                justifyContent: 'center',
+                            },
+                        }}
                     />
                 </Box>
             </div>
-            {belroseGames ? (
-                <div className="pt-8">
-                    <h3 className="text-xl font-bold pt-8 pb-4">Belrose</h3>
-                    <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                        
-                    </Box>
-                </div>
-            ) : (
-                <div />
-            )}
             <div className="flex gap-8">
-                <button type="button" onClick={() => console.log(GetTimesAndCourts())}>
-                    Get new things
-                </button>
-                <button
-                    type="button"
-                    onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
-                >
-                    getTeamsFromAgeGroup
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        console.log(' games:');
-                        console.log(logAllGames());
-                    }}
-                >
-                    Log  games
-                </button>
-
-                <button type="button" onClick={doTourney}>
-                    Generate Tournament
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        console.log('Teams:');
-                        console.log(ageGroupTeams);
-                    }}
-                >
-                    Print teams
-                </button>
+                
             </div>
         </PageContainer>
     );
