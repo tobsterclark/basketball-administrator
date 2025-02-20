@@ -55,6 +55,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
     const [createdGames, setCreatedGames] = useState<Game[]>([]);
     const [dbGames, setDbGames] = useState<Game[]>([]);
     const [belroseGames, setBelroseGames] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -69,6 +70,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
     };
 
     const getDbGames = () => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.game,
             operation: CrudOperations.findMany,
@@ -94,6 +96,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     timeSlotId: timeslotId,
                 }));
                 setDbGames(games as Game[]);
+                setIsLoading(false);
             });
     }
 
@@ -128,6 +131,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
     };
 
     const getTimeSlots = () => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.findMany,
@@ -150,10 +154,12 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     (slot: { location: string }) => slot.location === 'BELROSE',
                 );
                 setBelroseGames(!!belrose);
+                setIsLoading(false);
             });
     };
 
     const getTeamsFromAgeGroup = (ageGroupId: string) => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.team,
             operation: CrudOperations.findMany,
@@ -168,6 +174,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
                 setAgeGroupTeams(data as TeamDataResponse[]);
+                setIsLoading(false);
             });
         return null;
     };
@@ -364,7 +371,9 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                         
                         width: 200,
                         renderCell: (params: GridRenderCellParams<any, any>) => {
-                            console.log(params);
+                            if (isLoading) {
+                                return <div>Loading...</div>;
+                            }
                             return renderVersusDropdownsNew(params.row[courtTimeKey], 'ST_IVES');
                         }
                     });
@@ -393,7 +402,25 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             return courtNumA - courtNumB;
         });
     
-        return DataGrid_cols;
+        return DataGrid_cols.map(col => ({
+            ...col,
+            renderCell: (params: GridRenderCellParams<any, any>) => {
+                if (isLoading) {
+                    return (
+                        <div>
+                            <div
+                                role="status"
+                                className="space-y-2.5 animate-pulse max-w-lg py-8 px-4"
+                            >
+                                <div className="h-2.5 bg-gray-300 rounded-full w-36"></div>
+                                <div className="h-2.5 bg-gray-300 rounded-full w-36"></div>
+                            </div>
+                        </div>
+                    );
+                }
+                return col.renderCell ? col.renderCell(params) : params.value;
+            }
+        }));
     }
 
     const generateDataGridRows = (isStIves: boolean = true) => {
@@ -412,7 +439,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                         row[field] = null;
                     }
                     
-                    const tsId = getTimeSlotFromWeekTimeCourtNew(week, time, court)?.id;
+                    const tsId = getTimeSlotFromWeekTimeCourtNew(week - 1, time, court)?.id;
 
                     tsId ? row[field] = tsId : row[field] = 'error :(';
                 });
@@ -625,6 +652,9 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         timeSlotId: string,
         venue: string = 'ST_IVES',
     ) => {
+        if (isLoading) {
+            return <div>LOAD...</div>;
+        }
         if (!timeSlotId) {
             return <div />;
         }
@@ -792,6 +822,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                                 justifyContent: 'center',
                             },
                         }}
+                        showCellVerticalBorder
                     />
                 </Box>
             </div>
