@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "darwin", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id          String   @id @default(uuid()) @map("_id")
+  lightTeam   Team     @relation("game_team_dark", fields: [lightTeamId], references: [id])
+  lightTeamId String
+  darkTeam    Team     @relation("game_team_light", fields: [darkTeamId], references: [id])
+  darkTeamId  String
+  lightScore  Int
+  darkScore   Int
+  timeslot    Timeslot @relation(fields: [timeslotId], references: [id])
+  timeslotId  String   @unique
+}
+
+model Team {
+  id         String   @id @default(uuid()) @map("_id")
+  name       String
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+  ageGroupId String
+  lightGames Game[]   @relation("game_team_light")
+  darkGames  Game[]   @relation("game_team_dark")
+  players    Player[]
+  division   Int?
+}
+
+model Player {
+  id         String   @id @default(uuid()) @map("_id")
+  firstName  String
+  lastName   String
+  number     Int?
+  team       Team     @relation(fields: [teamId], references: [id])
+  teamId     String
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+  ageGroupId String
+}
+
+model Timeslot {
+  id         String    @id @default(uuid()) @map("_id")
+  location   Location
+  court      Int
+  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])
+  ageGroupId String?
+  date       DateTime
+  game       Game?
+
+  @@unique([location, date, court])
+}
+
+model AgeGroup {
+  id          String     @id @default(uuid()) @map("_id")
+  displayName String     @unique
+  timeslots   Timeslot[]
+  players     Player[]
+  teams       Team[]
+}
+
+enum Location {
+  ST_IVES
+  BELROSE
+}
