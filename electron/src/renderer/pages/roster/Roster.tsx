@@ -252,6 +252,11 @@ const CustomToolbar = ({
         [currentDate],
     );
 
+    // get day of week for current date like "Sunday, Monday, Tuesday, etc."
+    const dayOfWeek = currentDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+    });
+
     return (
         <Toolbar.Root {...restProps}>
             <div className="flex items-center justify-between px-4 py-2">
@@ -274,7 +279,7 @@ const CustomToolbar = ({
                 {/* Custom Text */}
                 {termAndWeek ? (
                     <div className="text-sm font-bold text-gray-700">
-                        Term {termAndWeek.term}, Week {termAndWeek.week}
+                        {dayOfWeek} - Term {termAndWeek.term}, Week {termAndWeek.week}
                     </div>
                 ) : (
                     <div className="text-sm font-bold text-gray-700">

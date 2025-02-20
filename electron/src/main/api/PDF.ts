@@ -38,7 +38,7 @@ async function getDownload(url: string, filePath: string | undefined) {
 
         if (res.status === 200) {
             try {
-                res.data.pipe(fileStream);
+                (res.data as NodeJS.ReadableStream).pipe(fileStream);
 
                 fileStream.on('finish', () => {
                     fileStream.close();
