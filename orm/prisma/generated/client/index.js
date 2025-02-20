@@ -184,6 +184,10 @@ const config = {
       {
         "fromEnvVar": null,
         "value": "windows"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -210,8 +214,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"./generated/client\"\n  binaryTargets = [\"native\", \"darwin\", \"windows\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Game {\n  id          String   @id @default(uuid()) @map(\"_id\")\n  lightTeam   Team     @relation(\"game_team_dark\", fields: [lightTeamId], references: [id])\n  lightTeamId String\n  darkTeam    Team     @relation(\"game_team_light\", fields: [darkTeamId], references: [id])\n  darkTeamId  String\n  lightScore  Int\n  darkScore   Int\n  timeslot    Timeslot @relation(fields: [timeslotId], references: [id])\n  timeslotId  String   @unique\n}\n\nmodel Team {\n  id         String   @id @default(uuid()) @map(\"_id\")\n  name       String\n  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String\n  lightGames Game[]   @relation(\"game_team_light\")\n  darkGames  Game[]   @relation(\"game_team_dark\")\n  players    Player[]\n  division   Int?\n}\n\nmodel Player {\n  id         String   @id @default(uuid()) @map(\"_id\")\n  firstName  String\n  lastName   String\n  number     Int?\n  team       Team     @relation(fields: [teamId], references: [id])\n  teamId     String\n  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String\n}\n\nmodel Timeslot {\n  id         String    @id @default(uuid()) @map(\"_id\")\n  location   Location\n  court      Int\n  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String?\n  date       DateTime\n  game       Game?\n\n  @@unique([location, date, court])\n}\n\nmodel AgeGroup {\n  id          String     @id @default(uuid()) @map(\"_id\")\n  displayName String     @unique\n  timeslots   Timeslot[]\n  players     Player[]\n  teams       Team[]\n}\n\nenum Location {\n  ST_IVES\n  BELROSE\n}\n",
-  "inlineSchemaHash": "3e35b7c8b0c417947f11d47f84b1b666af392b71b47bc81c04de13b79b926a4e",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"./generated/client\"\n  binaryTargets = [\"native\", \"darwin\", \"windows\", \"debian-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Game {\n  id          String   @id @default(uuid()) @map(\"_id\")\n  lightTeam   Team     @relation(\"game_team_dark\", fields: [lightTeamId], references: [id])\n  lightTeamId String\n  darkTeam    Team     @relation(\"game_team_light\", fields: [darkTeamId], references: [id])\n  darkTeamId  String\n  lightScore  Int\n  darkScore   Int\n  timeslot    Timeslot @relation(fields: [timeslotId], references: [id])\n  timeslotId  String   @unique\n}\n\nmodel Team {\n  id         String   @id @default(uuid()) @map(\"_id\")\n  name       String\n  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String\n  lightGames Game[]   @relation(\"game_team_light\")\n  darkGames  Game[]   @relation(\"game_team_dark\")\n  players    Player[]\n  division   Int?\n}\n\nmodel Player {\n  id         String   @id @default(uuid()) @map(\"_id\")\n  firstName  String\n  lastName   String\n  number     Int?\n  team       Team     @relation(fields: [teamId], references: [id])\n  teamId     String\n  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String\n}\n\nmodel Timeslot {\n  id         String    @id @default(uuid()) @map(\"_id\")\n  location   Location\n  court      Int\n  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])\n  ageGroupId String?\n  date       DateTime\n  game       Game?\n\n  @@unique([location, date, court])\n}\n\nmodel AgeGroup {\n  id          String     @id @default(uuid()) @map(\"_id\")\n  displayName String     @unique\n  timeslots   Timeslot[]\n  players     Player[]\n  teams       Team[]\n}\n\nenum Location {\n  ST_IVES\n  BELROSE\n}\n",
+  "inlineSchemaHash": "97777090a1969b19c18f07d6c1deed1afcd42e5d6dab74cedac5dc852f603c17",
   "copyEngine": true
 }
 
@@ -256,6 +260,10 @@ path.join(process.cwd(), "prisma/generated/client/query_engine-windows.dll.node"
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-darwin.dylib.node");
 path.join(process.cwd(), "prisma/generated/client/libquery_engine-darwin.dylib.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "prisma/generated/client/libquery_engine-debian-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "prisma/generated/client/schema.prisma")
