@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Button,
     Paper,
@@ -23,21 +23,6 @@ import {
     AppointmentForm,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { TodayButton, ViewState } from '@devexpress/dx-react-scheduler';
-import PageContainer from '../../ui_components/PageContainer';
-import PageTitle from '../../ui_components/PageTitle';
-import {
-    PrismaCall,
-    ModelName,
-    CrudOperations,
-} from '../../../general/prismaTypes';
-import { IpcChannels } from '../../../general/IpcChannels';
-import Terms2025 from '../data/Terms';
-import React from 'react';
-import {
-    AppointmentEvent,
-    PlayerDataProps,
-    RosterDataProps,
-} from '../players/components/Types';
 import { toast } from 'react-toastify';
 import {
     ArrowDownOnSquareStackIcon,
@@ -49,6 +34,22 @@ import {
     ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import html2pdf from 'html2pdf.js';
+import moment from 'moment';
+import PageContainer from '../../ui_components/PageContainer';
+import PageTitle from '../../ui_components/PageTitle';
+import {
+    PrismaCall,
+    ModelName,
+    CrudOperations,
+} from '../../../general/prismaTypes';
+import { IpcChannels } from '../../../general/IpcChannels';
+import Terms2025 from '../data/Terms';
+import {
+    AppointmentEvent,
+    PlayerDataProps,
+    RosterDataProps,
+} from '../players/components/Types';
 import {
     formatTime,
     locationToText,
@@ -59,88 +60,7 @@ import {
     Timeslot,
     Game,
 } from './Resources';
-import html2pdf from 'html2pdf.js';
-import moment from 'moment';
-
-const downloadRunsheet = async (gameId: string) => {
-    const defaultFileName = `scoresheet-${gameId}.pdf`;
-
-    const toastId = toast.loading('Downloading PDF...');
-    try {
-        const result = await window.electron.ipcRenderer.invoke('SavePDF', {
-            gameId,
-            defaultFileName,
-        });
-        console.log('result:');
-        console.log(result);
-        if (result.success) {
-            toast.update(toastId, {
-                render: `PDF saved successfully at ${result.filePath}`,
-                type: 'success',
-                isLoading: false,
-                autoClose: 3000,
-            });
-        } else {
-            toast.update(toastId, {
-                render: `Error: ${result.message}`,
-                type: 'error',
-                isLoading: false,
-                autoClose: 3000,
-            });
-        }
-    } catch (error) {
-        console.error('Error saving PDF:');
-        console.error(error);
-        toast.update(toastId, {
-            render: `An error occurred while saving the ZIP: ${
-                (error as Error).message
-            }`,
-            type: 'error',
-            isLoading: false,
-            autoClose: 3000,
-        });
-    }
-};
-
-const downloadMultipleRunsheets = async (gameIds: string[]) => {
-    const defaultFileName = `AllScoresheets.pdf`;
-    console.log(`downloading ${gameIds.length} scoresheets:`);
-    console.log(gameIds);
-
-    const toastId = toast.loading('Downloading PDF...');
-    try {
-        const result = await window.electron.ipcRenderer.invoke('SaveZIP', {
-            gameIds,
-            defaultFileName,
-        });
-        if (result.success) {
-            toast.update(toastId, {
-                render: `PDF saved successfully at ${result.filePath}`,
-                type: 'success',
-                isLoading: false,
-                autoClose: 3000,
-            });
-        } else {
-            toast.update(toastId, {
-                render: `Error: ${result.message}`,
-                type: 'error',
-                isLoading: false,
-                autoClose: 3000,
-            });
-        }
-    } catch (error) {
-        console.error('Error saving PDF:');
-        console.error(error);
-        toast.update(toastId, {
-            render: `An error occurred while saving the PDF: ${
-                (error as Error).message
-            }`,
-            type: 'error',
-            isLoading: false,
-            autoClose: 3000,
-        });
-    }
-};
+import { downloadRunsheet, downloadMultipleRunsheets } from './PdfUtil';
 
 const CustomAppointment = ({
     children,
@@ -251,7 +171,7 @@ const CustomTooltipHeader = ({
         <Button
             variant="contained"
             color="primary"
-            onClick={async () => await downloadRunsheet(appointmentData.id)}
+            onClick={async () => downloadRunsheet(appointmentData.id)}
         >
             Download Runsheet
         </Button>
@@ -260,10 +180,10 @@ const CustomTooltipHeader = ({
 
 const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
-    
+
     // Set this to closest sunday in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
     const [currentDate, setCurrentDate] = React.useState(
-        moment.tz(new Date(), 'Australia/Sydney').toDate(),
+        moment.tz(new Date(), 'Australia/Sydney').isoWeekday(7).toDate(),
     );
 
     const tableRef = useRef<HTMLDivElement>(null);
@@ -445,19 +365,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                     <Scheduler data={allEvents}>
                         <ViewState
                             // Only use dates rather than including time. FUCK TIMEZONES!!!
-                            defaultCurrentDate={moment
-                                .tz([2025, 1, 9], 'Australia/Sydney')
-                                .format('YYYY-MM-DD')}
-                            currentDate={moment
-                                .tz(currentDate, 'Australia/Sydney')
-                                .format('YYYY-MM-DD')}
-                            onCurrentDateChange={(date) =>
-                                setCurrentDate(
-                                    moment
-                                        .tz(date, 'Australia/Sydney')
-                                        .toDate(),
-                                )
-                            }
+                            defaultCurrentDate={currentDate}
+                            currentDate={currentDate}
+                            onCurrentDateChange={(date) => setCurrentDate(date)}
                         />
                         <WeekView
                             excludedDays={[1, 2, 3, 4, 5, 6]}
@@ -487,7 +397,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                         />
                     </Scheduler>
                 </div>
-                <div className="inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
+                <div className="inline-block h-5/6 mt-24 min-h-[1em] w-0.5 self-stretch bg-neutral-100 " />
                 <div className="flex-col pl-8 justify-center w-2/5">
                     <h2 className="pt-16 text-lg text-slate-800 font-bold underline underline-offset-4 decoration-4 decoration-dustyBlue">
                         {getCurrentTermAndWeek(currentDate)?.term !== undefined
@@ -512,7 +422,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                                 <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
                                 <p className="text-sm text-gray-600 pt-1">
                                     <span>
-                                        {`Pages are sorted in order of time (earliest to latest) first, and by court second.`}
+                                        Pages are sorted in order of time
+                                        (earliest to latest) first, and by court
+                                        second.
                                     </span>
                                 </p>
                             </div>
@@ -522,7 +434,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             size="medium"
                             className="flex items-center"
                             onClick={async () =>
-                                await downloadMultipleRunsheets(
+                                downloadMultipleRunsheets(
                                     getGameIdsForDate(currentDate),
                                 )
                             }
@@ -531,7 +443,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             <ArrowDownOnSquareStackIcon className="h-6 ml-2" />
                         </Button>
                     </div>
-                    <hr className="w-3/4 mt-8 mb-8"></hr>
+                    <hr className="w-3/4 mt-8 mb-8" />
                     <div className="">
                         <Button
                             variant="contained"

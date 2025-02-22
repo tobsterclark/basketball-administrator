@@ -72,7 +72,7 @@ export interface PlayerDataProps {
 }
 
 export interface RosterDataProps {
-    allEvents : AppointmentEvent[];
+    allEvents: AppointmentEvent[];
     setAllEvents: Dispatch<SetStateAction<AppointmentEvent[]>>;
     allGames: Game[];
     setAllGames: Dispatch<SetStateAction<Game[]>>;
