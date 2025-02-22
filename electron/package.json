@@ -1,6 +1,6 @@
 {
   "name": "nsbl-manager",
-  "version": "0.1.7-alpha.5",
+  "version": "v0.1.7-alpha.7",
   "description": "Management Application for North Shore Basketball League.",
   "keywords": [
     "electron",
