@@ -22,7 +22,11 @@ import {
 import { styled } from '@mui/material/styles';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { GameDataResponse, PlayerDataProps, TeamDataResponse } from '../players/components/Types';
+import {
+    GameDataResponse,
+    PlayerDataProps,
+    TeamDataResponse,
+} from '../players/components/Types';
 import {
     CrudOperations,
     ModelName,
@@ -46,7 +50,7 @@ const toTitleCase = (str: string) => {
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
-        'e20c91d4-06c9-4896-b2ea-0232250067f3', // years 3-4
+        'f022a91a-aadd-47b3-8687-b223f0ea0890', // years 3-4
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
@@ -88,19 +92,21 @@ export const GameSetup = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                const games = (data as GameDataResponse[]).map(({ lightTeamId, darkTeamId, timeslotId }) => ({
-                    lightTeamId,
-                    darkTeamId,
-                    timeSlotId: timeslotId,
-                }));
+                const games = (data as GameDataResponse[]).map(
+                    ({ lightTeamId, darkTeamId, timeslotId }) => ({
+                        lightTeamId,
+                        darkTeamId,
+                        timeSlotId: timeslotId,
+                    }),
+                );
                 setDbGames(games as Game[]);
             });
-    }
+    };
 
     const printCreatedGames = () => {
         console.log('Created games:');
         console.log(createdGames);
-    }
+    };
 
     // Ensures that the createdGames are reset when the age group is changed
     useEffect(() => {
@@ -108,15 +114,15 @@ export const GameSetup = (props: PlayerDataProps) => {
         getDbGames();
     }, [selectedAgeGroupId]);
 
-    const formatter = new Intl.DateTimeFormat("en-AU", {
-        timeZone: "Australia/Sydney",
-        hour: "numeric",
+    const formatter = new Intl.DateTimeFormat('en-AU', {
+        timeZone: 'Australia/Sydney',
+        hour: 'numeric',
         hour12: false,
     });
 
     // const getTimesFromSlots = (timeSlots: timeSlotParams[], venue: string = 'ST_IVES') => {
     //     const timesCount: { [key: number]: number } = {};
-    
+
     //     for (const timeSlot of timeSlots) {
     //         if (timeSlot.location === venue) {
     //             const hour = new Intl.DateTimeFormat('en-AU', {
@@ -124,15 +130,14 @@ export const GameSetup = (props: PlayerDataProps) => {
     //                 hour: 'numeric',
     //                 hour12: false,
     //             }).format(timeSlot.date);
-    
+
     //             const hourNumber = parseInt(hour, 10);
     //             timesCount[hourNumber] = (timesCount[hourNumber] || 0) + 1;
     //         }
     //     }
-    
+
     //     return timesCount;
     // };
-    
 
     // const getTimesFromSlots = (
     //     timeSlots: timeSlotParams[],
@@ -155,7 +160,7 @@ export const GameSetup = (props: PlayerDataProps) => {
     //             timesAndCourts[sydneyHourOfDay] = [timeSlot.court];
     //         }
     //     }
-        
+
     //     // Sort the value array for each key in ascending numerical order
     //     return timesAndCourts;
     // };
@@ -312,7 +317,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 setDbGames([]);
                 toast.success('All games deleted');
             });
-    }
+    };
 
     const uploadGames = () => {
         let actualUploadCount = 0;
@@ -320,9 +325,14 @@ export const GameSetup = (props: PlayerDataProps) => {
 
         const promises = createdGames.map((game) => {
             // check if game with matching lightTeamId, darkTeamId and timeslotId already exists in dbGames, and if so, skip it
-            if (dbGames.find(
-                (dbGame) => dbGame.lightTeamId === game.lightTeamId && dbGame.darkTeamId === game.darkTeamId && dbGame.timeSlotId === game.timeSlotId
-            )) {
+            if (
+                dbGames.find(
+                    (dbGame) =>
+                        dbGame.lightTeamId === game.lightTeamId &&
+                        dbGame.darkTeamId === game.darkTeamId &&
+                        dbGame.timeSlotId === game.timeSlotId,
+                )
+            ) {
                 return Promise.resolve();
             }
             actualUploadCount += 1;
@@ -361,17 +371,28 @@ export const GameSetup = (props: PlayerDataProps) => {
                                 },
                             },
                         };
-                        return window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, req);
+                        return window.electron.ipcRenderer.invoke(
+                            IpcChannels.PrismaClient,
+                            req,
+                        );
                     }
                 });
         });
 
         Promise.all(promises).then(() => {
             if (actualUploadCount > 0) {
-                toast.success(`${actualUploadCount} Game${actualUploadCount === 1 ? '' : 's'} uploaded`);
+                toast.success(
+                    `${actualUploadCount} Game${
+                        actualUploadCount === 1 ? '' : 's'
+                    } uploaded`,
+                );
             }
             if (actualUpdateCount > 0) {
-                toast.info(`${actualUpdateCount} Game${actualUpdateCount === 1 ? '' : 's'} updated`);
+                toast.info(
+                    `${actualUpdateCount} Game${
+                        actualUpdateCount === 1 ? '' : 's'
+                    } updated`,
+                );
             }
             getDbGames();
         });
@@ -446,17 +467,15 @@ export const GameSetup = (props: PlayerDataProps) => {
             return <div />;
         }
         // console.log("attempting to find a game in dbGames");
-        let game = dbGames.find(
-            (gamee) => gamee.timeSlotId === timeSlot?.id,
-        );
-        
+        let game = dbGames.find((gamee) => gamee.timeSlotId === timeSlot?.id);
+
         const createdGame = createdGames.find(
             (gamee) => gamee.timeSlotId === timeSlot?.id,
         );
-        
+
         if (createdGame) {
             game = createdGame;
-        };
+        }
 
         const lightTeamId = game?.lightTeamId || '';
         const darkTeamId = game?.darkTeamId || '';
@@ -556,12 +575,18 @@ export const GameSetup = (props: PlayerDataProps) => {
                             }}
                         >
                             {ageGroups
-                                .filter((ageGroup) => ageGroup.displayName !== "None")
+                                .filter(
+                                    (ageGroup) =>
+                                        ageGroup.displayName !== 'None',
+                                )
                                 .map((ageGroup) => (
-                                    <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                                    <MenuItem
+                                        key={ageGroup.id}
+                                        value={ageGroup.id}
+                                    >
                                         {toTitleCase(ageGroup.displayName)}
                                     </MenuItem>
-                            ))}
+                                ))}
                         </Select>
                     </FormControl>
                 </div>
@@ -794,46 +819,43 @@ export const GameSetup = (props: PlayerDataProps) => {
             ) : (
                 <div />
             )}
-            {
-                process.env.NODE_ENV === 'development' ? (
-                    <div className="flex gap-8">
-                        <button type="button" onClick={getTimeSlots}>
-                            Get Timeslots
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
-                        >
-                            getTeamsFromAgeGroup
-                        </button>
+            {process.env.NODE_ENV === 'development' ? (
+                <div className="flex gap-8">
+                    <button type="button" onClick={getTimeSlots}>
+                        Get Timeslots
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
+                    >
+                        getTeamsFromAgeGroup
+                    </button>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                console.log('created games:');
-                                console.log(createdGames);
-                            }}
-                        >
-                            Log created games
-                        </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            console.log('created games:');
+                            console.log(createdGames);
+                        }}
+                    >
+                        Log created games
+                    </button>
 
-                        <button type="button" onClick={doTourney}>
-                            Generate Tournament
-                        </button>
+                    <button type="button" onClick={doTourney}>
+                        Generate Tournament
+                    </button>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                console.log('Teams:');
-                                console.log(ageGroupTeams);
-                            }}
-                        >
-                            Print teams
-                        </button>
-                    </div>
-                ) : (null)
-            }
-            
+                    <button
+                        type="button"
+                        onClick={() => {
+                            console.log('Teams:');
+                            console.log(ageGroupTeams);
+                        }}
+                    >
+                        Print teams
+                    </button>
+                </div>
+            ) : null}
         </PageContainer>
     );
 };
