@@ -108,6 +108,8 @@ const venueCourts = {
     Belrose: 2,
 };
 
+const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
+
 const printAllTimeSlots = () => {
     const req: PrismaCall = {
         model: ModelName.timeslot,
@@ -456,7 +458,7 @@ const WeekTabPanel = (
             date: finalMoment.toDate(),
             location: venueToAdd,
             court: courtToAdd,
-            ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+            ageGroupId: ADULTS_AGE_GROUP_ID, // adults
         };
 
         // upload to prisma
@@ -528,7 +530,7 @@ const WeekTabPanel = (
             operation: CrudOperations.findMany,
             data: {
                 where: {
-                    ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f',
+                    ageGroupId: ADULTS_AGE_GROUP_ID,
                     date: {
                         lte: maxDate,
                         gte: minDate,
@@ -989,9 +991,7 @@ export const TermSetup = (props: PlayerDataProps) => {
     const [adultsRows, setAdultsRows] = useState<RowData[]>(
         dbTimeSlots
             .filter(
-                (timeSlot) =>
-                    timeSlot.ageGroupId ===
-                    'abb0356d-cf46-486b-bfb0-1165693f9f8f', // adults
+                (timeSlot) => timeSlot.ageGroupId === ADULTS_AGE_GROUP_ID, // adults
             )
             .map((timeSlot) => ({
                 time: moment(timeSlot.date).format('h:mm A'),
@@ -1113,8 +1113,7 @@ export const TermSetup = (props: PlayerDataProps) => {
     const uploadChanges = () => {
         const sundayTimeSlotsToUpdate = modifiedTimeSlots.filter(
             (timeSlot) =>
-                timeSlot.ageGroupId !==
-                    'abb0356d-cf46-486b-bfb0-1165693f9f8f' && // Exclude adults age group
+                timeSlot.ageGroupId !== ADULTS_AGE_GROUP_ID && // Exclude adults age group
                 (!dbTimeSlots.find(
                     (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ) ||
@@ -1127,8 +1126,7 @@ export const TermSetup = (props: PlayerDataProps) => {
 
         const adultsToCreate = modifiedTimeSlots.filter(
             (timeSlot) =>
-                timeSlot.ageGroupId ===
-                    'abb0356d-cf46-486b-bfb0-1165693f9f8f' && // Only include adults age group
+                timeSlot.ageGroupId === ADULTS_AGE_GROUP_ID && // Only include adults age group
                 !dbTimeSlots.find(
                     (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ),
@@ -1294,7 +1292,7 @@ export const TermSetup = (props: PlayerDataProps) => {
             operation: CrudOperations.findMany,
             data: {
                 where: {
-                    ageGroupId: 'abb0356d-cf46-486b-bfb0-1165693f9f8f',
+                    ageGroupId: ADULTS_AGE_GROUP_ID,
                     date: {
                         lte: maxDate,
                         gte: minDate,

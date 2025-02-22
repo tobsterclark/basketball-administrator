@@ -44,6 +44,8 @@ import {
     GridRenderCellParams,
 } from '@mui/x-data-grid';
 
+const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
+
 const toTitleCase = (str: string) => {
     return str
         .toLowerCase()
@@ -230,14 +232,23 @@ export const GameSetupNew = (props: PlayerDataProps) => {
     ) => {
         // time will be passed in as "HH:MM"
         if (!ageGroupsTimeSlots) return null;
+
         const dateToFind = new Date(Terms2025[currentTerm].date);
-        dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
+        if (selectedAgeGroupId === ADULTS_AGE_GROUP_ID) {
+            dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7 - 4);
+        } else {
+            dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
+        }
+
         let [hours, minutes] = time.split(':').map(Number);
 
         // Adjust for AM/PM if necessary
-        if (hours > 12 && !time.includes('AM') && !time.includes('PM')) {
-            hours += 12; // Convert to 24-hour format if it's PM
-        }
+        // if (hours > 12 && !time.includes('AM') && !time.includes('PM')) {
+        //     console.log(
+        //         `Converting ${hours}:${minutes} -> ${hours + 12}:${minutes}`,
+        //     );
+        //     hours += 12; // Convert to 24-hour format if it's PM
+        // }
 
         dateToFind.setHours(hours, minutes, 0, 0); // Set the time component in local time
 
@@ -253,6 +264,13 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                 return timeSlot;
             }
         }
+        if (week < 2) {
+            console.error(
+                `Attempted to find timeslot for week ${week}, time ${time}, court ${court}. Date to find: ${dateToFind}`,
+            );
+            return null;
+        }
+        return null;
         console.error(
             `Can't find timeslot for ${week}, time ${time}, court ${court}. Probably a daylight savings issue.`,
         );
@@ -660,6 +678,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         isLightTeam: boolean,
         venue: string = 'ST_IVES',
     ) => {
+        console.log(`Updating game for timeslot ${timeSlotId}`);
         setCreatedGames((prevGames) => {
             if (!timeSlotId) return prevGames;
 
