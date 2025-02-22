@@ -22,7 +22,11 @@ import {
 import { styled } from '@mui/material/styles';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
-import { GameDataResponse, PlayerDataProps, TeamDataResponse } from '../players/components/Types';
+import {
+    GameDataResponse,
+    PlayerDataProps,
+    TeamDataResponse,
+} from '../players/components/Types';
 import {
     CrudOperations,
     ModelName,
@@ -33,7 +37,12 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
 import { toast } from 'react-toastify';
-import { DataGrid, GridColDef, GridColumnGroupingModel, GridRenderCellParams } from '@mui/x-data-grid';
+import {
+    DataGrid,
+    GridColDef,
+    GridColumnGroupingModel,
+    GridRenderCellParams,
+} from '@mui/x-data-grid';
 
 const toTitleCase = (str: string) => {
     return str
@@ -46,7 +55,7 @@ const toTitleCase = (str: string) => {
 export const GameSetupNew = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
-        'e20c91d4-06c9-4896-b2ea-0232250067f3',
+        'f022a91a-aadd-47b3-8687-b223f0ea0890', // years 3-4
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
@@ -90,20 +99,22 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
-                const games = (data as GameDataResponse[]).map(({ lightTeamId, darkTeamId, timeslotId }) => ({
-                    lightTeamId,
-                    darkTeamId,
-                    timeSlotId: timeslotId,
-                }));
+                const games = (data as GameDataResponse[]).map(
+                    ({ lightTeamId, darkTeamId, timeslotId }) => ({
+                        lightTeamId,
+                        darkTeamId,
+                        timeSlotId: timeslotId,
+                    }),
+                );
                 setDbGames(games as Game[]);
                 setIsLoading(false);
             });
-    }
+    };
 
     const printCreatedGames = () => {
         console.log('Created games:');
         console.log(createdGames);
-    }
+    };
 
     // Ensures that the createdGames are reset when the age group is changed
     useEffect(() => {
@@ -185,7 +196,6 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAgeGroupId]);
 
-
     const getTimeSlotFromWeekTimeCourt = (
         week: number,
         time: number,
@@ -234,7 +244,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
             const timeSlot = ageGroupsTimeSlots[i];
             const slotDate = new Date(timeSlot.date);
-            
+
             if (
                 slotDate.getTime() === dateToFind.getTime() &&
                 timeSlot.court === court &&
@@ -243,9 +253,11 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                 return timeSlot;
             }
         }
-        console.error(`Can't find timeslot for ${week}, time ${time}, court ${court}. Probably a daylight savings issue.`);
+        console.error(
+            `Can't find timeslot for ${week}, time ${time}, court ${court}. Probably a daylight savings issue.`,
+        );
         return null;
-    }
+    };
 
     const getTeamIdFromName = (teamName: string) => {
         if (!ageGroupTeams) return '';
@@ -271,19 +283,21 @@ export const GameSetupNew = (props: PlayerDataProps) => {
          *        courts: [1, 2]    // Array of court numbers used at that date and time
          *     },
          *  ]
-         * 
+         *
          */
 
         const timeSlots = ageGroupsTimeSlots;
-        const timesAndCourts: { time: Date, courts: number[] }[] = [];
-        
+        const timesAndCourts: { time: Date; courts: number[] }[] = [];
+
         // Loop through all time slots, compare the time and date, and add to timesAndCourts if not already added
         timeSlots?.forEach((timeSlot) => {
             const time = timeSlot.date;
             const court = timeSlot.court;
             const venue = timeSlot.location;
             const timeAndCourt = timesAndCourts.find(
-                (timeAndCourt) => timeAndCourt.time.getTime() === time.getTime() && venue === (isStIves ? 'ST_IVES' : 'BELROSE')
+                (timeAndCourt) =>
+                    timeAndCourt.time.getTime() === time.getTime() &&
+                    venue === (isStIves ? 'ST_IVES' : 'BELROSE'),
             );
             if (timeAndCourt) {
                 timeAndCourt.courts.push(court);
@@ -292,12 +306,16 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             }
         });
 
-        // get a list of times in HH:MM format, 
-        const times = [...new Set(timesAndCourts.map((timeAndCourt) => {
-            const hours = timeAndCourt.time.getHours();
-            const minutes = timeAndCourt.time.getMinutes();
-            return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
-        }))];
+        // get a list of times in HH:MM format,
+        const times = [
+            ...new Set(
+                timesAndCourts.map((timeAndCourt) => {
+                    const hours = timeAndCourt.time.getHours();
+                    const minutes = timeAndCourt.time.getMinutes();
+                    return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+                }),
+            ),
+        ];
 
         /** now given a list ['9:00', '10:00'], we need to figure out which courts are possibly used at each time across all weeks,
          *  in order to figure out how many columns we need in the data grid. Create a new array of objects in the following format:
@@ -312,15 +330,18 @@ export const GameSetupNew = (props: PlayerDataProps) => {
          *     courts: [1, 3]
          *   },
          * ]
-         * 
+         *
          * Ensure that the array is sorted by time, and the courts are sorted in ascending order
          */
-        const possibleTimesAndCourts: { time: string, courts: number[] }[] = [];
+        const possibleTimesAndCourts: { time: string; courts: number[] }[] = [];
         times.forEach((time) => {
             const timeAndCourt = timesAndCourts.find((timeAndCourt) => {
                 const hours = timeAndCourt.time.getHours();
                 const minutes = timeAndCourt.time.getMinutes();
-                return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}` === time;
+                return (
+                    `${hours}:${minutes < 10 ? `0${minutes}` : minutes}` ===
+                    time
+                );
             });
             if (timeAndCourt) {
                 possibleTimesAndCourts.push({
@@ -331,9 +352,11 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         });
 
         return possibleTimesAndCourts;
-    }
+    };
 
-    const generateDataGridCols = (timesAndCourts: { time: string, courts: number[] }[]) => {
+    const generateDataGridCols = (
+        timesAndCourts: { time: string; courts: number[] }[],
+    ) => {
         /**
          * Returns the following data type based on what courts are used. If courts 1, 2, and 3 are used, the following will be returned:
          *      const DataGrid_cols: GridColDef[] = [
@@ -344,20 +367,22 @@ export const GameSetupNew = (props: PlayerDataProps) => {
          *          { field: 'court3', headerName: 'Court 3', width: 100 },
          *          { field: 'test', headerName: 'dropdowns', width: 200 },
          *      ];
-         *  
+         *
          * If only courts 1 and 2 are used, the returned cols will not have a court3 field
          */
         const DataGrid_cols: GridColDef[] = [
-            { field: 'week', headerName: 'Week', width: 70, renderCell: (
-                params: GridRenderCellParams<any, any>) => 
-                    (
-                        <div className="flex items-center justify-center h-full font-bold">
-                            {params.value}
-                        </div>
-                    )
+            {
+                field: 'week',
+                headerName: 'Week',
+                width: 70,
+                renderCell: (params: GridRenderCellParams<any, any>) => (
+                    <div className="flex items-center justify-center h-full font-bold">
+                        {params.value}
+                    </div>
+                ),
             },
         ];
-    
+
         const addedCourtTimes = new Set<string>();
         timesAndCourts.forEach((timeAndCourt) => {
             timeAndCourt.courts.forEach((court) => {
@@ -368,41 +393,46 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     DataGrid_cols.push({
                         field: courtTimeKey,
                         headerName: `Court ${court}`,
-                        
+
                         width: 200,
-                        renderCell: (params: GridRenderCellParams<any, any>) => {
+                        renderCell: (
+                            params: GridRenderCellParams<any, any>,
+                        ) => {
                             if (isLoading) {
                                 return <div>Loading...</div>;
                             }
-                            return renderVersusDropdownsNew(params.row[courtTimeKey], 'ST_IVES');
-                        }
+                            return renderVersusDropdownsNew(
+                                params.row[courtTimeKey],
+                                'ST_IVES',
+                            );
+                        },
                     });
                     addedCourtTimes.add(courtTimeKey);
                 }
             });
         });
-        
+
         // Sort the court columns by time and then by court number
         DataGrid_cols.sort((a, b) => {
             if (a.field === 'week' || a.field === 'test') return 0;
             if (b.field === 'week' || b.field === 'test') return 0;
-    
+
             const [courtA, timeA] = a.field.split('-');
             const [courtB, timeB] = b.field.split('-');
-    
+
             const [hoursA, minutesA] = timeA.split(':').map(Number);
             const [hoursB, minutesB] = timeB.split(':').map(Number);
-    
+
             if (hoursA !== hoursB) return hoursA - hoursB;
             if (minutesA !== minutesB) return minutesA - minutesB;
-    
+
             const courtNumA = parseInt(courtA.replace('court', ''), 10);
             const courtNumB = parseInt(courtB.replace('court', ''), 10);
-    
+
             return courtNumA - courtNumB;
         });
-    
-        return DataGrid_cols.map(col => ({
+
+        return DataGrid_cols.map((col) => ({
             ...col,
             renderCell: (params: GridRenderCellParams<any, any>) => {
                 if (isLoading) {
@@ -419,18 +449,23 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     );
                 }
                 return col.renderCell ? col.renderCell(params) : params.value;
-            }
+            },
         }));
-    }
+    };
 
     const generateDataGridRows = (isStIves: boolean = true) => {
         const timesAndCourts = GetTimesAndCourts(isStIves);
-        const rows: { [key: string]: any; }[] = [];
+        const rows: { [key: string]: any }[] = [];
         let id = 1;
 
         for (let week = 1; week <= 10; week += 1) {
-            const row: { [key: string]: any } = { id, week, time: 9, test: 'z' };
-            
+            const row: { [key: string]: any } = {
+                id,
+                week,
+                time: 9,
+                test: 'z',
+            };
+
             timesAndCourts.forEach((timeAndCourt) => {
                 const { time, courts } = timeAndCourt;
                 courts.forEach((court) => {
@@ -438,10 +473,14 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     if (!row.hasOwnProperty(field)) {
                         row[field] = null;
                     }
-                    
-                    const tsId = getTimeSlotFromWeekTimeCourtNew(week - 1, time, court)?.id;
 
-                    tsId ? row[field] = tsId : row[field] = 'error :(';
+                    const tsId = getTimeSlotFromWeekTimeCourtNew(
+                        week - 1,
+                        time,
+                        court,
+                    )?.id;
+
+                    tsId ? (row[field] = tsId) : (row[field] = 'error :(');
                 });
             });
 
@@ -450,9 +489,11 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         }
 
         return rows;
-    }
+    };
 
-    const generateDataGridGroupingModel = (timesAndCourts: { time: string, courts: number[] }[]) => {
+    const generateDataGridGroupingModel = (
+        timesAndCourts: { time: string; courts: number[] }[],
+    ) => {
         /**
          * Creates a Column Grouping Model for the Data Grid based on the times and courts used.
          * Based on the times and courts used, the following will be returned:
@@ -491,10 +532,9 @@ export const GameSetupNew = (props: PlayerDataProps) => {
         });
 
         return DataGrid_colGroupingModel;
-    }
+    };
 
     // ############## END Data Grid Config ##############
-
 
     const uploadGames = () => {
         let actualUploadCount = 0;
@@ -502,9 +542,14 @@ export const GameSetupNew = (props: PlayerDataProps) => {
 
         const promises = createdGames.map((game) => {
             // check if game with matching lightTeamId, darkTeamId and timeslotId already exists in dbGames, and if so, skip it
-            if (dbGames.find(
-                (dbGame) => dbGame.lightTeamId === game.lightTeamId && dbGame.darkTeamId === game.darkTeamId && dbGame.timeSlotId === game.timeSlotId
-            )) {
+            if (
+                dbGames.find(
+                    (dbGame) =>
+                        dbGame.lightTeamId === game.lightTeamId &&
+                        dbGame.darkTeamId === game.darkTeamId &&
+                        dbGame.timeSlotId === game.timeSlotId,
+                )
+            ) {
                 return Promise.resolve();
             }
             actualUploadCount += 1;
@@ -543,17 +588,28 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                                 },
                             },
                         };
-                        return window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, req);
+                        return window.electron.ipcRenderer.invoke(
+                            IpcChannels.PrismaClient,
+                            req,
+                        );
                     }
                 });
         });
 
         Promise.all(promises).then(() => {
             if (actualUploadCount > 0) {
-                toast.success(`${actualUploadCount} Game${actualUploadCount === 1 ? '' : 's'} uploaded`);
+                toast.success(
+                    `${actualUploadCount} Game${
+                        actualUploadCount === 1 ? '' : 's'
+                    } uploaded`,
+                );
             }
             if (actualUpdateCount > 0) {
-                toast.info(`${actualUpdateCount} Game${actualUpdateCount === 1 ? '' : 's'} updated`);
+                toast.info(
+                    `${actualUpdateCount} Game${
+                        actualUpdateCount === 1 ? '' : 's'
+                    } updated`,
+                );
             }
             getDbGames();
         });
@@ -659,25 +715,22 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             return <div />;
         }
         // console.log("attempting to find a game in dbGames");
-        let game = dbGames.find(
-            (gamee) => gamee.timeSlotId === timeSlotId,
-        );
-        
+        let game = dbGames.find((gamee) => gamee.timeSlotId === timeSlotId);
+
         const createdGame = createdGames.find(
             (gamee) => gamee.timeSlotId === timeSlotId,
         );
-        
+
         if (createdGame) {
             game = createdGame;
-        };
+        }
 
         const lightTeamId = game?.lightTeamId || '';
         const darkTeamId = game?.darkTeamId || '';
-        
 
         return (
-            <div className='py-4 flex flex-col gap-4'>
-                <FormControl variant="outlined" fullWidth >
+            <div className="py-4 flex flex-col gap-4">
+                <FormControl variant="outlined" fullWidth>
                     <InputLabel id="select-label-light">Light</InputLabel>
                     <Select
                         labelId="select-label-light"
@@ -765,12 +818,18 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                             }}
                         >
                             {ageGroups
-                                .filter((ageGroup) => ageGroup.displayName !== "None")
+                                .filter(
+                                    (ageGroup) =>
+                                        ageGroup.displayName !== 'None',
+                                )
                                 .map((ageGroup) => (
-                                    <MenuItem key={ageGroup.id} value={ageGroup.id}>
+                                    <MenuItem
+                                        key={ageGroup.id}
+                                        value={ageGroup.id}
+                                    >
                                         {toTitleCase(ageGroup.displayName)}
                                     </MenuItem>
-                            ))}
+                                ))}
                         </Select>
                     </FormControl>
                 </div>
@@ -797,19 +856,25 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             </div>
             <div className="pt-8">
                 <h3 className="text-xl font-bold pb-4">St Ives</h3>
-                <div className='flex gap-8'>
+                <div className="flex gap-8">
                     <Button
                         variant="contained"
-                        onClick={() => console.log(getTimeSlotFromWeekTimeCourtNew(1, "10:00", 1))}
+                        onClick={() =>
+                            console.log(
+                                getTimeSlotFromWeekTimeCourtNew(1, '10:00', 1),
+                            )
+                        }
                     >
                         get timeslot test
                     </Button>
                 </div>
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                    <DataGrid 
-                        rows={generateDataGridRows(true)} 
-                        columns={generateDataGridCols(GetTimesAndCourts(true))} 
-                        columnGroupingModel={generateDataGridGroupingModel(GetTimesAndCourts(true))}
+                    <DataGrid
+                        rows={generateDataGridRows(true)}
+                        columns={generateDataGridCols(GetTimesAndCourts(true))}
+                        columnGroupingModel={generateDataGridGroupingModel(
+                            GetTimesAndCourts(true),
+                        )}
                         disableRowSelectionOnClick
                         autoHeight
                         getRowHeight={() => 'auto'}
@@ -826,9 +891,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     />
                 </Box>
             </div>
-            <div className="flex gap-8">
-                
-            </div>
+            <div className="flex gap-8"></div>
         </PageContainer>
     );
 };

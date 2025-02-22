@@ -50,7 +50,7 @@ const toTitleCase = (str: string) => {
 export const GameSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
-        'e20c91d4-06c9-4896-b2ea-0232250067f3', // years 3-4
+        'f022a91a-aadd-47b3-8687-b223f0ea0890', // years 3-4
     );
     const [currentTerm, setCurrentTerm] = useState(0); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
