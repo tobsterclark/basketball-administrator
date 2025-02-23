@@ -158,7 +158,7 @@ const CustomAppointment = ({
         resources={[]}
     >
         <div
-            className={`text-white px-1 py-1 ${
+            className={`text-white px-1 py-1 h-[97%] ${
                 data.location === Location.ST_IVES
                     ? 'bg-blue-500'
                     : 'bg-green-500'
@@ -279,7 +279,8 @@ const CustomToolbar = ({
                 {/* Custom Text */}
                 {termAndWeek ? (
                     <div className="text-sm font-bold text-gray-700">
-                        {dayOfWeek} - Term {termAndWeek.term}, Week {termAndWeek.week}
+                        {dayOfWeek} - Term {termAndWeek.term}, Week{' '}
+                        {termAndWeek.week}
                     </div>
                 ) : (
                     <div className="text-sm font-bold text-gray-700">
@@ -338,6 +339,17 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
         Location.ST_IVES | Location.BELROSE
     >(Location.ST_IVES);
 
+    // get a list of events that have a date of 2025-03-05T08:00:00.000Z
+    const testEvents = allGames.filter((event) => {
+        const gameId = '7680d7fe-56cf-4b0c-aa4c-3dd464af3e0d';
+        return event.id === gameId;
+    });
+
+    console.log('test events:');
+    console.log(testEvents);
+    console.log('all games:');
+    console.log(allGames);
+
     const getNewTitle = (gameId: string) => {
         const game = allGames.find((game) => game.id === gameId);
         if (!game) return 'Unknown';
@@ -353,6 +365,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             (event) => !selectedLocation || event.location === selectedLocation,
         ); // Apply location filter
 
+    console.log('newAllEvents:');
+    console.log(newAllEvents);
+
     const groupedEvents: Record<string, AppointmentEvent[]> =
         newAllEvents.reduce(
             (acc, event) => {
@@ -362,6 +377,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             },
             {} as Record<string, AppointmentEvent[]>,
         );
+
+    console.log('groupedEvents:');
+    console.log(groupedEvents);
 
     const handleDownloadPDF = async (
         location: Location.ST_IVES | Location.BELROSE,
@@ -444,12 +462,14 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             const startDateUTC = moment.utc(game.timeslot.date);
             const startDate = startDateUTC.tz('Australia/Sydney').toDate();
 
-            const endDate = moment(startDate).add(1, 'hour').toDate();
-
             const ageGroupIdStr: string = game.lightTeam.ageGroupId;
             const ageGroupName = ageGroups.find(
                 (ageGroup) => ageGroup.id === ageGroupIdStr,
             )?.displayName;
+            const endDate = ageGroupName?.includes('adult')
+                ? moment(startDate).add(45, 'minute').toDate() // ensures adult games only go for 45m
+                : moment(startDate).add(1, 'hour').toDate();
+
             return {
                 title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
                 startDate,
@@ -524,7 +544,23 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             startDayHour={8.5}
                             endDayHour={19.5}
                         /> */}
-                        <DayView startDayHour={8.5} endDayHour={19.5} />
+                        <DayView
+                            startDayHour={
+                                currentDate.toDateString().includes('Sun') // Shift time scale on wednesdays
+                                    ? 8.5
+                                    : 18
+                            }
+                            endDayHour={
+                                currentDate.toDateString().includes('Sun')
+                                    ? 19.5
+                                    : 22.5
+                            }
+                            cellDuration={
+                                currentDate.toDateString().includes('Sun')
+                                    ? 30
+                                    : 15
+                            }
+                        />
                         <Toolbar
                             rootComponent={(props) => (
                                 <CustomToolbar

@@ -153,7 +153,10 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                     ageGroupId: selectedAgeGroupId,
                     date: {
                         lte: Terms2025[currentTerm + 1].date,
-                        gte: Terms2025[currentTerm].date,
+                        gte: new Date(
+                            Terms2025[currentTerm].date.getTime() -
+                                4 * 24 * 60 * 60 * 1000, // minus 4 days to account for wednesdays...
+                        ),
                     },
                 },
             },
@@ -264,13 +267,6 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                 return timeSlot;
             }
         }
-        if (week < 2) {
-            console.error(
-                `Attempted to find timeslot for week ${week}, time ${time}, court ${court}. Date to find: ${dateToFind}`,
-            );
-            return null;
-        }
-        return null;
         console.error(
             `Can't find timeslot for ${week}, time ${time}, court ${court}. Probably a daylight savings issue.`,
         );
@@ -368,7 +364,6 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                 });
             }
         });
-
         return possibleTimesAndCourts;
     };
 
@@ -412,7 +407,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                         field: courtTimeKey,
                         headerName: `Court ${court}`,
 
-                        width: 200,
+                        width: 225,
                         renderCell: (
                             params: GridRenderCellParams<any, any>,
                         ) => {
@@ -480,7 +475,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             const row: { [key: string]: any } = {
                 id,
                 week,
-                time: 9,
+                time: 0,
                 test: 'z',
             };
 
