@@ -686,7 +686,7 @@ const GameResults = (props: PlayerDataProps) => {
                             </Button>
                         </div>
                         <div className="inline-block mt-2 h-[50px] min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
-                        <div className="h-[70px] flex items-center font-bold w-1/3">
+                        <div className="h-[70px] flex items-center font-bold w-[180px]">
                             <p>St Ives</p>
                             <Switch
                                 checked={venue !== Location.ST_IVES}
@@ -714,6 +714,36 @@ const GameResults = (props: PlayerDataProps) => {
                                 }}
                             />
                             <p>Belrose</p>
+                        </div>
+                        <div className="inline-block mt-2 h-[50px] min-h-[1em] w-0.5 self-stretch bg-neutral-100 "></div>
+                        <div className="h-[70px] w-[220px] flex items-center font-bold">
+                            <p>Sunday Games</p>
+                            <Switch
+                                checked={venue !== Location.ST_IVES}
+                                onChange={() =>
+                                    setVenue(
+                                        venue === Location.ST_IVES
+                                            ? Location.BELROSE
+                                            : Location.ST_IVES,
+                                    )
+                                }
+                                size="medium"
+                                sx={{
+                                    '& .MuiSwitch-track': {
+                                        backgroundColor: '#8cbae8',
+                                    },
+                                    '& .MuiSwitch-thumb': {
+                                        color: '#1976d2',
+                                    },
+                                    '&.Mui-checked .MuiSwitch-track': {
+                                        backgroundColor: '#8cbae8',
+                                    },
+                                    '&.Mui-checked .MuiSwitch-thumb': {
+                                        color: '#1976d2',
+                                    },
+                                }}
+                            />
+                            <p>Adult Games</p>
                         </div>
                     </div>
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
