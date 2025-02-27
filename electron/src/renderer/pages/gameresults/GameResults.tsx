@@ -79,6 +79,7 @@ type Game = {
 type TableEntry = {
     time: string;
     gameId: string;
+    courtNumber: number;
     ageGroup: string;
     lightTeam: string;
     lightTeamScore: number;
@@ -112,6 +113,29 @@ const GameResults = (props: PlayerDataProps) => {
     );
     const [venue, setVenue] = React.useState<Location>(Location.ST_IVES);
     const [isSundayGames, setIsSundayGames] = React.useState<boolean>(true);
+
+    const getAgeGroupOrder = (ageGroups: { id: string; displayName: string }[]) => {
+        // Sort age groups by age, with adults first
+        const adults = ageGroups.find((ageGroup) =>
+            ageGroup.displayName.toLowerCase().includes('adult')
+        );
+
+        const remainingAgeGroups = ageGroups
+            .filter((ageGroup) => !ageGroup.displayName.toLowerCase().includes('adult'))
+            .map((ageGroup) => ({
+                ...ageGroup,
+                displayName: ageGroup.displayName.replace('years ', ''),
+            }))
+            .sort((a, b) => {
+                const aNumbers = a.displayName.match(/\d+/g)?.map(Number) || [];
+                const bNumbers = b.displayName.match(/\d+/g)?.map(Number) || [];
+                return aNumbers[0] - bNumbers[0];
+            });
+
+        return adults ? [adults.id, ...remainingAgeGroups.map((ageGroup) => ageGroup.id)] : remainingAgeGroups.map((ageGroup) => ageGroup.id);
+    };
+
+    const ageGroupOrder = getAgeGroupOrder(ageGroups);
 
     const getCurrentTermAndWeek = (
         currentDate: Date,
@@ -196,9 +220,9 @@ const GameResults = (props: PlayerDataProps) => {
         getCurrentGames(currentDate, venue);
     }, [currentDate, venue]);
 
-    const getTableEntries = (games: Game[], court: number): TableEntry[] => {
+    const getTableEntries = (games: Game[], ageGroupId: string): TableEntry[] => {
         return games
-            .filter((game) => game.timeslot.court === court)
+            .filter((game) => game.timeslot.ageGroupId === ageGroupId)
             .map((game) => {
                 let winningTeam = '';
                 if (game.lightScore === 0 && game.darkScore === 0) {
@@ -225,6 +249,7 @@ const GameResults = (props: PlayerDataProps) => {
                     darkTeam: game.darkTeam.name,
                     darkTeamScore: game.darkScore,
                     winningTeam: winningTeam,
+                    courtNumber: game.timeslot.court,
                 };
             })
             .sort(
@@ -236,6 +261,15 @@ const GameResults = (props: PlayerDataProps) => {
 
     const getNumCourts = (games: Game[]): number => {
         return Math.max(...games.map((game) => game.timeslot.court));
+    };
+
+    const getAgeGroups = (games: Game[]): string[] => {
+        const x = Array.from(new Set(games.map((game) => game.timeslot.ageGroupId))).sort(
+            (a, b) => ageGroupOrder.indexOf(a) - ageGroupOrder.indexOf(b)
+        );
+        console.log('order:');
+        console.log(x);
+        return x;
     };
 
     const getNumGamesUpdated = (games: Game[]): number => {
@@ -271,55 +305,59 @@ const GameResults = (props: PlayerDataProps) => {
     };
 
     const handleKeyPress = useCallback(
-        (e: KeyboardEvent) => {
-            const currentCourt =
-                currentGames.find((game) => game.id === selectedGame)?.timeslot
-                    .court || 1;
-            const entries = getTableEntries(currentGames, currentCourt);
-            const currentIndex = entries.findIndex(
-                (game) => game.gameId === selectedGame,
-            );
-            const nextIndex = currentIndex + 1;
-            const prevIndex = currentIndex - 1;
-            const currentGame = currentGames[currentIndex];
+        // TODO: Fix the keyboard navigation to handle the new table structure 
+        //       (changed separating by court to separating by age group)
 
-            if (e.ctrlKey && e.key === 's') {
-                uploadGameResults(currentGame);
-            } else if (e.ctrlKey && e.key === 'c') {
-                setSelectedGame('');
-                getCurrentGames(currentDate, venue);
-            } else if (e.key === 'ArrowRight') {
-                if (selectedGame === '') {
-                    setSelectedGame(entries[0]?.gameId || '');
-                } else if (nextIndex < entries.length) {
-                    setSelectedGame(entries[nextIndex]?.gameId || '');
-                } else {
-                    const nextCourt = currentCourt + 1;
-                    const nextCourtEntries = getTableEntries(
-                        currentGames,
-                        nextCourt,
-                    );
-                    if (nextCourtEntries.length > 0) {
-                        setSelectedGame(nextCourtEntries[0]?.gameId || '');
-                    }
-                }
-            } else if (e.key === 'ArrowLeft') {
-                if (prevIndex >= 0) {
-                    setSelectedGame(entries[prevIndex]?.gameId || '');
-                } else {
-                    const prevCourt = currentCourt - 1;
-                    const prevCourtEntries = getTableEntries(
-                        currentGames,
-                        prevCourt,
-                    );
-                    if (prevCourtEntries.length > 0) {
-                        setSelectedGame(
-                            prevCourtEntries[prevCourtEntries.length - 1]
-                                ?.gameId || '',
-                        );
-                    }
-                }
-            }
+        (e: KeyboardEvent) => {
+            return;
+            // const currentCourt =
+            //     currentGames.find((game) => game.id === selectedGame)?.timeslot
+            //         .court || 1;
+            // const entries = getTableEntries(currentGames, currentCourt);
+            // const currentIndex = entries.findIndex(
+            //     (game) => game.gameId === selectedGame,
+            // );
+            // const nextIndex = currentIndex + 1;
+            // const prevIndex = currentIndex - 1;
+            // const currentGame = currentGames[currentIndex];
+
+            // if (e.ctrlKey && e.key === 's') {
+            //     uploadGameResults(currentGame);
+            // } else if (e.ctrlKey && e.key === 'c') {
+            //     setSelectedGame('');
+            //     getCurrentGames(currentDate, venue);
+            // } else if (e.key === 'ArrowRight') {
+            //     if (selectedGame === '') {
+            //         setSelectedGame(entries[0]?.gameId || '');
+            //     } else if (nextIndex < entries.length) {
+            //         setSelectedGame(entries[nextIndex]?.gameId || '');
+            //     } else {
+            //         const nextCourt = currentCourt + 1;
+            //         const nextCourtEntries = getTableEntries(
+            //             currentGames,
+            //             nextCourt,
+            //         );
+            //         if (nextCourtEntries.length > 0) {
+            //             setSelectedGame(nextCourtEntries[0]?.gameId || '');
+            //         }
+            //     }
+            // } else if (e.key === 'ArrowLeft') {
+            //     if (prevIndex >= 0) {
+            //         setSelectedGame(entries[prevIndex]?.gameId || '');
+            //     } else {
+            //         const prevCourt = currentCourt - 1;
+            //         const prevCourtEntries = getTableEntries(
+            //             currentGames,
+            //             prevCourt,
+            //         );
+            //         if (prevCourtEntries.length > 0) {
+            //             setSelectedGame(
+            //                 prevCourtEntries[prevCourtEntries.length - 1]
+            //                     ?.gameId || '',
+            //             );
+            //         }
+            //     }
+            // }
         },
         [currentGames, selectedGame, currentDate, venue],
     );
@@ -763,21 +801,23 @@ const GameResults = (props: PlayerDataProps) => {
                         </div>
                     </div>
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-                        {Array.from(
-                            { length: getNumCourts(currentGames) },
-                            (_, i) => (
+                        {getAgeGroups(currentGames)
+                            .sort(
+                                (a, b) =>
+                                    ageGroupOrder.indexOf(a) -
+                                    ageGroupOrder.indexOf(b),
+                            )
+                            .map((ageGroupId) => (
                                 <CourtTable
-                                    key={i + 1}
-                                    courtNumber={i + 1}
+                                    key={ageGroupId}
                                     tableData={getTableEntries(
                                         currentGames,
-                                        i + 1,
+                                        ageGroupId,
                                     )}
                                     selectedGame={selectedGame}
                                     setSelectedGame={setSelectedGame}
                                 />
-                            ),
-                        )}
+                            ))}
                     </div>
                 </div>
             </div>
