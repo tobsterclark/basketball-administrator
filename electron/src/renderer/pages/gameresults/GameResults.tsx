@@ -13,7 +13,7 @@ import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { PlayerDataProps } from '../players/components/Types';
 import Terms2025 from '../data/Terms';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Button,
     FormControl,
@@ -42,6 +42,7 @@ import {
 } from '../../../general/prismaTypes';
 import FormCancelSave from '../../ui_components/FormCancelSave';
 import { toast } from 'react-toastify';
+import moment from 'moment';
 
 enum Location {
     ST_IVES = 'ST_IVES',
@@ -102,8 +103,15 @@ const GameResults = (props: PlayerDataProps) => {
     const [selectedGame, setSelectedGame] = React.useState<string>('');
     const [selectedGameForfeited, setSelectedGameForfeited] =
         React.useState<boolean>(false);
-    const [currentDate, setCurrentDate] = React.useState(new Date(2025, 1, 9));
+    const [currentDate, setCurrentDate] = useState<Date>(
+        moment
+            .tz(new Date(), 'Australia/Sydney')
+            .startOf('week')
+            .add(7, 'days')
+            .toDate(),
+    );
     const [venue, setVenue] = React.useState<Location>(Location.ST_IVES);
+    const [isSundayGames, setIsSundayGames] = React.useState<boolean>(true);
 
     const getCurrentTermAndWeek = (
         currentDate: Date,
@@ -132,8 +140,9 @@ const GameResults = (props: PlayerDataProps) => {
 
     const formatDate = (date: Date): string => {
         return date.toLocaleDateString('en-US', {
+            weekday: 'long',
             year: 'numeric',
-            month: 'long',
+            month: 'short',
             day: 'numeric',
         });
     };
@@ -357,6 +366,17 @@ const GameResults = (props: PlayerDataProps) => {
             ),
         );
     };
+
+    const handleSwitchDays = () => {
+        setIsSundayGames(!isSundayGames);
+        const newDate = new Date(currentDate);
+        // add 3 days
+        if (isSundayGames) newDate.setDate(newDate.getDate() + 3);
+        else {
+            newDate.setDate(newDate.getDate() - 3);
+        }
+        setCurrentDate(newDate);
+    }
 
     return (
         <PageContainer>
@@ -719,13 +739,9 @@ const GameResults = (props: PlayerDataProps) => {
                         <div className="h-[70px] w-[220px] flex items-center font-bold">
                             <p>Sunday Games</p>
                             <Switch
-                                checked={venue !== Location.ST_IVES}
+                                checked={!isSundayGames}
                                 onChange={() =>
-                                    setVenue(
-                                        venue === Location.ST_IVES
-                                            ? Location.BELROSE
-                                            : Location.ST_IVES,
-                                    )
+                                    handleSwitchDays()
                                 }
                                 size="medium"
                                 sx={{
