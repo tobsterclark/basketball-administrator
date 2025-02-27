@@ -238,10 +238,11 @@ export const GameSetupNew = (props: PlayerDataProps) => {
 
         const dateToFind = new Date(Terms2025[currentTerm].date);
         if (selectedAgeGroupId === ADULTS_AGE_GROUP_ID) {
-            dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7 - 4);
+            dateToFind.setDate(dateToFind.getDate() + week * 7 - 4);
         } else {
-            dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
+            dateToFind.setDate(dateToFind.getDate() + week * 7);
         }
+        
 
         let [hours, minutes] = time.split(':').map(Number);
 
@@ -491,6 +492,7 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                         week - 1,
                         time,
                         court,
+                        isStIves ? 'ST_IVES' : 'BELROSE',
                     )?.id;
 
                     tsId ? (row[field] = tsId) : (row[field] = 'error :(');
@@ -759,11 +761,13 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                             );
                         }}
                     >
-                        {ageGroupTeams?.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                                {team.name}
-                            </MenuItem>
-                        ))}
+                        {ageGroupTeams
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((team) => (
+                                <MenuItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </MenuItem>
+                            ))}
                     </Select>
                 </FormControl>
                 <FormControl variant="outlined" fullWidth>
@@ -781,11 +785,13 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                             );
                         }}
                     >
-                        {ageGroupTeams?.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                                {team.name}
-                            </MenuItem>
-                        ))}
+                        {ageGroupTeams
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((team) => (
+                                <MenuItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </MenuItem>
+                            ))}
                     </Select>
                 </FormControl>
             </div>
@@ -870,18 +876,6 @@ export const GameSetupNew = (props: PlayerDataProps) => {
             </div>
             <div className="pt-8">
                 <h3 className="text-xl font-bold pb-4">St Ives</h3>
-                <div className="flex gap-8">
-                    <Button
-                        variant="contained"
-                        onClick={() =>
-                            console.log(
-                                getTimeSlotFromWeekTimeCourtNew(1, '10:00', 1),
-                            )
-                        }
-                    >
-                        get timeslot test
-                    </Button>
-                </div>
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
                     <DataGrid
                         rows={generateDataGridRows(true)}
@@ -904,6 +898,34 @@ export const GameSetupNew = (props: PlayerDataProps) => {
                         showCellVerticalBorder
                     />
                 </Box>
+                {belroseGames ? (
+                    <div className='py-16'>
+                        <hr className="w-full mb-8"></hr>
+                        <h3 className="text-xl font-bold pb-4">Belrose</h3>
+                        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                            <DataGrid
+                                rows={generateDataGridRows(false)}
+                                columns={generateDataGridCols(GetTimesAndCourts(false))}
+                                columnGroupingModel={generateDataGridGroupingModel(
+                                    GetTimesAndCourts(false),
+                                )}
+                                disableRowSelectionOnClick
+                                autoHeight
+                                getRowHeight={() => 'auto'}
+                                sx={{
+                                    '& .MuiDataGrid-columnHeaderTitle': {
+                                        fontWeight: 'bold',
+                                        textAlign: 'center',
+                                    },
+                                    '& .MuiDataGrid-columnHeaderTitleContainer': {
+                                        justifyContent: 'center',
+                                    },
+                                }}
+                                showCellVerticalBorder
+                            />
+                        </Box>
+                    </div>
+                ) : null}
             </div>
             <div className="flex gap-8"></div>
         </PageContainer>
