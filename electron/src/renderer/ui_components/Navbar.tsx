@@ -92,11 +92,6 @@ const Navbar = () => {
                     icon: <hr className="w-full border-t border-gray-300" />,
                 },
                 {
-                    name: 'Game Setup New',
-                    link: '/game-setup-new',
-                    icon: <LifebuoyIcon className={iconStyle} />,
-                },
-                {
                     name: 'Admin',
                     link: '/admin',
                     icon: <Cog6ToothIcon className={iconStyle} />,

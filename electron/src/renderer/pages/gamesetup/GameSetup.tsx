@@ -6,20 +6,11 @@ import { useEffect, useState } from 'react';
 import {
     Box,
     Button,
-    Divider,
     FormControl,
     InputLabel,
     MenuItem,
-    Paper,
     Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import {
@@ -37,7 +28,14 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
 import { toast } from 'react-toastify';
-import { env } from 'process';
+import {
+    DataGrid,
+    GridColDef,
+    GridColumnGroupingModel,
+    GridRenderCellParams,
+} from '@mui/x-data-grid';
+
+const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
 
 const toTitleCase = (str: string) => {
     return str
@@ -59,6 +57,7 @@ export const GameSetup = (props: PlayerDataProps) => {
     const [createdGames, setCreatedGames] = useState<Game[]>([]);
     const [dbGames, setDbGames] = useState<Game[]>([]);
     const [belroseGames, setBelroseGames] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -73,6 +72,7 @@ export const GameSetup = (props: PlayerDataProps) => {
     };
 
     const getDbGames = () => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.game,
             operation: CrudOperations.findMany,
@@ -100,7 +100,13 @@ export const GameSetup = (props: PlayerDataProps) => {
                     }),
                 );
                 setDbGames(games as Game[]);
+                setIsLoading(false);
             });
+    };
+
+    const printCreatedGames = () => {
+        console.log('Created games:');
+        console.log(createdGames);
     };
 
     // Ensures that the createdGames are reset when the age group is changed
@@ -108,12 +114,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         setCreatedGames([]);
         getDbGames();
     }, [selectedAgeGroupId]);
-
-    const formatter = new Intl.DateTimeFormat('en-AU', {
-        timeZone: 'Australia/Sydney',
-        hour: 'numeric',
-        hour12: false,
-    });
 
     const getTimesFromSlots = (
         timeSlots: timeSlotParams[],
@@ -123,29 +123,19 @@ export const GameSetup = (props: PlayerDataProps) => {
         for (let i = 0; i < timeSlots.length; i += 1) {
             const timeSlot = timeSlots[i];
             if (timeSlot.location === venue) {
-                const hour = new Date(timeSlot.date).getHours();
-                const minutes = new Date(timeSlot.date).getMinutes();
-                const time = hour + minutes / 60;
-                if (timesCount[time]) {
-                    timesCount[time] += 1;
+                const hour = timeSlot.date.getHours();
+                if (timesCount[hour]) {
+                    timesCount[hour] += 1;
                 } else {
-                    timesCount[time] = 1;
+                    timesCount[hour] = 1;
                 }
             }
         }
-        const sortedTimesCount = Object.keys(timesCount)
-            .sort((a, b) => parseFloat(a) - parseFloat(b))
-            .reduce(
-                (acc, key) => {
-                    acc[parseFloat(key)] = timesCount[parseFloat(key)];
-                    return acc;
-                },
-                {} as { [key: number]: number },
-            );
-        return sortedTimesCount;
+        return timesCount;
     };
 
     const getTimeSlots = () => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.findMany,
@@ -154,7 +144,10 @@ export const GameSetup = (props: PlayerDataProps) => {
                     ageGroupId: selectedAgeGroupId,
                     date: {
                         lte: Terms2025[currentTerm + 1].date,
-                        gte: Terms2025[currentTerm].date,
+                        gte: new Date(
+                            Terms2025[currentTerm].date.getTime() -
+                                4 * 24 * 60 * 60 * 1000, // minus 4 days to account for wednesdays...
+                        ),
                     },
                 },
             },
@@ -168,10 +161,12 @@ export const GameSetup = (props: PlayerDataProps) => {
                     (slot: { location: string }) => slot.location === 'BELROSE',
                 );
                 setBelroseGames(!!belrose);
+                setIsLoading(false);
             });
     };
 
     const getTeamsFromAgeGroup = (ageGroupId: string) => {
+        setIsLoading(true);
         const req: PrismaCall = {
             model: ModelName.team,
             operation: CrudOperations.findMany,
@@ -186,6 +181,7 @@ export const GameSetup = (props: PlayerDataProps) => {
             .invoke(IpcChannels.PrismaClient, req)
             .then((data) => {
                 setAgeGroupTeams(data as TeamDataResponse[]);
+                setIsLoading(false);
             });
         return null;
     };
@@ -196,63 +192,16 @@ export const GameSetup = (props: PlayerDataProps) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAgeGroupId]);
 
-    const TimeTableCell = styled(TableCell)({
-        textAlign: 'center',
-        borderRight: '1px solid rgba(224, 224, 224, 1)',
-        borderLeft: '1px solid rgba(224, 224, 224, 1)',
-        borderTop: '1px solid rgba(224, 224, 224, 1)',
-    });
-
-    const WeekTableCell = styled(TableCell)({
-        fontWeight: 'bold',
-        textAlign: 'center',
-        borderRight: '1px solid rgba(224, 224, 224, 1)',
-    });
-
-    const NormalTableCell = styled(TableCell)({
-        textAlign: 'center',
-    });
-
-    const BRTableCell = styled(TableCell)({
-        textAlign: 'center',
-        borderRight: '1px solid rgba(224, 224, 224, 1)',
-    });
-
-    const formatTime = (time: string) => {
-        const floatTime = parseFloat(time);
-        const hour = Math.floor(floatTime);
-        const minutes = (floatTime - hour) * 60;
-        const formattedMinutes =
-            minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
-
-        if (hour > 12 && hour <= 23) {
-            return `${hour - 12}${formattedMinutes}pm`;
-        }
-        if (hour === 12) {
-            return `${hour}${formattedMinutes}pm`;
-        }
-        return `${hour}${formattedMinutes}am`;
-    };
-
     const getTimeSlotFromWeekTimeCourt = (
         week: number,
         time: number,
         court: number,
         venue: string = 'ST_IVES',
-        isSunday: boolean = true,
     ) => {
         if (!ageGroupsTimeSlots) return null;
-
         const dateToFind = new Date(Terms2025[currentTerm].date);
-        dateToFind.setDate(dateToFind.getDate() + week * 7);
-
-        // if isSunday is true, go minus 4 days to get to wednesday
-        dateToFind.setDate(dateToFind.getDate() + (isSunday ? 0 : -4));
-
-        const hours = Math.floor(time);
-        const minutes = (time - hours) * 60;
-        dateToFind.setHours(hours, minutes, 0, 0); // Set the time component
-        let found = false;
+        dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
+        dateToFind.setUTCHours(time, 0, 0, 0); // Set the time component in UTC
 
         for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
             const timeSlot = ageGroupsTimeSlots[i];
@@ -264,20 +213,55 @@ export const GameSetup = (props: PlayerDataProps) => {
                 timeSlot.location === venue
             ) {
                 return timeSlot;
-            } else if (
-                week === 0 &&
-                time === 19 &&
-                court === 1 &&
-                !isSunday &&
-                dateToFind.toISOString() === '2025-02-05T08:00:00.000Z' &&
-                slotDate.toISOString().includes('2025-02-12')
-            ) {
-                console.log(
-                    `slotDate.getTimee: ${slotDate.toISOString()}, dateToFind.getTime: ${dateToFind.toISOString()}, court: ${court}, location: ${venue}`,
-                );
-                found = true;
             }
         }
+        return null;
+    };
+
+    const getTimeSlotFromWeekTimeCourtNew = (
+        week: number,
+        time: string,
+        court: number,
+        venue: string = 'ST_IVES',
+    ) => {
+        // time will be passed in as "HH:MM"
+        if (!ageGroupsTimeSlots) return null;
+
+        const dateToFind = new Date(Terms2025[currentTerm].date);
+        if (selectedAgeGroupId === ADULTS_AGE_GROUP_ID) {
+            dateToFind.setDate(dateToFind.getDate() + week * 7 - 4);
+        } else {
+            dateToFind.setDate(dateToFind.getDate() + week * 7);
+        }
+        
+
+        let [hours, minutes] = time.split(':').map(Number);
+
+        // Adjust for AM/PM if necessary
+        // if (hours > 12 && !time.includes('AM') && !time.includes('PM')) {
+        //     console.log(
+        //         `Converting ${hours}:${minutes} -> ${hours + 12}:${minutes}`,
+        //     );
+        //     hours += 12; // Convert to 24-hour format if it's PM
+        // }
+
+        dateToFind.setHours(hours, minutes, 0, 0); // Set the time component in local time
+
+        for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
+            const timeSlot = ageGroupsTimeSlots[i];
+            const slotDate = new Date(timeSlot.date);
+
+            if (
+                slotDate.getTime() === dateToFind.getTime() &&
+                timeSlot.court === court &&
+                timeSlot.location === venue
+            ) {
+                return timeSlot;
+            }
+        }
+        console.error(
+            `Can't find timeslot for ${week}, time ${time}, court ${court}. Probably a daylight savings issue.`,
+        );
         return null;
     };
 
@@ -286,6 +270,277 @@ export const GameSetup = (props: PlayerDataProps) => {
         const theTeam = ageGroupTeams.find((tean) => tean.name === teamName);
         return theTeam?.id || '';
     };
+
+    const getWeekNumberFromDate = (date: Date) => {
+        const termStart = new Date(Terms2025[currentTerm].date);
+        const diffTime = Math.abs(date.getTime() - termStart.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.floor(diffDays / 7);
+    };
+
+    // ############## BEGIN Data Grid Config ##############
+
+    const GetTimesAndCourts = (isStIves: boolean = true) => {
+        /**
+         * Returns an array of times with an array of court numbers used at that time
+         *  [
+         *     {
+         *        time: new Date(), // Moment -> date, will contain date and time
+         *        courts: [1, 2]    // Array of court numbers used at that date and time
+         *     },
+         *  ]
+         *
+         */
+
+        const timeSlots = ageGroupsTimeSlots;
+        const timesAndCourts: { time: Date; courts: number[] }[] = [];
+
+        // Loop through all time slots, compare the time and date, and add to timesAndCourts if not already added
+        timeSlots?.forEach((timeSlot) => {
+            const time = timeSlot.date;
+            const court = timeSlot.court;
+            const venue = timeSlot.location;
+            const timeAndCourt = timesAndCourts.find(
+                (timeAndCourt) =>
+                    timeAndCourt.time.getTime() === time.getTime() &&
+                    venue === (isStIves ? 'ST_IVES' : 'BELROSE'),
+            );
+            if (timeAndCourt) {
+                timeAndCourt.courts.push(court);
+            } else {
+                timesAndCourts.push({ time, courts: [court] });
+            }
+        });
+
+        // get a list of times in HH:MM format,
+        const times = [
+            ...new Set(
+                timesAndCourts.map((timeAndCourt) => {
+                    const hours = timeAndCourt.time.getHours();
+                    const minutes = timeAndCourt.time.getMinutes();
+                    return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+                }),
+            ),
+        ];
+
+        /** now given a list ['9:00', '10:00'], we need to figure out which courts are possibly used at each time across all weeks,
+         *  in order to figure out how many columns we need in the data grid. Create a new array of objects in the following format:
+         *
+         * [
+         *   {
+         *     time: '9:00',
+         *     courts: [1, 2]
+         *   },
+         *   {
+         *     time: '10:00',
+         *     courts: [1, 3]
+         *   },
+         * ]
+         *
+         * Ensure that the array is sorted by time, and the courts are sorted in ascending order
+         */
+        const possibleTimesAndCourts: { time: string; courts: number[] }[] = [];
+        times.forEach((time) => {
+            const timeAndCourt = timesAndCourts.find((timeAndCourt) => {
+                const hours = timeAndCourt.time.getHours();
+                const minutes = timeAndCourt.time.getMinutes();
+                return (
+                    `${hours}:${minutes < 10 ? `0${minutes}` : minutes}` ===
+                    time
+                );
+            });
+            if (timeAndCourt) {
+                possibleTimesAndCourts.push({
+                    time,
+                    courts: timeAndCourt.courts.sort((a, b) => a - b),
+                });
+            }
+        });
+        return possibleTimesAndCourts;
+    };
+
+    const generateDataGridCols = (
+        timesAndCourts: { time: string; courts: number[] }[],
+    ) => {
+        /**
+         * Returns the following data type based on what courts are used. If courts 1, 2, and 3 are used, the following will be returned:
+         *      const DataGrid_cols: GridColDef[] = [
+         *          { field: 'week', headerName: 'Week', width: 100 },
+         *          { field: 'time', headerName: 'Time', width: 100 },
+         *          { field: 'court1', headerName: 'Court 1', width: 100 },
+         *          { field: 'court2', headerName: 'Court 2', width: 100 },
+         *          { field: 'court3', headerName: 'Court 3', width: 100 },
+         *          { field: 'test', headerName: 'dropdowns', width: 200 },
+         *      ];
+         *
+         * If only courts 1 and 2 are used, the returned cols will not have a court3 field
+         */
+        const DataGrid_cols: GridColDef[] = [
+            {
+                field: 'week',
+                headerName: 'Week',
+                width: 70,
+                renderCell: (params: GridRenderCellParams<any, any>) => (
+                    <div className="flex items-center justify-center h-full font-bold">
+                        {params.value}
+                    </div>
+                ),
+            },
+        ];
+
+        const addedCourtTimes = new Set<string>();
+        timesAndCourts.forEach((timeAndCourt) => {
+            timeAndCourt.courts.forEach((court) => {
+                const courtTimeKey = `court${court}-${timeAndCourt.time}`;
+                if (!addedCourtTimes.has(courtTimeKey)) {
+                    // const tsId = getTimeSlotFromWeekTimeCourtNew(week, time, court)?.id;
+
+                    DataGrid_cols.push({
+                        field: courtTimeKey,
+                        headerName: `Court ${court}`,
+
+                        width: 225,
+                        renderCell: (
+                            params: GridRenderCellParams<any, any>,
+                        ) => {
+                            if (isLoading) {
+                                return <div>Loading...</div>;
+                            }
+                            return renderVersusDropdownsNew(
+                                params.row[courtTimeKey],
+                                'ST_IVES',
+                            );
+                        },
+                    });
+                    addedCourtTimes.add(courtTimeKey);
+                }
+            });
+        });
+
+        // Sort the court columns by time and then by court number
+        DataGrid_cols.sort((a, b) => {
+            if (a.field === 'week' || a.field === 'test') return 0;
+            if (b.field === 'week' || b.field === 'test') return 0;
+
+            const [courtA, timeA] = a.field.split('-');
+            const [courtB, timeB] = b.field.split('-');
+
+            const [hoursA, minutesA] = timeA.split(':').map(Number);
+            const [hoursB, minutesB] = timeB.split(':').map(Number);
+
+            if (hoursA !== hoursB) return hoursA - hoursB;
+            if (minutesA !== minutesB) return minutesA - minutesB;
+
+            const courtNumA = parseInt(courtA.replace('court', ''), 10);
+            const courtNumB = parseInt(courtB.replace('court', ''), 10);
+
+            return courtNumA - courtNumB;
+        });
+
+        return DataGrid_cols.map((col) => ({
+            ...col,
+            renderCell: (params: GridRenderCellParams<any, any>) => {
+                if (isLoading) {
+                    return (
+                        <div>
+                            <div
+                                role="status"
+                                className="space-y-2.5 animate-pulse max-w-lg py-8 px-4"
+                            >
+                                <div className="h-2.5 bg-gray-300 rounded-full w-36"></div>
+                                <div className="h-2.5 bg-gray-300 rounded-full w-36"></div>
+                            </div>
+                        </div>
+                    );
+                }
+                return col.renderCell ? col.renderCell(params) : params.value;
+            },
+        }));
+    };
+
+    const generateDataGridRows = (isStIves: boolean = true) => {
+        const timesAndCourts = GetTimesAndCourts(isStIves);
+        const rows: { [key: string]: any }[] = [];
+        let id = 1;
+
+        for (let week = 1; week <= 10; week += 1) {
+            const row: { [key: string]: any } = {
+                id,
+                week,
+                time: 0,
+                test: 'z',
+            };
+
+            timesAndCourts.forEach((timeAndCourt) => {
+                const { time, courts } = timeAndCourt;
+                courts.forEach((court) => {
+                    const field = `court${court}-${time}`;
+                    if (!row.hasOwnProperty(field)) {
+                        row[field] = null;
+                    }
+
+                    const tsId = getTimeSlotFromWeekTimeCourtNew(
+                        week - 1,
+                        time,
+                        court,
+                        isStIves ? 'ST_IVES' : 'BELROSE',
+                    )?.id;
+
+                    tsId ? (row[field] = tsId) : (row[field] = 'error :(');
+                });
+            });
+
+            rows.push(row);
+            id += 1;
+        }
+
+        return rows;
+    };
+
+    const generateDataGridGroupingModel = (
+        timesAndCourts: { time: string; courts: number[] }[],
+    ) => {
+        /**
+         * Creates a Column Grouping Model for the Data Grid based on the times and courts used.
+         * Based on the times and courts used, the following will be returned:
+         *     const DataGrid_colGroupingModel: GridColumnGroupingModel = [
+         *        {
+         *           groupId: '10:00',
+         *          children: [ { field: 'court1-10:00' }, { field: 'court2-10:00' }, { field: 'court3-10:00' } ]
+         *       }
+         *    ]
+         */
+        const DataGrid_colGroupingModel: GridColumnGroupingModel = [];
+        const addedCourtTimes = new Set<string>();
+
+        timesAndCourts.forEach((timeAndCourt) => {
+            const { time, courts } = timeAndCourt;
+            const children: GridColDef[] = [];
+            courts.forEach((court) => {
+                const courtTimeKey = `court${court}-${time}`;
+                if (!addedCourtTimes.has(courtTimeKey)) {
+                    children.push({ field: courtTimeKey });
+                    addedCourtTimes.add(courtTimeKey);
+                }
+            });
+
+            DataGrid_colGroupingModel.push({
+                groupId: time,
+                children,
+            });
+        });
+
+        // Sort the entries by time
+        DataGrid_colGroupingModel.sort((a, b) => {
+            const timeA = a.groupId.split(':').map(Number);
+            const timeB = b.groupId.split(':').map(Number);
+            return timeA[0] - timeB[0] || timeA[1] - timeB[1];
+        });
+
+        return DataGrid_colGroupingModel;
+    };
+
+    // ############## END Data Grid Config ##############
 
     const uploadGames = () => {
         let actualUploadCount = 0;
@@ -405,6 +660,38 @@ export const GameSetup = (props: PlayerDataProps) => {
         });
     };
 
+    const updateGameNew = (
+        timeSlotId: string,
+        teamId: string,
+        isLightTeam: boolean,
+        venue: string = 'ST_IVES',
+    ) => {
+        console.log(`Updating game for timeslot ${timeSlotId}`);
+        setCreatedGames((prevGames) => {
+            if (!timeSlotId) return prevGames;
+
+            const gameIndex = prevGames.findIndex(
+                (game) => game.timeSlotId === timeSlotId,
+            );
+
+            if (gameIndex !== -1) {
+                const updatedGames = [...prevGames];
+                if (isLightTeam) {
+                    updatedGames[gameIndex].lightTeamId = teamId;
+                } else {
+                    updatedGames[gameIndex].darkTeamId = teamId;
+                }
+                return updatedGames;
+            }
+            const newGame: Game = {
+                lightTeamId: isLightTeam ? teamId : null,
+                darkTeamId: isLightTeam ? null : teamId,
+                timeSlotId: timeSlotId ? timeSlotId : '',
+            };
+            return [...prevGames, newGame];
+        });
+    };
+
     const doTourney = () => {
         // create a list of strings from the teams
         const teamNames = ageGroupTeams?.map((team) => team.name) || [];
@@ -424,38 +711,21 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
     };
 
-    const renderVersusDropdowns = (
-        week: number,
-        time: number,
-        court: number,
+    const renderVersusDropdownsNew = (
+        timeSlotId: string,
         venue: string = 'ST_IVES',
-        isSunday: boolean = true,
     ) => {
-        const timeSlot = getTimeSlotFromWeekTimeCourt(
-            week,
-            time,
-            court,
-            venue,
-            isSunday,
-        );
-        if (!timeSlot) {
-            if (week === 0 && time === 19 && court === 1) {
-                console.log(
-                    'no timeslot for',
-                    week,
-                    time,
-                    court,
-                    venue,
-                    isSunday,
-                );
-            }
+        if (isLoading) {
+            return <div>LOAD...</div>;
+        }
+        if (!timeSlotId) {
             return <div />;
         }
         // console.log("attempting to find a game in dbGames");
-        let game = dbGames.find((gamee) => gamee.timeSlotId === timeSlot?.id);
+        let game = dbGames.find((gamee) => gamee.timeSlotId === timeSlotId);
 
         const createdGame = createdGames.find(
-            (gamee) => gamee.timeSlotId === timeSlot?.id,
+            (gamee) => gamee.timeSlotId === timeSlotId,
         );
 
         if (createdGame) {
@@ -466,32 +736,31 @@ export const GameSetup = (props: PlayerDataProps) => {
         const darkTeamId = game?.darkTeamId || '';
 
         return (
-            <div>
-                <FormControl variant="outlined" fullWidth sx={{ pb: 2 }}>
+            <div className="py-4 flex flex-col gap-4">
+                <FormControl variant="outlined" fullWidth>
                     <InputLabel id="select-label-light">Light</InputLabel>
                     <Select
                         labelId="select-label-light"
                         value={lightTeamId}
                         onChange={(event: { target: { value: string } }) => {
                             const selectedTeamId = event.target.value;
-                            updateGame(
-                                week,
-                                time,
-                                court,
+                            updateGameNew(
+                                timeSlotId,
                                 selectedTeamId,
                                 true,
                                 venue,
                             );
                         }}
                     >
-                        {ageGroupTeams?.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                                {team.name}
-                            </MenuItem>
-                        ))}
+                        {ageGroupTeams
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((team) => (
+                                <MenuItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </MenuItem>
+                            ))}
                     </Select>
                 </FormControl>
-                <Divider />
                 <FormControl variant="outlined" fullWidth>
                     <InputLabel id="select-label-dark">Dark</InputLabel>
                     <Select
@@ -499,21 +768,21 @@ export const GameSetup = (props: PlayerDataProps) => {
                         value={darkTeamId}
                         onChange={(event: { target: { value: string } }) => {
                             const selectedTeamId = event.target.value;
-                            updateGame(
-                                week,
-                                time,
-                                court,
+                            updateGameNew(
+                                timeSlotId,
                                 selectedTeamId,
                                 false,
                                 venue,
                             );
                         }}
                     >
-                        {ageGroupTeams?.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                                {team.name}
-                            </MenuItem>
-                        ))}
+                        {ageGroupTeams
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((team) => (
+                                <MenuItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </MenuItem>
+                            ))}
                     </Select>
                 </FormControl>
             </div>
@@ -575,7 +844,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         </Select>
                     </FormControl>
                 </div>
-                <div className="w-1/5">
+                {/* <div className="w-1/5">
                     <Button
                         fullWidth
                         variant="contained"
@@ -584,7 +853,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     >
                         Generate Schedule
                     </Button>
-                </div>
+                </div> */}
                 <div className="w-1/5">
                     <Button
                         fullWidth
@@ -597,256 +866,59 @@ export const GameSetup = (props: PlayerDataProps) => {
                 </div>
             </div>
             <div className="pt-8">
-                {belroseGames ? (
-                    <h3 className="text-xl font-bold pb-4">St Ives</h3>
-                ) : (
-                    <div />
-                )}
+                <h3 className="text-xl font-bold pb-4">St Ives</h3>
                 <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                    <TableContainer
-                        component={Paper}
-                        sx={{ maxWidth: 1500, margin: 'auto' }}
-                    >
-                        <Table aria-label="game schedule table">
-                            <TableHead>
-                                <TableRow>
-                                    <NormalTableCell padding="none" />
-                                    {Object.entries(
-                                        getTimesFromSlots(
-                                            ageGroupsTimeSlots || [],
-                                            'ST_IVES',
-                                        ),
-                                    ).map(([time, count]) => (
-                                        <TimeTableCell
-                                            colSpan={3}
-                                            aria-label={`${time} games`}
-                                        >
-                                            {formatTime(time)}
-                                        </TimeTableCell>
-                                    ))}
-                                </TableRow>
-                                <TableRow>
-                                    <WeekTableCell />
-                                    {Object.entries(
-                                        getTimesFromSlots(
-                                            ageGroupsTimeSlots || [],
-                                            'ST_IVES',
-                                        ),
-                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                    ).map(([time, count]) => (
-                                        <>
-                                            <BRTableCell>Court 1</BRTableCell>
-                                            <BRTableCell>Court 2</BRTableCell>
-                                            <BRTableCell>Court 3</BRTableCell>
-                                        </>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {Array.from({
-                                    length: Terms2025[currentTerm].weeks,
-                                }).map((_, weekIndex) => (
-                                    // eslint-disable-next-line react/no-array-index-key
-                                    <TableRow key={weekIndex}>
-                                        <WeekTableCell
-                                            component="th"
-                                            scope="row"
-                                            sx={{ fontWeight: 'bold' }}
-                                            padding="none"
-                                        >
-                                            Week {weekIndex + 1}
-                                        </WeekTableCell>
-                                        {Object.entries(
-                                            getTimesFromSlots(
-                                                ageGroupsTimeSlots || [],
-                                                'ST_IVES',
-                                            ),
-                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                        ).map(([time, count]) => (
-                                            <>
-                                                <BRTableCell>
-                                                    {renderVersusDropdowns(
-                                                        weekIndex,
-                                                        parseFloat(time),
-                                                        1,
-                                                        'ST_IVES',
-                                                        selectedAgeGroupId !==
-                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
-                                                    )}
-                                                </BRTableCell>
-                                                <BRTableCell>
-                                                    {renderVersusDropdowns(
-                                                        weekIndex,
-                                                        parseFloat(time),
-                                                        2,
-                                                        'ST_IVES',
-                                                        selectedAgeGroupId !==
-                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
-                                                    )}
-                                                </BRTableCell>
-                                                <BRTableCell>
-                                                    {renderVersusDropdowns(
-                                                        weekIndex,
-                                                        parseFloat(time),
-                                                        3,
-                                                        'ST_IVES',
-                                                        selectedAgeGroupId !==
-                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
-                                                    )}
-                                                </BRTableCell>
-                                            </>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <DataGrid
+                        rows={generateDataGridRows(true)}
+                        columns={generateDataGridCols(GetTimesAndCourts(true))}
+                        columnGroupingModel={generateDataGridGroupingModel(
+                            GetTimesAndCourts(true),
+                        )}
+                        disableRowSelectionOnClick
+                        autoHeight
+                        getRowHeight={() => 'auto'}
+                        sx={{
+                            '& .MuiDataGrid-columnHeaderTitle': {
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                            },
+                            '& .MuiDataGrid-columnHeaderTitleContainer': {
+                                justifyContent: 'center',
+                            },
+                        }}
+                        showCellVerticalBorder
+                    />
                 </Box>
+                {belroseGames ? (
+                    <div className='py-16'>
+                        <hr className="w-full mb-8"></hr>
+                        <h3 className="text-xl font-bold pb-4">Belrose</h3>
+                        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                            <DataGrid
+                                rows={generateDataGridRows(false)}
+                                columns={generateDataGridCols(GetTimesAndCourts(false))}
+                                columnGroupingModel={generateDataGridGroupingModel(
+                                    GetTimesAndCourts(false),
+                                )}
+                                disableRowSelectionOnClick
+                                autoHeight
+                                getRowHeight={() => 'auto'}
+                                sx={{
+                                    '& .MuiDataGrid-columnHeaderTitle': {
+                                        fontWeight: 'bold',
+                                        textAlign: 'center',
+                                    },
+                                    '& .MuiDataGrid-columnHeaderTitleContainer': {
+                                        justifyContent: 'center',
+                                    },
+                                }}
+                                showCellVerticalBorder
+                            />
+                        </Box>
+                    </div>
+                ) : null}
             </div>
-            {belroseGames ? (
-                <div className="pt-8">
-                    <h3 className="text-xl font-bold pt-8 pb-4">Belrose</h3>
-                    <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                        <TableContainer
-                            component={Paper}
-                            sx={{ maxWidth: 1500, margin: 'auto' }}
-                        >
-                            <Table aria-label="game schedule table">
-                                <TableHead>
-                                    <TableRow>
-                                        <NormalTableCell padding="none" />
-                                        {Object.entries(
-                                            getTimesFromSlots(
-                                                ageGroupsTimeSlots || [],
-                                                'BELROSE',
-                                            ),
-                                        ).map(([time, count]) => (
-                                            <TimeTableCell
-                                                colSpan={3}
-                                                aria-label={`${time} games`}
-                                            >
-                                                {formatTime(time)}
-                                            </TimeTableCell>
-                                        ))}
-                                    </TableRow>
-                                    <TableRow>
-                                        <WeekTableCell />
-                                        {Object.entries(
-                                            getTimesFromSlots(
-                                                ageGroupsTimeSlots || [],
-                                                'BELROSE',
-                                            ),
-                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                        ).map(([time, count]) => (
-                                            <>
-                                                <BRTableCell>
-                                                    Court 1
-                                                </BRTableCell>
-                                                <BRTableCell>
-                                                    Court 2
-                                                </BRTableCell>
-                                                <BRTableCell>
-                                                    Court 3
-                                                </BRTableCell>
-                                            </>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {Array.from({
-                                        length: Terms2025[currentTerm].weeks,
-                                    }).map((_, weekIndex) => (
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        <TableRow key={weekIndex}>
-                                            <WeekTableCell
-                                                component="th"
-                                                scope="row"
-                                                sx={{ fontWeight: 'bold' }}
-                                                padding="none"
-                                            >
-                                                Week {weekIndex + 1}
-                                            </WeekTableCell>
-                                            {Object.entries(
-                                                getTimesFromSlots(
-                                                    ageGroupsTimeSlots || [],
-                                                    'BELROSE',
-                                                ),
-                                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                            ).map(([time, count]) => (
-                                                <>
-                                                    <BRTableCell>
-                                                        {renderVersusDropdowns(
-                                                            weekIndex,
-                                                            parseInt(time, 10),
-                                                            1,
-                                                            'BELROSE',
-                                                        )}
-                                                    </BRTableCell>
-                                                    <BRTableCell>
-                                                        {renderVersusDropdowns(
-                                                            weekIndex,
-                                                            parseInt(time, 10),
-                                                            2,
-                                                            'BELROSE',
-                                                        )}
-                                                    </BRTableCell>
-                                                    <BRTableCell>
-                                                        {renderVersusDropdowns(
-                                                            weekIndex,
-                                                            parseInt(time, 10),
-                                                            3,
-                                                            'BELROSE',
-                                                        )}
-                                                    </BRTableCell>
-                                                </>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
-                </div>
-            ) : (
-                <div />
-            )}
-            {process.env.NODE_ENV === 'development' ? (
-                <div className="flex gap-8">
-                    <button type="button" onClick={getTimeSlots}>
-                        Get Timeslots
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => getTeamsFromAgeGroup(selectedAgeGroupId)}
-                    >
-                        getTeamsFromAgeGroup
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            console.log('created games:');
-                            console.log(createdGames);
-                        }}
-                    >
-                        Log created games
-                    </button>
-
-                    <button type="button" onClick={doTourney}>
-                        Generate Tournament
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            console.log('Teams:');
-                            console.log(ageGroupTeams);
-                        }}
-                    >
-                        Print teams
-                    </button>
-                </div>
-            ) : null}
+            <div className="flex gap-8"></div>
         </PageContainer>
     );
 };
