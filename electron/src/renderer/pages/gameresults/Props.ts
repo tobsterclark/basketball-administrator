@@ -1,10 +1,10 @@
 import { Game } from "../gamesetup/types";
 
 export interface CourtTableProps {
-    courtNumber: number;
     tableData: {
         time: string;
         gameId: string;
+        courtNumber: number;
         ageGroup: string;
         lightTeam: string;
         lightTeamScore: number;

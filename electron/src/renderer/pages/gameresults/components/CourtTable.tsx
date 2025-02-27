@@ -10,11 +10,11 @@ import {
 import { CourtTableProps } from '../Props';
 
 const CourtTable = (props: CourtTableProps) => {
-    const { courtNumber, tableData, selectedGame, setSelectedGame } = props;
+    const { tableData, selectedGame, setSelectedGame } = props;
 
     return (
         <div className="pt-8 pr-2">
-            <h2 className="font-bold text-lg pb-2">Court {courtNumber}</h2>
+            <h2 className="font-bold text-lg pb-2">{tableData[0].ageGroup}</h2>
             <TableContainer
                 component={Paper}
                 sx={{ maxWidth: 800, margin: 'auto' }}
@@ -47,7 +47,7 @@ const CourtTable = (props: CourtTableProps) => {
                                 onClick={() => setSelectedGame(row.gameId)}
                             >
                                 <TableCell>{row.time}</TableCell>
-                                <TableCell>{row.ageGroup}</TableCell>
+                                <TableCell>{row.courtNumber}</TableCell>
                                 <TableCell>{row.lightTeam}</TableCell>
                                 <TableCell>
                                     {row.lightTeamScore === -1

@@ -5,8 +5,8 @@
 	"main": "index.js",
 	"types": "index.d.ts",
 	"scripts": {
-		"generate": "npx prisma generate && shx rm -rf ../functions/orm && shx rm -rf ../electron/node_modules/.prisma && shx rm -rf ../fixtures/orm && shx cp -r prisma/generated ../functions/orm && shx cp -r prisma/generated ../electron/node_modules/.prisma && shx cp -r prisma/generated ../fixtures/orm",
-		"postinstall": "npm run generate"
+		"generate": "npx prisma generate && shx cp -r prisma/generated ../functions/orm && shx cp -r prisma/generated ../electron/node_modules/.prisma && shx cp -r prisma/generated ../fixtures/orm",
+		"postinstall": "npx prisma generate"
 	},
 	"keywords": [],
 	"author": "",

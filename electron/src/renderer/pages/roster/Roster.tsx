@@ -78,7 +78,7 @@ const CustomAppointment = ({
         resources={[]}
     >
         <div
-            className={`text-white px-1 py-1 ${
+            className={`text-white px-1 py-1 h-[97%] ${
                 data.location === Location.ST_IVES
                     ? 'bg-blue-500'
                     : 'bg-green-500'
@@ -119,11 +119,52 @@ const getCurrentTermAndWeek = (currentDate: Date) => {
     return null; // Outside of term dates
 };
 
-const CustomToolbar = ({
+const CustomNavigationButton = ({
     currentDate,
+    onNavigate,
+    type,
     ...restProps
 }: {
     currentDate: Date;
+    onNavigate: (date: Date) => void;
+    type: 'back' | 'forward';
+}) => {
+    const getNextValidDate = (date: Date, direction: 1 | -1): Date => {
+        let nextDate = new Date(date);
+        do {
+            nextDate.setDate(nextDate.getDate() + direction);
+        } while (![3, 0].includes(nextDate.getDay())); // 3 = Wednesday, 0 = Sunday
+        return nextDate;
+    };
+
+    return (
+        <div className="flex-col items-center justify-center">
+            <button
+                {...restProps}
+                onClick={() => {
+                    const direction = type === 'forward' ? 1 : -1;
+                    const newDate = getNextValidDate(currentDate, direction);
+                    console.log('Navigating to:', newDate);
+                    onNavigate(newDate);
+                }}
+            >
+                {type === 'forward' ? (
+                    <ArrowRightIcon className="h-6 w-6 mr-4 ml-4 mt-1.5 text-blue-700" />
+                ) : (
+                    <ArrowLeftIcon className="h-6 w-6 mt-1.5 text-blue-700" />
+                )}
+            </button>
+        </div>
+    );
+};
+
+const CustomToolbar = ({
+    currentDate,
+    onNavigate,
+    ...restProps
+}: {
+    currentDate: Date;
+    onNavigate: (date: Date) => void;
     children?: React.ReactNode;
 }) => {
     const termAndWeek = useMemo(
@@ -131,16 +172,35 @@ const CustomToolbar = ({
         [currentDate],
     );
 
+    // get day of week for current date like "Sunday, Monday, Tuesday, etc."
+    const dayOfWeek = currentDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+    });
+
     return (
         <Toolbar.Root {...restProps}>
             <div className="flex items-center justify-between px-4 py-2">
                 {/* Original Toolbar Functionality */}
-                {restProps.children}
+                {/* {restProps.children} */}
+                {/* Custom Navigation Buttons Wrapper */}
+                <div className="flex gap-2">
+                    <CustomNavigationButton
+                        type="back"
+                        currentDate={currentDate}
+                        onNavigate={onNavigate}
+                    />
+                    <CustomNavigationButton
+                        type="forward"
+                        currentDate={currentDate}
+                        onNavigate={onNavigate}
+                    />
+                </div>
 
                 {/* Custom Text */}
                 {termAndWeek ? (
                     <div className="text-sm font-bold text-gray-700">
-                        Term {termAndWeek.term}, Week {termAndWeek.week}
+                        {dayOfWeek} - Term {termAndWeek.term}, Week{' '}
+                        {termAndWeek.week}
                     </div>
                 ) : (
                     <div className="text-sm font-bold text-gray-700">
@@ -182,14 +242,15 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const { ageGroups, allEvents, setAllEvents, allGames, setAllGames } = props;
 
     // Set this to closest sunday in Sydney time (stored in UTC time) -> so as ISO, it is 2025-02-08T13:00:00.000Z (this is 2025-02-09T00:00:00.000+11:00)
-    const [currentDate, setCurrentDate] = React.useState(
-        moment.tz(new Date(), 'Australia/Sydney').isoWeekday(7).toDate(),
+    const [currentDate, setCurrentDate] = useState<Date>(
+        moment
+            .tz(new Date(), 'Australia/Sydney')
+            .startOf('week')
+            .add(7, 'days')
+            .toDate(),
     );
 
     const tableRef = useRef<HTMLDivElement>(null);
-
-    console.log('current date:');
-    console.log(currentDate.toISOString());
 
     // ####################     PDF DOWNLOADING     ########################################
 
@@ -197,6 +258,17 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const [selectedLocation, setSelectedLocation] = useState<
         Location.ST_IVES | Location.BELROSE
     >(Location.ST_IVES);
+
+    // get a list of events that have a date of 2025-03-05T08:00:00.000Z
+    const testEvents = allGames.filter((event) => {
+        const gameId = '7680d7fe-56cf-4b0c-aa4c-3dd464af3e0d';
+        return event.id === gameId;
+    });
+
+    console.log('test events:');
+    console.log(testEvents);
+    console.log('all games:');
+    console.log(allGames);
 
     const getNewTitle = (gameId: string) => {
         const game = allGames.find((game) => game.id === gameId);
@@ -213,6 +285,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             (event) => !selectedLocation || event.location === selectedLocation,
         ); // Apply location filter
 
+    console.log('newAllEvents:');
+    console.log(newAllEvents);
+
     const groupedEvents: Record<string, AppointmentEvent[]> =
         newAllEvents.reduce(
             (acc, event) => {
@@ -222,6 +297,9 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             },
             {} as Record<string, AppointmentEvent[]>,
         );
+
+    console.log('groupedEvents:');
+    console.log(groupedEvents);
 
     const handleDownloadPDF = async (
         location: Location.ST_IVES | Location.BELROSE,
@@ -304,12 +382,14 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             const startDateUTC = moment.utc(game.timeslot.date);
             const startDate = startDateUTC.tz('Australia/Sydney').toDate();
 
-            const endDate = moment(startDate).add(1, 'hour').toDate();
-
             const ageGroupIdStr: string = game.lightTeam.ageGroupId;
             const ageGroupName = ageGroups.find(
                 (ageGroup) => ageGroup.id === ageGroupIdStr,
             )?.displayName;
+            const endDate = ageGroupName?.includes('adult')
+                ? moment(startDate).add(45, 'minute').toDate() // ensures adult games only go for 45m
+                : moment(startDate).add(1, 'hour').toDate();
+
             return {
                 title: `${game.lightTeam.name} vs ${game.darkTeam.name}`,
                 startDate,
@@ -369,20 +449,46 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             currentDate={currentDate}
                             onCurrentDateChange={(date) => setCurrentDate(date)}
                         />
-                        <WeekView
-                            excludedDays={[1, 2, 3, 4, 5, 6]}
+                        {/* <WeekView
+                            excludedDays={[1, 2, 3, 5, 6]}
                             startDayHour={8.5}
                             endDayHour={19.5}
+                        /> */}
+                        <DayView
+                            startDayHour={
+                                currentDate.toDateString().includes('Sun') // Shift time scale on wednesdays
+                                    ? 8.5
+                                    : 18
+                            }
+                            endDayHour={
+                                currentDate.toDateString().includes('Sun')
+                                    ? 19.5
+                                    : 22.5
+                            }
+                            cellDuration={
+                                currentDate.toDateString().includes('Sun')
+                                    ? 30
+                                    : 15
+                            }
                         />
                         <Toolbar
                             rootComponent={(props) => (
                                 <CustomToolbar
                                     currentDate={currentDate}
+                                    onNavigate={setCurrentDate}
                                     {...props}
                                 />
                             )}
                         />
-                        <DateNavigator />
+                        <DateNavigator
+                            navigationButtonComponent={(props) => (
+                                <CustomNavigationButton
+                                    {...props}
+                                    currentDate={currentDate}
+                                    onNavigate={setCurrentDate}
+                                />
+                            )}
+                        />
                         <Appointments
                             appointmentComponent={CustomAppointment}
                         />

@@ -1,6 +1,8 @@
 import {
     ArrowLeftCircleIcon,
+    ArrowLongRightIcon,
     ArrowRightCircleIcon,
+    ExclamationCircleIcon,
 } from '@heroicons/react/24/solid';
 import {
     Box,
@@ -38,9 +40,23 @@ import { IpcChannels } from '../../../general/IpcChannels';
 import FormCancelSave from '../../ui_components/FormCancelSave';
 import Terms2025 from '../data/Terms';
 import { toast } from 'react-toastify';
-import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
-import { enAU } from 'date-fns/locale';
+import {
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    LocalizationProvider,
+    TimePicker,
+} from '@mui/x-date-pickers';
+import { enAU, is } from 'date-fns/locale';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { Location } from '../roster/Resources';
+import { TrashIcon } from '@heroicons/react/24/outline';
+
+type RowData = {
+    time: string;
+    court: number;
+    venue: string;
+    id: string;
+};
 
 type timeSlotParams = {
     id?: string;
@@ -82,7 +98,7 @@ const getWeekDateFromTerm = (
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
+        termDate.getDate() + week * 7 + (!isSundayComp ? -4 : 0), // If wednesday, minus 3 days
     );
     return newDate;
 };
@@ -91,6 +107,8 @@ const venueCourts = {
     'St Ives': 3,
     Belrose: 2,
 };
+
+const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
 
 const printAllTimeSlots = () => {
     const req: PrismaCall = {
@@ -240,7 +258,7 @@ const getWeekDate = (
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
-        termDate.getDate() + week * 7 + (!isSundayComp ? -3 : 0), // If wednesday, minus 3 days
+        termDate.getDate() + week * 7 + (!isSundayComp ? -4 : 0), // If wednesday, minus 3 days
     );
     return <Moment format="dddd[,] MMMM Do YYYY">{newDate}</Moment>;
 };
@@ -256,6 +274,7 @@ const renderWeekTable = (
     >,
     modifiedTimeSlots: timeSlotParams[],
     isSundayComp: boolean,
+    isLoading: boolean,
 ) => {
     const currentDate = getWeekDateFromTerm(term, week, isSundayComp);
 
@@ -313,7 +332,41 @@ const renderWeekTable = (
             </Table>
         </TableContainer>
     );
-    return table;
+
+    const loadingTable = (
+        <TableContainer>
+            <Table aria-label={`${venue} table`}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell padding="none">Court</TableCell>
+                        {hourSlots.map((hour) => (
+                            <TableCell key={hour.slot}>{hour.time}</TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {Array.from({ length: venueCourts[venue] }, (_, i) => (
+                        <TableRow key={i}>
+                            <TableCell>{i + 1}</TableCell>
+                            {hourSlots.map((hour) => (
+                                <TableCell key={hour.slot}>
+                                    <div
+                                        role="status"
+                                        className="space-y-2.5 animate-pulse max-w-lg"
+                                    >
+                                        <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+                                        <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+                                    </div>
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+    // return loadingTable;
+    return isLoading ? loadingTable : table;
 };
 
 const WeekTabPanel = (
@@ -322,6 +375,9 @@ const WeekTabPanel = (
             React.SetStateAction<timeSlotParams[]>
         >;
         modifiedTimeSlots: timeSlotParams[];
+        adultsRows: RowData[];
+        setAdultsRows: React.Dispatch<React.SetStateAction<RowData[]>>;
+        isLoading: boolean;
     },
 ) => {
     const {
@@ -334,6 +390,9 @@ const WeekTabPanel = (
         modifiedTimeSlots,
         isSundayComp,
         setIsSundayComp,
+        adultsRows,
+        setAdultsRows,
+        isLoading,
     } = props;
 
     const stIvesTimeSlots = dbTimeSlots.filter(
@@ -344,7 +403,234 @@ const WeekTabPanel = (
         (timeSlot) => timeSlot.location === 'BELROSE',
     );
 
-    let timeToAdd: Date = new Date();
+    const currentDate = getWeekDateFromTerm(term, index, false);
+
+    const [timeToAdd, setTimeToAdd] = useState<Date>(new Date());
+    // let timeToAdd: Date = new Date();
+    const [courtToAdd, setCourtToAdd] = useState<number>(1);
+    const [venueToAdd, setVenueToAdd] = useState<Location>(Location.ST_IVES);
+
+    const handlePushAdult = () => {
+        // add a row entry with the timeToAdd, courtToAdd and venueToAdd
+        const time = moment(timeToAdd);
+        let finalMoment = moment(currentDate);
+        finalMoment = finalMoment.set({
+            hour: time.hours(),
+            minute: time.minutes(),
+            second: 0,
+        });
+        finalMoment = finalMoment.tz('Australia/Sydney');
+
+        const newGameStart = finalMoment;
+        const newGameEnd = moment(newGameStart).add(45, 'minutes');
+
+        const isConflict = adultsRows.some((row) => {
+            const existingGameStart = moment(currentDate)
+                .set({
+                    hour: moment(row.time, 'h:mm A').hours(),
+                    minute: moment(row.time, 'h:mm A').minutes(),
+                    second: 0,
+                })
+                .tz('Australia/Sydney');
+            const existingGameEnd = moment(existingGameStart).add(
+                45,
+                'minutes',
+            );
+
+            return (
+                row.court === courtToAdd &&
+                row.venue ===
+                    (venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose') &&
+                ((newGameStart.isSameOrAfter(existingGameStart) &&
+                    newGameStart.isBefore(existingGameEnd)) ||
+                    (newGameEnd.isAfter(existingGameStart) &&
+                        newGameEnd.isSameOrBefore(existingGameEnd)))
+            );
+        });
+
+        if (isConflict) {
+            console.error('Cannot add game: Time conflict with existing game.');
+            toast.error('Cannot add game: Time conflict with existing game.');
+            return;
+        }
+
+        const newTimeSlot: timeSlotParams = {
+            date: finalMoment.toDate(),
+            location: venueToAdd,
+            court: courtToAdd,
+            ageGroupId: ADULTS_AGE_GROUP_ID, // adults
+        };
+
+        // upload to prisma
+        const timeSlotRequest: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.create,
+            data: {
+                data: newTimeSlot,
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+            .then((data: timeSlotParams) => {
+                console.log(`Created time slot for ${venueToAdd}`);
+                console.log(data);
+                toast.success(`Created time slot successfully!`);
+                const newRow = {
+                    time: time.format('h:mm A'),
+                    court: courtToAdd,
+                    venue:
+                        venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
+                    id: data.id,
+                };
+
+                setAdultsRows([...adultsRows, newRow as RowData]);
+            })
+            .catch((error: Error) => {
+                console.error(`Error creating time slot for ${venueToAdd}:`);
+                console.error(error);
+            });
+
+        // setModifiedTimeSlots([...modifiedTimeSlots, newTimeSlot]);
+    };
+
+    const handleDeleteAdultRow = (gameId: string) => {
+        // remove time slot from prisma
+        const delReq: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.delete,
+            data: {
+                where: {
+                    id: gameId,
+                },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, delReq)
+            .then(() => {
+                console.log(`Deleted time slot for ${gameId}`);
+                toast.info(`Deleted time slot successfully!`);
+                // remove from adultsRows
+                setAdultsRows(adultsRows.filter((row) => row.id !== gameId));
+            })
+            .catch((error: Error) => {
+                console.error(`Error deleting time slot for ${gameId}:`);
+                console.error(error);
+            });
+    };
+
+    const handleCopyToAllWeeks = () => {
+        // create an array of this week's adult games fetching from prisma
+        const minDate = getWeekDateFromTerm(term, index, false);
+        const maxDate = moment(minDate).add(1, 'day').toDate();
+
+        const req: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    ageGroupId: ADULTS_AGE_GROUP_ID,
+                    date: {
+                        lte: maxDate,
+                        gte: minDate,
+                    },
+                },
+            },
+        };
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data: timeSlotParams[]) => {
+                const adultsTimeSlots = data;
+                if (adultsTimeSlots) {
+                    const promises = [];
+
+                    for (
+                        let weekOffset = 1;
+                        weekOffset < Terms2025[term].weeks - index;
+                        weekOffset++
+                    ) {
+                        adultsTimeSlots.forEach((game) => {
+                            const newDate = moment(game.date)
+                                .add(weekOffset, 'week')
+                                .toDate();
+                            const newGame: timeSlotParams = {
+                                date: newDate,
+                                location: game.location,
+                                court: game.court,
+                                ageGroupId: game.ageGroupId,
+                            };
+
+                            const timeSlotRequest: PrismaCall = {
+                                model: ModelName.timeslot,
+                                operation: CrudOperations.create,
+                                data: {
+                                    data: newGame,
+                                },
+                            };
+
+                            promises.push(
+                                window.electron.ipcRenderer
+                                    .invoke(
+                                        IpcChannels.PrismaClient,
+                                        timeSlotRequest,
+                                    )
+                                    .then(() => {
+                                        console.log(
+                                            `Created time slot for ${newGame.location}`,
+                                        );
+                                        toast.success(
+                                            `Copied timeslots successfully!`,
+                                        );
+                                    })
+                                    .catch((error: Error) => {
+                                        console.error(
+                                            `Error creating time slot for ${newGame.location}:`,
+                                        );
+                                        console.error(error);
+                                        console.error(newGame);
+                                        toast.error(
+                                            `Something went wrong copying some or all timeslots.`,
+                                        );
+                                    }),
+                            );
+                        });
+                    }
+                } else {
+                    return;
+                }
+            });
+
+        // create a list of promises. For each game, create a new game in the same court and venue and time of day, but add one week to the date
+    };
+
+    const checkSlots = () => {
+        console.log('adultrows');
+        console.log(adultsRows);
+        console.log(dbTimeSlots);
+        const timeSlotsToUpdate = modifiedTimeSlots.filter(
+            (timeSlot) =>
+                !dbTimeSlots.find(
+                    (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
+                ) ||
+                dbTimeSlots.find(
+                    (dbTimeSlot) =>
+                        dbTimeSlot.id === timeSlot.id &&
+                        dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                ),
+        );
+        console.log(timeSlotsToUpdate);
+        console.log(
+            `${modifiedTimeSlots.length} modified time slots - ${dbTimeSlots.length} db time slots `,
+        );
+    };
+
+    const loadingDiv = (
+        <div role="status" className="space-y-2.5 animate-pulse max-w-lg">
+            <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+            <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+        </div>
+    );
 
     return (
         <div
@@ -355,61 +641,303 @@ const WeekTabPanel = (
         >
             {value === index && (
                 <div>
-                    {/* <div className="pb-16">
-                        <h2 className="font-bold text-lg pb-4">Add a game</h2>
-                        <div className="flex items-center gap-4">
-                            <LocalizationProvider
-                                dateAdapter={AdapterDateFns}
-                                adapterLocale={enAU}
-                            >
-                                <TimePicker
-                                    label="Time"
-                                    value={timeToAdd}
-                                    onChange={(date) => {
-                                        timeToAdd = date ?? new Date();
-                                    }}
-                                />
-                            </LocalizationProvider>
-                            <Button variant="contained">Add</Button>
+                    {
+                        <div className="flex flex-row gap-16">
+                            <div className="pb-8 w-1/2">
+                                <h1 className="font-bold text-xl">
+                                    Adults Competition
+                                </h1>
+                                <h2 className="pb-4">
+                                    {getWeekDate(term, index, false)}
+                                </h2>
+                                <h2 className="font-bold text-lg pb-4">
+                                    Add a game
+                                </h2>
+                                <div className="flex items-center gap-4">
+                                    <div>
+                                        <LocalizationProvider
+                                            dateAdapter={AdapterDateFns}
+                                            adapterLocale={enAU}
+                                        >
+                                            <TimePicker
+                                                label="Time"
+                                                value={timeToAdd}
+                                                onChange={(date) => {
+                                                    setTimeToAdd(
+                                                        date ?? new Date(),
+                                                    );
+                                                }}
+                                            />
+                                        </LocalizationProvider>
+                                    </div>
+
+                                    <div>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="court-label">
+                                                Court
+                                            </InputLabel>
+                                            <Select
+                                                labelId="court-label"
+                                                id="court-select"
+                                                label="Court"
+                                                name="court"
+                                                value={courtToAdd}
+                                                onChange={(e) => {
+                                                    setCourtToAdd(
+                                                        e.target
+                                                            .value as number,
+                                                    );
+                                                }}
+                                            >
+                                                {Array.from(
+                                                    {
+                                                        length: Math.max(
+                                                            ...Object.values(
+                                                                venueCourts,
+                                                            ),
+                                                        ),
+                                                    },
+                                                    (_, i) => (
+                                                        <MenuItem
+                                                            key={i + 1}
+                                                            value={i + 1}
+                                                        >
+                                                            {`Court ${i + 1}`}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                    </div>
+
+                                    <div>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="venue-label">
+                                                Venue
+                                            </InputLabel>
+                                            <Select
+                                                labelId="venue-label"
+                                                id="venue-select"
+                                                label="Venue"
+                                                name="venue"
+                                                value={venueToAdd}
+                                                onChange={(e) => {
+                                                    setVenueToAdd(
+                                                        e.target
+                                                            .value as Location,
+                                                    );
+                                                }}
+                                            >
+                                                {Object.values(Location).map(
+                                                    (location) => (
+                                                        <MenuItem
+                                                            key={location}
+                                                            value={location}
+                                                        >
+                                                            {toTitleCase(
+                                                                location.replace(
+                                                                    '_',
+                                                                    ' ',
+                                                                ),
+                                                            )}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                    </div>
+
+                                    <div>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handlePushAdult}
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 w-full">
+                                    <TableContainer className="shadow-lg rounded-lg">
+                                        <Table>
+                                            <TableHead className="bg-gray-200">
+                                                <TableRow>
+                                                    <TableCell className="font-bold">
+                                                        Time
+                                                    </TableCell>
+                                                    <TableCell className="font-bold">
+                                                        Court Number
+                                                    </TableCell>
+                                                    <TableCell className="font-bold">
+                                                        Venue
+                                                    </TableCell>
+                                                    <TableCell className="font-bold" />
+                                                </TableRow>
+                                            </TableHead>
+                                            {isLoading ? (
+                                                <TableBody>
+                                                    <TableRow
+                                                        key={index}
+                                                        className="hover:bg-gray-100"
+                                                    >
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div>
+                                                                {loadingDiv}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="w-6"></div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            ) : (
+                                                <TableBody>
+                                                    {adultsRows
+                                                        .slice()
+                                                        .sort((a, b) => {
+                                                            const timeA =
+                                                                moment(
+                                                                    a.time,
+                                                                    'h:mm A',
+                                                                );
+                                                            const timeB =
+                                                                moment(
+                                                                    b.time,
+                                                                    'h:mm A',
+                                                                );
+                                                            if (
+                                                                timeA.isSame(
+                                                                    timeB,
+                                                                )
+                                                            ) {
+                                                                return (
+                                                                    a.court -
+                                                                    b.court
+                                                                );
+                                                            }
+                                                            return timeA.isBefore(
+                                                                timeB,
+                                                            )
+                                                                ? -1
+                                                                : 1;
+                                                        })
+                                                        .map((row, index) => (
+                                                            <TableRow
+                                                                key={index}
+                                                                className="hover:bg-gray-100"
+                                                            >
+                                                                <TableCell>
+                                                                    {row.time}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {row.court}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {row.venue}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <TrashIcon
+                                                                        className="h-6 w-6 text-red-500 hover:text-gray-800 hover:cursor-pointer"
+                                                                        onClick={() =>
+                                                                            handleDeleteAdultRow(
+                                                                                row.id,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                </TableBody>
+                                            )}
+                                        </Table>
+                                    </TableContainer>
+                                </div>
+
+                                <div className="pt-4">
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => {
+                                            handleCopyToAllWeeks();
+                                        }}
+                                    >
+                                        Copy to all weeks
+                                    </Button>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="pt-24">
+                                    <div className="flex gap-1 text-gray-500">
+                                        <ExclamationCircleIcon className="h-6 w-6 inline-block" />
+                                        <h3>Quick tip</h3>
+                                    </div>
+                                    <div className="flex gap-2 pl-2">
+                                        <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                        <p className="text-sm text-gray-600 pt-1">
+                                            Adult games are automatically saved
+                                            as you create or delete them.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 pl-2 pt-2">
+                                        <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
+                                        <p className="text-sm text-gray-600 pt-1">
+                                            Sunday games must be saved manually
+                                            with the button below.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div> */}
-                    {/* {
-                        isSundayComp ? (
-                            <div>
-                                <h2>{getWeekDate(term, index)}</h2>
-                                    <div className="pt-4">
-                                        <h3 className="text-xl font-bold">St Ives</h3>
-                                        {renderWeekTable(
-                                            term,
-                                            index,
-                                            'St Ives',
-                                            ageGroups,
-                                            stIvesTimeSlots,
-                                            setModifiedTimeSlots,
-                                            modifiedTimeSlots,
-                                            isSundayComp,
-                                        )}
-                                    </div>
-                                    <div className="pt-8">
-                                        <h3 className="text-xl font-bold">Belrose</h3>
-                                        {renderWeekTable(
-                                            term,
-                                            index,
-                                            'Belrose',
-                                            ageGroups,
-                                            belroseTimeSlots,
-                                            setModifiedTimeSlots,
-                                            modifiedTimeSlots,
-                                            isSundayComp,
-                                        )}
-                                    </div>
+                    }
+                    <hr className="pb-4" />
+                    {isSundayComp ? (
+                        <div>
+                            <h1 className="font-bold text-xl pb-4">
+                                Sunday Competition
+                            </h1>
+                            <h2>{getWeekDate(term, index)}</h2>
+                            <div className="pt-4">
+                                <h3 className="text-xl font-bold">St Ives</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'St Ives',
+                                    ageGroups,
+                                    stIvesTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                    isLoading,
+                                )}
                             </div>
-                        ) : (
-                            <div>
+                            <div className="pt-8">
+                                <h3 className="text-xl font-bold">Belrose</h3>
+                                {renderWeekTable(
+                                    term,
+                                    index,
+                                    'Belrose',
+                                    ageGroups,
+                                    belroseTimeSlots,
+                                    setModifiedTimeSlots,
+                                    modifiedTimeSlots,
+                                    isSundayComp,
+                                    isLoading,
+                                )}
                             </div>
-                        )
-                    } */}
-                    <div>
+                        </div>
+                    ) : (
+                        <div></div>
+                    )}
+                    {/* <div>
                         <h2>{getWeekDate(term, index, isSundayComp)}</h2>
                         <div className="pt-4">
                             <h3 className="text-xl font-bold">St Ives</h3>
@@ -437,7 +965,7 @@ const WeekTabPanel = (
                                 isSundayComp,
                             )}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             )}
         </div>
@@ -459,6 +987,19 @@ export const TermSetup = (props: PlayerDataProps) => {
 
     const [copyToAllWeeksConfirmation, setCopyToAllWeeksConfirmation] =
         useState(false);
+
+    const [adultsRows, setAdultsRows] = useState<RowData[]>(
+        dbTimeSlots
+            .filter(
+                (timeSlot) => timeSlot.ageGroupId === ADULTS_AGE_GROUP_ID, // adults
+            )
+            .map((timeSlot) => ({
+                time: moment(timeSlot.date).format('h:mm A'),
+                court: timeSlot.court,
+                venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
+                id: timeSlot.id ?? '',
+            })),
+    );
 
     const copyToAllWeeks = () => {
         // Copy the current week's time slots to all other weeks.
@@ -570,19 +1111,61 @@ export const TermSetup = (props: PlayerDataProps) => {
     };
 
     const uploadChanges = () => {
-        const timeSlotsToUpdate = modifiedTimeSlots.filter(
+        const sundayTimeSlotsToUpdate = modifiedTimeSlots.filter(
             (timeSlot) =>
-                !dbTimeSlots.find(
+                timeSlot.ageGroupId !== ADULTS_AGE_GROUP_ID && // Exclude adults age group
+                (!dbTimeSlots.find(
                     (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ) ||
-                dbTimeSlots.find(
-                    (dbTimeSlot) =>
-                        dbTimeSlot.id === timeSlot.id &&
-                        dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                    dbTimeSlots.find(
+                        (dbTimeSlot) =>
+                            dbTimeSlot.id === timeSlot.id &&
+                            dbTimeSlot.ageGroupId !== timeSlot.ageGroupId,
+                    )),
+        );
+
+        const adultsToCreate = modifiedTimeSlots.filter(
+            (timeSlot) =>
+                timeSlot.ageGroupId === ADULTS_AGE_GROUP_ID && // Only include adults age group
+                !dbTimeSlots.find(
+                    (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
                 ),
         );
 
-        const promises = timeSlotsToUpdate.map((timeSlot) => {
+        // ### begin creating adult games ###
+        // const adultPromises = adultsToCreate.map((timeSlot) => {
+        //     const timeSlotRequest: PrismaCall = {
+        //         model: ModelName.timeslot,
+        //         operation: CrudOperations.create,
+        //         data: {
+        //             data: {
+        //                 location: timeSlot.location,
+        //                 date: timeSlot.date,
+        //                 court: timeSlot.court,
+        //                 ageGroupId: timeSlot.ageGroupId,
+        //             },
+        //         },
+        //     };
+
+        //     return window.electron.ipcRenderer
+        //         .invoke(IpcChannels.PrismaClient, timeSlotRequest)
+        //         .then((data) => {
+        //             console.log(`Created time slot for ${timeSlot.location}`);
+        //             console.log(data);
+        //         })
+        //         .catch((error: Error) => {
+        //             console.error(
+        //                 `Error creating time slot for ${timeSlot.location}:`,
+        //                 error,
+        //             );
+        //         });
+        // });
+
+        // ### end creating adult games ###
+
+        // ### begin handling sunday games ###
+
+        const promises = sundayTimeSlotsToUpdate.map((timeSlot) => {
             const timeSlotRequest: PrismaCall = {
                 model: ModelName.timeslot,
                 operation: CrudOperations.update,
@@ -618,6 +1201,10 @@ export const TermSetup = (props: PlayerDataProps) => {
             setDbTimeSlots(modifiedTimeSlots);
         });
 
+        // Promise.all([...promises, ...adultPromises]).then(() => {
+        //     setDbTimeSlots(modifiedTimeSlots);
+        // });
+
         toast.success(
             `${promises.length} time slot${
                 promises.length === 1 ? '' : 's'
@@ -646,7 +1233,9 @@ export const TermSetup = (props: PlayerDataProps) => {
         term: number = currentTerm,
         weekTab: number = currentWeekTab,
     ) => {
+        setLoading(true);
         if (!isSundayComp) return;
+
         // Fetches or creates all time slots for the current week and term.
         // Stores into dbTimeSlots.
         // https://github.com/prisma/docs/issues/640
@@ -692,15 +1281,52 @@ export const TermSetup = (props: PlayerDataProps) => {
         if (dataWithIds.length > 0) {
             setLoading(false);
         }
+        getAdultGames();
+    };
+
+    const getAdultGames = () => {
+        const minDate = getWeekDateFromTerm(currentTerm, currentWeekTab, false);
+        const maxDate = moment(minDate).add(1, 'day').toDate();
+        const req: PrismaCall = {
+            model: ModelName.timeslot,
+            operation: CrudOperations.findMany,
+            data: {
+                where: {
+                    ageGroupId: ADULTS_AGE_GROUP_ID,
+                    date: {
+                        lte: maxDate,
+                        gte: minDate,
+                    },
+                },
+            },
+        };
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, req)
+            .then((data: timeSlotParams[]) => {
+                const adultsTimeSlots = data;
+                if (adultsTimeSlots) {
+                    setAdultsRows(
+                        adultsTimeSlots.map((timeSlot) => ({
+                            time: moment(timeSlot.date).format('h:mm A'),
+                            court: timeSlot.court,
+                            venue:
+                                timeSlot.location === 'ST_IVES'
+                                    ? 'St Ives'
+                                    : 'Belrose',
+                            id: timeSlot.id ? timeSlot.id : '',
+                        })),
+                    );
+                }
+            });
     };
 
     useEffect(() => {
         upsert();
     }, [currentTerm, currentWeekTab]);
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
+    // if (loading) {
+    //     return <div>Loading...</div>;
+    // }
 
     const { weeks } = Terms2025[currentTerm];
 
@@ -792,12 +1418,15 @@ export const TermSetup = (props: PlayerDataProps) => {
                                 modifiedTimeSlots={modifiedTimeSlots}
                                 isSundayComp={isSundayComp}
                                 setIsSundayComp={setIsSundayComp}
+                                adultsRows={adultsRows}
+                                setAdultsRows={setAdultsRows}
+                                isLoading={loading}
                             />
                         ))}
                     </div>
                 </Box>
             </div>
-            <div className="w-1/3 pt-4">
+            <div className="w-1/3 pt-4 pb-16">
                 <div className="w-1/2 flex flex-col pb-8">
                     <Button
                         variant="contained"

@@ -103,11 +103,6 @@ export const GameSetup = (props: PlayerDataProps) => {
             });
     };
 
-    const printCreatedGames = () => {
-        console.log('Created games:');
-        console.log(createdGames);
-    };
-
     // Ensures that the createdGames are reset when the age group is changed
     useEffect(() => {
         setCreatedGames([]);
@@ -120,51 +115,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         hour12: false,
     });
 
-    // const getTimesFromSlots = (timeSlots: timeSlotParams[], venue: string = 'ST_IVES') => {
-    //     const timesCount: { [key: number]: number } = {};
-
-    //     for (const timeSlot of timeSlots) {
-    //         if (timeSlot.location === venue) {
-    //             const hour = new Intl.DateTimeFormat('en-AU', {
-    //                 timeZone: 'Australia/Sydney',
-    //                 hour: 'numeric',
-    //                 hour12: false,
-    //             }).format(timeSlot.date);
-
-    //             const hourNumber = parseInt(hour, 10);
-    //             timesCount[hourNumber] = (timesCount[hourNumber] || 0) + 1;
-    //         }
-    //     }
-
-    //     return timesCount;
-    // };
-
-    // const getTimesFromSlots = (
-    //     timeSlots: timeSlotParams[],
-    //     venue: string = 'ST_IVES',
-    // ) => {
-    //     const timesAndCourts: { [key: number]: number[] } = {};
-    //     for (let i = 0; i < timeSlots.length; i += 1) {
-    //         const timeSlot = timeSlots[i];
-    //         const sydneyHourOfDay = parseInt(formatter.format(timeSlot.date), 10);
-
-    //         if (timeSlot.location !== venue) {
-    //             continue;
-    //         }
-    //         if (timesAndCourts[sydneyHourOfDay]) {
-    //             if (!timesAndCourts[sydneyHourOfDay].includes(timeSlot.court)) {
-    //                 timesAndCourts[sydneyHourOfDay].push(timeSlot.court);
-    //                 console.log(`sydneyHourOfDay: ${sydneyHourOfDay}, court: ${timeSlot.court}`);
-    //             }
-    //         } else {
-    //             timesAndCourts[sydneyHourOfDay] = [timeSlot.court];
-    //         }
-    //     }
-
-    //     // Sort the value array for each key in ascending numerical order
-    //     return timesAndCourts;
-    // };
-
     const getTimesFromSlots = (
         timeSlots: timeSlotParams[],
         venue: string = 'ST_IVES',
@@ -173,16 +123,26 @@ export const GameSetup = (props: PlayerDataProps) => {
         for (let i = 0; i < timeSlots.length; i += 1) {
             const timeSlot = timeSlots[i];
             if (timeSlot.location === venue) {
-                const hour = timeSlot.date.getHours();
-                if (timesCount[hour]) {
-                    timesCount[hour] += 1;
+                const hour = new Date(timeSlot.date).getHours();
+                const minutes = new Date(timeSlot.date).getMinutes();
+                const time = hour + minutes / 60;
+                if (timesCount[time]) {
+                    timesCount[time] += 1;
                 } else {
-                    timesCount[hour] = 1;
+                    timesCount[time] = 1;
                 }
             }
         }
-        console.log(timesCount);
-        return timesCount;
+        const sortedTimesCount = Object.keys(timesCount)
+            .sort((a, b) => parseFloat(a) - parseFloat(b))
+            .reduce(
+                (acc, key) => {
+                    acc[parseFloat(key)] = timesCount[parseFloat(key)];
+                    return acc;
+                },
+                {} as { [key: number]: number },
+            );
+        return sortedTimesCount;
     };
 
     const getTimeSlots = () => {
@@ -259,14 +219,19 @@ export const GameSetup = (props: PlayerDataProps) => {
     });
 
     const formatTime = (time: string) => {
-        const hour = parseInt(time, 10);
+        const floatTime = parseFloat(time);
+        const hour = Math.floor(floatTime);
+        const minutes = (floatTime - hour) * 60;
+        const formattedMinutes =
+            minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+
         if (hour > 12 && hour <= 23) {
-            return `${hour - 12}pm`;
+            return `${hour - 12}${formattedMinutes}pm`;
         }
         if (hour === 12) {
-            return `${hour}pm`;
+            return `${hour}${formattedMinutes}pm`;
         }
-        return `${hour}am`;
+        return `${hour}${formattedMinutes}am`;
     };
 
     const getTimeSlotFromWeekTimeCourt = (
@@ -274,11 +239,20 @@ export const GameSetup = (props: PlayerDataProps) => {
         time: number,
         court: number,
         venue: string = 'ST_IVES',
+        isSunday: boolean = true,
     ) => {
         if (!ageGroupsTimeSlots) return null;
+
         const dateToFind = new Date(Terms2025[currentTerm].date);
         dateToFind.setDate(dateToFind.getDate() + week * 7);
-        dateToFind.setHours(time, 0, 0, 0); // Set the time component
+
+        // if isSunday is true, go minus 4 days to get to wednesday
+        dateToFind.setDate(dateToFind.getDate() + (isSunday ? 0 : -4));
+
+        const hours = Math.floor(time);
+        const minutes = (time - hours) * 60;
+        dateToFind.setHours(hours, minutes, 0, 0); // Set the time component
+        let found = false;
 
         for (let i = 0; i < ageGroupsTimeSlots.length; i += 1) {
             const timeSlot = ageGroupsTimeSlots[i];
@@ -290,6 +264,18 @@ export const GameSetup = (props: PlayerDataProps) => {
                 timeSlot.location === venue
             ) {
                 return timeSlot;
+            } else if (
+                week === 0 &&
+                time === 19 &&
+                court === 1 &&
+                !isSunday &&
+                dateToFind.toISOString() === '2025-02-05T08:00:00.000Z' &&
+                slotDate.toISOString().includes('2025-02-12')
+            ) {
+                console.log(
+                    `slotDate.getTimee: ${slotDate.toISOString()}, dateToFind.getTime: ${dateToFind.toISOString()}, court: ${court}, location: ${venue}`,
+                );
+                found = true;
             }
         }
         return null;
@@ -299,24 +285,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         if (!ageGroupTeams) return '';
         const theTeam = ageGroupTeams.find((tean) => tean.name === teamName);
         return theTeam?.id || '';
-    };
-
-    const deleteAllGames = () => {
-        const req: PrismaCall = {
-            model: ModelName.game,
-            operation: CrudOperations.deleteMany,
-            data: {
-                where: {},
-            },
-        };
-
-        window.electron.ipcRenderer
-            .invoke(IpcChannels.PrismaClient, req)
-            .then((data) => {
-                setCreatedGames([]);
-                setDbGames([]);
-                toast.success('All games deleted');
-            });
     };
 
     const uploadGames = () => {
@@ -461,9 +429,26 @@ export const GameSetup = (props: PlayerDataProps) => {
         time: number,
         court: number,
         venue: string = 'ST_IVES',
+        isSunday: boolean = true,
     ) => {
-        const timeSlot = getTimeSlotFromWeekTimeCourt(week, time, court, venue);
+        const timeSlot = getTimeSlotFromWeekTimeCourt(
+            week,
+            time,
+            court,
+            venue,
+            isSunday,
+        );
         if (!timeSlot) {
+            if (week === 0 && time === 19 && court === 1) {
+                console.log(
+                    'no timeslot for',
+                    week,
+                    time,
+                    court,
+                    venue,
+                    isSunday,
+                );
+            }
             return <div />;
         }
         // console.log("attempting to find a game in dbGames");
@@ -682,25 +667,31 @@ export const GameSetup = (props: PlayerDataProps) => {
                                                 <BRTableCell>
                                                     {renderVersusDropdowns(
                                                         weekIndex,
-                                                        parseInt(time, 10),
+                                                        parseFloat(time),
                                                         1,
                                                         'ST_IVES',
+                                                        selectedAgeGroupId !==
+                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
                                                     )}
                                                 </BRTableCell>
                                                 <BRTableCell>
                                                     {renderVersusDropdowns(
                                                         weekIndex,
-                                                        parseInt(time, 10),
+                                                        parseFloat(time),
                                                         2,
                                                         'ST_IVES',
+                                                        selectedAgeGroupId !==
+                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
                                                     )}
                                                 </BRTableCell>
                                                 <BRTableCell>
                                                     {renderVersusDropdowns(
                                                         weekIndex,
-                                                        parseInt(time, 10),
+                                                        parseFloat(time),
                                                         3,
                                                         'ST_IVES',
+                                                        selectedAgeGroupId !==
+                                                            'abb0356d-cf46-486b-bfb0-1165693f9f8f',
                                                     )}
                                                 </BRTableCell>
                                             </>
