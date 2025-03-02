@@ -13,7 +13,7 @@ import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { PlayerDataProps } from '../players/components/Types';
 import Terms2025 from '../data/Terms';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
     Button,
     FormControl,
@@ -76,7 +76,7 @@ type Game = {
     timeslot: Timeslot;
 };
 
-type TableEntry = {
+export type TableEntry = {
     time: string;
     gameId: string;
     courtNumber: number;
@@ -113,6 +113,26 @@ const GameResults = (props: PlayerDataProps) => {
     );
     const [venue, setVenue] = React.useState<Location>(Location.ST_IVES);
     const [isSundayGames, setIsSundayGames] = React.useState<boolean>(true);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const rowRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+    React.useEffect(() => {
+        if (selectedGame === '') return;
+        if (currentGames.find((game) => game.id === selectedGame)?.lightScore === 0 && currentGames.find((game) => game.id === selectedGame)?.darkScore === 0) {
+            console.log('exiting');
+            return;
+        }
+        try {
+            uploadGameResults(
+                currentGames.find(
+                    (game) =>
+                        game.id === selectedGame,
+                ) as Game,
+            );
+        } catch (e) {
+            console.error(e);
+        }
+    }, [selectedGame]);
 
     const getAgeGroupOrder = (ageGroups: { id: string; displayName: string }[]) => {
         // Sort age groups by age, with adults first
@@ -224,38 +244,39 @@ const GameResults = (props: PlayerDataProps) => {
         return games
             .filter((game) => game.timeslot.ageGroupId === ageGroupId)
             .map((game) => {
-                let winningTeam = '';
-                if (game.lightScore === 0 && game.darkScore === 0) {
-                    winningTeam = '';
-                } else if (game.lightScore === game.darkScore) {
-                    winningTeam = 'TIE!';
-                } else {
-                    winningTeam =
-                        game.lightScore > game.darkScore
-                            ? game.lightTeam.name
-                            : game.darkTeam.name;
-                }
-                return {
-                    time: formatTime(new Date(game.timeslot.date)),
-                    gameId: game.id,
-                    ageGroup: toTitleCase(
-                        ageGroups.find(
-                            (ageGroup) =>
-                                ageGroup.id === game.timeslot.ageGroupId,
-                        )?.displayName || '',
-                    ),
-                    lightTeam: game.lightTeam.name,
-                    lightTeamScore: game.lightScore,
-                    darkTeam: game.darkTeam.name,
-                    darkTeamScore: game.darkScore,
-                    winningTeam: winningTeam,
-                    courtNumber: game.timeslot.court,
-                };
+            let winningTeam = '';
+            if (game.lightScore === 0 && game.darkScore === 0) {
+                winningTeam = '';
+            } else if (game.lightScore === game.darkScore) {
+                winningTeam = 'TIE!';
+            } else {
+                winningTeam =
+                game.lightScore > game.darkScore
+                    ? game.lightTeam.name
+                    : game.darkTeam.name;
+            }
+            return {
+                time: formatTime(new Date(game.timeslot.date)),
+                gameId: game.id,
+                ageGroup: toTitleCase(
+                ageGroups.find(
+                    (ageGroup) =>
+                    ageGroup.id === game.timeslot.ageGroupId,
+                )?.displayName || '',
+                ),
+                lightTeam: game.lightTeam.name,
+                lightTeamScore: game.lightScore,
+                darkTeam: game.darkTeam.name,
+                darkTeamScore: game.darkScore,
+                winningTeam: winningTeam,
+                courtNumber: game.timeslot.court,
+            };
             })
             .sort(
-                (a, b) =>
-                    new Date(`1970/01/01 ${a.time}`).getTime() -
-                    new Date(`1970/01/01 ${b.time}`).getTime(),
+            (a, b) =>
+                new Date(`1970/01/01 ${a.time}`).getTime() -
+                new Date(`1970/01/01 ${b.time}`).getTime() ||
+                a.courtNumber - b.courtNumber
             );
     };
 
@@ -267,8 +288,6 @@ const GameResults = (props: PlayerDataProps) => {
         const x = Array.from(new Set(games.map((game) => game.timeslot.ageGroupId))).sort(
             (a, b) => ageGroupOrder.indexOf(a) - ageGroupOrder.indexOf(b)
         );
-        console.log('order:');
-        console.log(x);
         return x;
     };
 
@@ -305,59 +324,29 @@ const GameResults = (props: PlayerDataProps) => {
     };
 
     const handleKeyPress = useCallback(
-        // TODO: Fix the keyboard navigation to handle the new table structure 
-        //       (changed separating by court to separating by age group)
-
         (e: KeyboardEvent) => {
-            return;
-            // const currentCourt =
-            //     currentGames.find((game) => game.id === selectedGame)?.timeslot
-            //         .court || 1;
-            // const entries = getTableEntries(currentGames, currentCourt);
-            // const currentIndex = entries.findIndex(
-            //     (game) => game.gameId === selectedGame,
-            // );
-            // const nextIndex = currentIndex + 1;
-            // const prevIndex = currentIndex - 1;
-            // const currentGame = currentGames[currentIndex];
+            if (e.code === 'Enter' || e.code === 'NumpadEnter' || (e.ctrlKey && e.key === 's')) {
+                e.preventDefault();
+                uploadGameResults(
+                    currentGames.find((game) => game.id === selectedGame) as Game,
+                );
+            } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
+                e.preventDefault();
+                const ageGroupIds = getAgeGroups(currentGames);
+                let allEntries: TableEntry[] = [];
+                ageGroupIds.forEach((ageGroupId) => {
+                    allEntries = allEntries.concat(getTableEntries(currentGames, ageGroupId));
+                });
 
-            // if (e.ctrlKey && e.key === 's') {
-            //     uploadGameResults(currentGame);
-            // } else if (e.ctrlKey && e.key === 'c') {
-            //     setSelectedGame('');
-            //     getCurrentGames(currentDate, venue);
-            // } else if (e.key === 'ArrowRight') {
-            //     if (selectedGame === '') {
-            //         setSelectedGame(entries[0]?.gameId || '');
-            //     } else if (nextIndex < entries.length) {
-            //         setSelectedGame(entries[nextIndex]?.gameId || '');
-            //     } else {
-            //         const nextCourt = currentCourt + 1;
-            //         const nextCourtEntries = getTableEntries(
-            //             currentGames,
-            //             nextCourt,
-            //         );
-            //         if (nextCourtEntries.length > 0) {
-            //             setSelectedGame(nextCourtEntries[0]?.gameId || '');
-            //         }
-            //     }
-            // } else if (e.key === 'ArrowLeft') {
-            //     if (prevIndex >= 0) {
-            //         setSelectedGame(entries[prevIndex]?.gameId || '');
-            //     } else {
-            //         const prevCourt = currentCourt - 1;
-            //         const prevCourtEntries = getTableEntries(
-            //             currentGames,
-            //             prevCourt,
-            //         );
-            //         if (prevCourtEntries.length > 0) {
-            //             setSelectedGame(
-            //                 prevCourtEntries[prevCourtEntries.length - 1]
-            //                     ?.gameId || '',
-            //             );
-            //         }
-            //     }
-            // }
+                const currentIndex = allEntries.findIndex(entry => entry.gameId === selectedGame);
+                if (currentIndex !== -1) {
+                    if (e.code === 'ArrowRight' && currentIndex < allEntries.length - 1) {
+                        setSelectedGame(allEntries[currentIndex + 1].gameId);
+                    } else if (e.code === 'ArrowLeft' && currentIndex > 0) {
+                        setSelectedGame(allEntries[currentIndex - 1].gameId);
+                    }
+                }
+            }
         },
         [currentGames, selectedGame, currentDate, venue],
     );
@@ -368,6 +357,16 @@ const GameResults = (props: PlayerDataProps) => {
             document.removeEventListener('keydown', handleKeyPress);
         };
     }, [handleKeyPress]);
+
+    useEffect(() => {
+        if (selectedGame && rowRefs.current[selectedGame]) {
+            rowRefs.current[selectedGame]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'start',
+            });
+        }
+    }, [selectedGame]);
 
     useEffect(() => {
         const focusableElements = document.querySelectorAll(
@@ -674,6 +673,13 @@ const GameResults = (props: PlayerDataProps) => {
                                         </span>
                                         <span>
                                             {' '}
+                                            or{' '}
+                                        </span>
+                                        <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">
+                                            Enter
+                                        </span>
+                                        <span>
+                                            {' '}
                                             to save the entered score, or{' '}
                                         </span>
                                         <span className="bg-gray-200 px-0.5 py-0.5 rounded-sm">
@@ -800,7 +806,7 @@ const GameResults = (props: PlayerDataProps) => {
                             <p>Adult Games</p>
                         </div>
                     </div>
-                    <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '80vh', overflowY: 'auto' }} ref={containerRef}>
                         {getAgeGroups(currentGames)
                             .sort(
                                 (a, b) =>
@@ -816,6 +822,7 @@ const GameResults = (props: PlayerDataProps) => {
                                     )}
                                     selectedGame={selectedGame}
                                     setSelectedGame={setSelectedGame}
+                                    rowRefs={rowRefs}
                                 />
                             ))}
                     </div>
