@@ -24,3 +24,7 @@ export const locationToText = (location: Location) => {
 			return "Belrose";
 	}
 };
+
+export function groupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Array<[K, T[]]> {
+	return [...Map.groupBy(items, keySelector)];
+}

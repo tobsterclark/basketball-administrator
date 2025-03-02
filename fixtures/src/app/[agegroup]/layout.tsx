@@ -36,6 +36,9 @@ export default async function MainLayout({ children, params }: { children: React
 				<Link href={`/${ageGroupId}/ladder`} className="bg-orange-500 p-2 rounded">
 					Ladder
 				</Link>
+				<Link href={`/${ageGroupId}/teams`} className="bg-orange-500 p-2 rounded">
+					Teams
+				</Link>
 			</div>
 
 			<section>{children}</section>
