@@ -14,19 +14,21 @@ function PlayersTable(teams: Team[]) {
 	const maxPlayers = allPlayerLengths.length > 0 ? allPlayerLengths.reduce((prev, current) => (prev && prev > current ? prev : current)) : 0;
 
 	return (
-		<table className="table-auto">
-			<thead className="uppercase bg-gray-50 text-gray-700 text-xs">
-				<tr>
-					<th scope="col" className="px-6 py-3 border-r">
-						Teams
-					</th>
-					<th scope="col" className="px-6 py-3 text-start" colSpan={10}>
-						Players
-					</th>
-				</tr>
-			</thead>
-			<tbody>{teams.map((team) => PlayersRow(team, maxPlayers))}</tbody>
-		</table>
+		<div className="overflow-x-auto">
+			<table className="table-auto">
+				<thead className="uppercase bg-gray-50 text-gray-700 text-xs">
+					<tr>
+						<th scope="col" className="px-6 py-3 border-r">
+							Teams
+						</th>
+						<th scope="col" className="px-6 py-3 text-start" colSpan={10}>
+							Players
+						</th>
+					</tr>
+				</thead>
+				<tbody>{teams.map((team) => PlayersRow(team, maxPlayers))}</tbody>
+			</table>
+		</div>
 	);
 }
 

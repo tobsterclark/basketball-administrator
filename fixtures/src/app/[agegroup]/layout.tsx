@@ -24,7 +24,7 @@ export default async function MainLayout({ children, params }: { children: React
 	const ageGroup = (await getAgeGroup(ageGroupId))?.displayName;
 
 	return (
-		<div className="flex flex-col gap-8 bg-white text-black p-5 min-h-screen w-screen font-sans">
+		<div className="flex flex-col gap-8 bg-white text-black p-5 min-h-screen w-screen overflow-hidden font-sans">
 			<h1 className="text-2xl font-extrabold">Age group {ageGroup}</h1>
 			<TabBar ageGroupId={ageGroupId} />
 
