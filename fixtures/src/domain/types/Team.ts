@@ -1,4 +1,5 @@
 import { Game } from "./Game";
+import { Player } from "./Player";
 
 export class Team {
 	wins: number = 0;
@@ -10,10 +11,10 @@ export class Team {
 	pointsAgainst: number = 0;
 
 	constructor(
-		public id?: string,
-		public name?: string,
-		public division?: number | null,
-		public players?: undefined[],
+		public id: string,
+		public name: string,
+		public division: number | null,
+		public players: Player[],
 	) {}
 
 	setGames(allGames: Game[]) {
@@ -52,9 +53,5 @@ export class Team {
 		points += this.losses;
 
 		return points;
-	}
-
-	static fromJSON(object: Object): Team {
-		return Object.assign(new Team(), object);
 	}
 }

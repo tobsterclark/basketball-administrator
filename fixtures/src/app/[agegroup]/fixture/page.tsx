@@ -1,6 +1,6 @@
 import { stripTime } from "@/util";
 import { GamesList } from "../_common/GamesList";
-import { getGamesForAgeGroup } from "@/db/cached";
+import { getGamesForAgeGroup } from "@/domain/usecases/getGamesForAgeGroup";
 
 export default async function Page({ params }: { params: Promise<{ agegroup: string }> }) {
 	const ageGroupId = (await params).agegroup;

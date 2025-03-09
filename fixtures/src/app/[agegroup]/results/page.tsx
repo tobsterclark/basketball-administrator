@@ -1,4 +1,4 @@
-import { getGamesForAgeGroup } from "@/db/cached";
+import { getGamesForAgeGroup } from "@/domain/usecases/getGamesForAgeGroup";
 import { GamesList } from "../_common/GamesList";
 import { stripTime } from "@/util";
 

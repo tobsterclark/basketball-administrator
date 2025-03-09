@@ -1,5 +1,5 @@
 import { Location } from "@/../orm/client";
-import { Game } from "@/domain/Game";
+import { Game } from "@/domain/types/Game";
 import { groupBy, locationToText } from "@/util";
 import { stripTime } from "@/util";
 
@@ -57,7 +57,7 @@ function Tile(game: Game) {
 	);
 }
 
-function FormatDate(date: string) {
+function formatDate(date: string) {
 	// takes in a string in the format "HH:MM:SS AM/PM" and returns a string in the format "HH:MM am/pm"
 	const time = date.split(":");
 	return `${time[0]}:${time[1]}${time[2].split(" ")[1].toLowerCase()}`;
@@ -72,7 +72,7 @@ function TimeAndWinner(game: Game) {
 		return (
 			<div className="flex flex-col space-y-1 text-end">
 				<p>Court {game.court}</p>
-				<p>{FormatDate(new Date(game.date).toLocaleTimeString())}</p>
+				<p>{formatDate(new Date(game.date).toLocaleTimeString())}</p>
 			</div>
 		);
 	}
