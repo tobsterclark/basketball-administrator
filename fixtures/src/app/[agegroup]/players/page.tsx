@@ -10,7 +10,8 @@ export default async function Page({ params }: { params: Promise<{ agegroup: str
 }
 
 function PlayersTable(teams: Team[]) {
-	const maxPlayers = teams.map((team) => team.players.length).reduce((prev, current) => (prev && prev > current ? prev : current));
+	const allPlayerLengths = teams.map((team) => team.players.length);
+	const maxPlayers = allPlayerLengths.length > 0 ? allPlayerLengths.reduce((prev, current) => (prev && prev > current ? prev : current)) : 0;
 
 	return (
 		<table className="table-auto">
