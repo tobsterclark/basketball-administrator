@@ -59,12 +59,15 @@ function LadderTable(teams: Team[]) {
 					<th scope="col" className="px-6 py-3 hidden lg:table-cell">
 						points against
 					</th>
+					<th scope="col" className="px-6 py-3">
+						points %
+					</th>
 				</tr>
 			</thead>
 			<tbody>{orderedTeams.map((team, index) => LadderRow(team, index + 1))}</tbody>
 			<caption className="text-gray-500 text-xs caption-bottom py-2">
 				<p>Team positions are calculated by number of wins, draws, losses and forfeits,</p>
-				<p>if teams have equal points, they are then compared by total score across all games (points for)</p>
+				<p>if teams have equal points, they are then compared by points percentage (points for / points against) * 100</p>
 			</caption>
 		</table>
 	);
@@ -84,6 +87,7 @@ function LadderRow(team: Team, position: number) {
 			<td className="px-6 py-3 hidden md:table-cell">{team.forfeits}</td>
 			<td className="px-6 py-3 hidden lg:table-cell">{team.pointsFor}</td>
 			<td className="px-6 py-3 hidden lg:table-cell">{team.pointsAgainst}</td>
+			<td className="px-6 py-3">{team.pointsPercentage() || 0}</td>
 		</tr>
 	);
 }

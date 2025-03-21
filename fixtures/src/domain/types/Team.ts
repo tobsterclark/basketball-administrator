@@ -54,4 +54,9 @@ export class Team {
 
 		return points;
 	}
+
+	pointsPercentage() {
+		const percentage = (this.pointsFor / this.pointsAgainst) * 100;
+		return Math.round(percentage);
+	}
 }
