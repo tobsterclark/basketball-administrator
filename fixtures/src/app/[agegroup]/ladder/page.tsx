@@ -21,8 +21,12 @@ export default async function Page({ params }: { params: Promise<{ agegroup: str
 }
 
 function LadderTable(teams: Team[]) {
-	// TODO: teams need to be ordered by baskets if equal in points (I believe)
-	const orderedTeams = teams.sort((a, b) => b.points() - a.points());
+	// Teams are sorted by the number of points they have
+	// Teams with equal points are sorted by 'pointsFor'
+	const orderedTeams = teams.sort((a, b) => {
+		const comparison = b.points() - a.points();
+		return comparison !== 0 ? comparison : b.pointsFor - a.pointsFor;
+	});
 
 	return (
 		<table className="table-auto">
@@ -38,20 +42,30 @@ function LadderTable(teams: Team[]) {
 						points
 					</th>
 					<th scope="col" className="px-6 py-3 hidden md:table-cell">
-						wins
+						wins (3)
 					</th>
 					<th scope="col" className="px-6 py-3 hidden md:table-cell">
-						losses
+						draws (2)
 					</th>
 					<th scope="col" className="px-6 py-3 hidden md:table-cell">
-						draws
+						losses (1)
 					</th>
 					<th scope="col" className="px-6 py-3 hidden md:table-cell">
-						forfeits
+						forfeits (0)
+					</th>
+					<th scope="col" className="px-6 py-3 hidden lg:table-cell">
+						points for
+					</th>
+					<th scope="col" className="px-6 py-3 hidden lg:table-cell">
+						points against
 					</th>
 				</tr>
 			</thead>
 			<tbody>{orderedTeams.map((team, index) => LadderRow(team, index + 1))}</tbody>
+			<caption className="text-gray-500 text-xs caption-bottom py-2">
+				<p>Team positions are calculated by number of wins, draws, losses and forfeits,</p>
+				<p>if teams have equal points, they are then compared by total score across all games (points for)</p>
+			</caption>
 		</table>
 	);
 }
@@ -65,9 +79,11 @@ function LadderRow(team: Team, position: number) {
 			<td className="px-6 py-3">{team.name}</td>
 			<td className="px-6 py-3">{team.points()}</td>
 			<td className="px-6 py-3 hidden md:table-cell">{team.wins}</td>
-			<td className="px-6 py-3 hidden md:table-cell">{team.losses}</td>
 			<td className="px-6 py-3 hidden md:table-cell">{team.draws}</td>
+			<td className="px-6 py-3 hidden md:table-cell">{team.losses}</td>
 			<td className="px-6 py-3 hidden md:table-cell">{team.forfeits}</td>
+			<td className="px-6 py-3 hidden lg:table-cell">{team.pointsFor}</td>
+			<td className="px-6 py-3 hidden lg:table-cell">{team.pointsAgainst}</td>
 		</tr>
 	);
 }
