@@ -543,6 +543,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
                             onClick={async () =>
                                 downloadMultipleRunsheets(
                                     getGameIdsForDate(currentDate),
+                                    currentDate,
                                 )
                             }
                         >
