@@ -15,6 +15,8 @@ export type PlayerDataResponse = Prisma.PlayerGetPayload<{
 }>;
 
 export type TeamCache = Omit<TeamDataResponse, 'ageGroup'>;
+export type PlayerCache = Omit<PlayerDataResponse, 'ageGroup'>;
+
 
 export interface TeamMemberRow {
     id: number;
@@ -40,4 +42,10 @@ export interface TeamSearchProps {
     setSelectedTeam: Dispatch<SetStateAction<string>>; // dispatch needed for hooks
     handleAddTeamButtonPress: () => void;
     cachedTeams: Map<string, TeamCache>;
+}
+
+export interface PlayerSearchProps {
+    setSelectedPlayer: Dispatch<SetStateAction<string>>; // dispatch needed for hooks
+    handleAddPlayerButtonPress: () => void;
+    cachedPlayers: Map<string, PlayerCache>;
 }
