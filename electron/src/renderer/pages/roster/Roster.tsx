@@ -59,6 +59,7 @@ import {
     Team,
     Timeslot,
     Game,
+    getFileName,
 } from './Resources';
 import { downloadRunsheet, downloadMultipleRunsheets } from './PdfUtil';
 
@@ -321,7 +322,7 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
             await html2pdf()
                 .set({
                     margin: 10,
-                    filename: `Runsheet-${locationToText(location).replace(
+                    filename: `${getFileName(location, currentDate.toDateString()).replace(
                         ' ',
                         '',
                     )}.pdf`,

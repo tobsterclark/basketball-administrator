@@ -24,6 +24,11 @@ export const locationToText = (location: Location) => {
     }
 };
 
+export const getFileName = (location: Location, date: string) => {
+    // Returns file name in the following format: "St Ives - 2021-06-01"
+    return `${locationToText(location)} - ${date}`;
+};
+
 export const formatTime = (date: Date) => {
     // format time in <HH:mm> AM/PM format
     //return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
 import {
     DataGrid,
@@ -24,10 +25,14 @@ import { PlayerData } from './components/PlayerData';
 import { PlayerProps } from './PlayersProps';
 
 const toTitleCase = (str: any) => {
-    return str.toLowerCase().split(' ').map((word: any) => {
-      return (word.charAt(0).toUpperCase() + word.slice(1));
-    }).join(' ');
-}
+    return str
+        .toLowerCase()
+        .split(' ')
+        .map((word: any) => {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+};
 
 const Players = (playersProps: PlayerProps) => {
     const { ageGroups, teams } = playersProps;
@@ -95,10 +100,8 @@ const Players = (playersProps: PlayerProps) => {
                 setSelectedPlayer(null);
                 setRowSelectionModel([]);
                 setTotalPlayers((currentTotal) => currentTotal - 1);
-                
             });
     };
-    
 
     const createNewPlayerPrisma = (player: PlayerCache) => {
         // Converts player number as string to number/int as req. by Prisma
