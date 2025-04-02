@@ -1,12 +1,14 @@
 import {
+    Button,
     FormControl,
     InputLabel,
     MenuItem,
     Select,
+    SelectChangeEvent,
     TextField,
 } from '@mui/material';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
@@ -26,11 +28,14 @@ import {
 import { IpcChannels } from '../../../general/IpcChannels';
 import {
     AgeGroupDataResponse,
+    PlayerCache,
     PlayerDataResponse,
     TeamCache,
     TeamMemberRow,
 } from './components/Types';
 import { TeamSearch } from './components/TeamSearch';
+import { PlayerSearch } from './components/PlayerSearch';
+import { useRef } from 'react';
 
 const toTitleCase = (str: string) => {
     return str
@@ -44,9 +49,14 @@ const Teams = () => {
     const [cachedTeams, setCachedTeams] = useState<Map<string, TeamCache>>(
         new Map(),
     );
+    const [cachedPlayers, setCachedPlayers] = useState<Map<string, PlayerCache>>(
+        new Map(),
+    );
     const [ageGroups, setAgeGroups] = useState<AgeGroupDataResponse[]>([]);
 
     const [selectedTeam, setSelectedTeam] = useState<string>('');
+    const [selectedPlayer, setSelectedPlayer] = useState<string>('');
+
     const [selectedTeamPlayers, setSelectedTeamPlayers] =
         useState<TeamMemberRow[]>();
 
@@ -74,6 +84,10 @@ const Teams = () => {
     const [editedAgeGroup, setEditedAgeGroup] = useState<
         AgeGroupDataResponse | undefined
     >(selectedAgeGroup);
+
+    const rowClick: React.Dispatch<React.SetStateAction<string>> = (value) => {
+        setSelectedPlayer(typeof value === 'string' ? value : value(''));
+    };
 
     const deleteTeam = () => {
         const deleteTeamPush: PrismaCall = {
@@ -241,7 +255,7 @@ const Teams = () => {
                     (player, index) => ({
                         id: index,
                         playerId: player.id,
-                        name: player.firstName + player.lastName,
+                        name: `${player.firstName} ${player.lastName}`,
                         number: player.number ?? 0,
                         toBeRemoved: false,
                     }),
@@ -304,6 +318,33 @@ const Teams = () => {
             });
     }, [pullNewData]);
 
+    // Fetches all players from DB and stores into the cachedPlayers map
+    useEffect(() => {
+        const allPlayersRequest: PrismaCall = {
+            model: ModelName.player,
+            operation: CrudOperations.findMany,
+            data: {
+                orderBy: { firstName: 'asc' },
+                include: { ageGroup: true },
+            },
+        };
+
+        window.electron.ipcRenderer
+            .invoke(IpcChannels.PrismaClient, allPlayersRequest)
+            .then((data) => {
+                console.warn('allPlayersRequest invoked');
+                const fetchedPlayers = data as PlayerCache[];
+                console.log(fetchedPlayers);
+                setCachedPlayers((currentCache) => {
+                    const newCache = new Map(currentCache);
+                    fetchedPlayers.forEach((player) => {
+                        newCache.set(player.id, player);
+                    });
+                    return newCache;
+                });
+            });
+    }, [pullNewData]);
+
     const handleAddTeamButtonPress = () => {
         setIsCreatingNewTeam(true);
         console.log('Add team button pressed');
@@ -312,6 +353,110 @@ const Teams = () => {
         setEditedAgeGroup(undefined);
         setSelectedTeamPlayers(teamMemberRowsTEMP);
         setEditingDisabled(false);
+    };
+
+    const handleAddPlayerButtonPress = () => {
+        // setIsCreatingNewTeam(true);
+        console.log('Add team button pressed');
+        setSelectedPlayer('');
+        // setEditedTeamName('');
+        // setEditedAgeGroup(undefined);
+        // setSelectedTeamPlayers(teamMemberRowsTEMP);
+        // setEditingDisabled(false);
+    };
+
+    const handlePlayerInfoUpdate = (e: ChangeEvent<HTMLInputElement>) => {
+        if (!selectedPlayer) return;
+
+        const { name, value: rawValue } = e.target;
+        const sanitizedValue =
+            name === 'number'
+                ? rawValue.replace(/\D/g, '').replace(/^0+(?!$)/, '').substring(0, 6)
+                : rawValue;
+
+        setCachedPlayers((currentCache) => {
+            const newCache = new Map(currentCache);
+            const player = newCache.get(selectedPlayer);
+
+            if (player) {
+                switch (name) {
+                    case 'number':
+                        player.number = parseInt(sanitizedValue, 10) || 0;
+                        break;
+                    case 'firstName':
+                        player.firstName = sanitizedValue;
+                        break;
+                    case 'lastName':
+                        player.lastName = sanitizedValue;
+                        break;
+                    default:
+                        break;
+                }
+                newCache.set(selectedPlayer, player);
+            }
+
+            return newCache;
+        });
+
+        // Debounce the update to the database
+        debounceUpdatePlayer(name, sanitizedValue);
+    };
+
+    const handlePlayerSelectInput = (e: SelectChangeEvent<string>) => {
+        if (!selectedPlayer) return;
+        const { name, value } = e.target;
+
+        setCachedPlayers((currentCache) => {
+            const newCache = new Map(currentCache);
+            const player = newCache.get(selectedPlayer);
+
+            if (player) {
+                switch (name) {
+                    case 'teamId':
+                        player.teamId = value;
+                        break;
+                    case 'ageGroupId':
+                        player.ageGroupId = value;
+                        break;
+                    default:
+                        break;
+                }
+                newCache.set(selectedPlayer, player);
+            }
+            return newCache;
+        });
+
+        // Use debounceUpdatePlayer to update the database
+        debounceUpdatePlayer(name, value);
+    };
+
+    const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const debounceUpdatePlayer = (name: string, value: string | number) => {
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+
+        debounceTimeout.current = setTimeout(async () => {
+            const updatePlayerPush: PrismaCall = {
+                model: ModelName.player,
+                operation: CrudOperations.update,
+                data: {
+                    where: { id: selectedPlayer },
+                    data: {
+                        [name]: name === 'number' ? parseInt(value as string, 10) || 0 : value,
+                    },
+                },
+            };
+
+            try {
+                await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, updatePlayerPush);
+                toast.success('Player information updated successfully');
+            } catch (error) {
+                console.error('Failed to update player:', error);
+                toast.error('Failed to update player information');
+            }
+        }, 500); // Wait 500ms after the user stops typing
     };
 
     // console.log(`selectedTeam: ${selectedTeam}`);
@@ -418,90 +563,125 @@ const Teams = () => {
                             editedPlayersToRemove={editedPlayersToRemove}
                             setEditedPlayersToRemove={setEditedPlayersToRemove}
                             deleteTeam={deleteTeam}
+                            rowClick={(value) => rowClick(value)}
                         />
                     </div>
                 </div>
 
-                <div className="w-2/3 flex flex-col">
-                    <div className="">
-                        <h3 className="text-lg font-medium pt-6 pb-2">
-                            Standings
-                        </h3>
+                <div className="w-3/5 flex flex-col">
+                    {/* Area for editing players. Needs a search bar and fields for editing name etc */}
+                    <div className="flex flex-row gap-4">
                         <div className="w-full">
-                            <DataGrid
-                                rows={standingsRowsTEMP}
-                                columns={standingsColumns}
-                                pageSizeOptions={[100]}
-                                disableRowSelectionOnClick
-                                disableColumnResize
-                                disableColumnFilter
-                                disableColumnSelector
-                                initialState={{
-                                    pagination: {
-                                        paginationModel: { pageSize: 5 },
-                                    },
-                                }}
-                                disableColumnSorting
-                                disableDensitySelector
-                                disableColumnMenu
-                                sx={{
-                                    [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
-                                    [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                        {
-                                            outline: 'none',
-                                        },
-                                    [`& .${gridClasses.columnSeparator}`]: {
-                                        [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                            {
-                                                display: 'none',
-                                            },
-                                    },
-                                }}
+                            <PlayerSearch
+                                setSelectedPlayer={setSelectedPlayer}
+                                handleAddPlayerButtonPress={handleAddPlayerButtonPress}
+                                cachedPlayers={cachedPlayers}
+                                selectedPlayer={selectedPlayer}
                             />
                         </div>
+                        {/* <Button
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            variant="contained"
+                            onClick={() => {
+                                console.log('Add player button pressed');
+                                setNewPlayerAddPlayerDisabled(true);
+                            }}
+                        >
+                            Add Player
+                        </Button>
+                        <Button
+                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                            variant="contained"
+                            color="error"
+                            onClick={() => {
+                                console.log('delete player button pressed');
+                            }}
+                        >
+                            Delete Player
+                        </Button> */}
                     </div>
-                    <div className="">
-                        <h3 className="text-lg font-medium pt-6 pb-2">
-                            Recent Games
-                            <div className="">
-                                <DataGrid
-                                    rows={recentGamesRowsTEMP}
-                                    columns={recentGamesColumns}
-                                    pageSizeOptions={[100]}
-                                    disableRowSelectionOnClick
-                                    disableColumnResize
-                                    initialState={{
-                                        pagination: {
-                                            paginationModel: { pageSize: 5 },
-                                        },
-                                    }}
-                                    disableColumnFilter
-                                    disableColumnSelector
-                                    disableColumnSorting
-                                    disableDensitySelector
-                                    disableColumnMenu
-                                    sx={{
-                                        [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
-                                            {
-                                                outline: 'none',
-                                            },
-                                        [`& .${gridClasses.columnHeader}:focus, & .${gridClasses.columnHeader}:focus-within`]:
-                                            {
-                                                outline: 'none',
-                                            },
-                                        [`& .${gridClasses.columnSeparator}`]: {
-                                            [`&:not(.${gridClasses['columnSeparator--resizable']})`]:
-                                                {
-                                                    display: 'none',
-                                                },
-                                        },
-                                    }}
-                                />
-                            </div>
-                        </h3>
+                    <div className="flex flex-row gap-4 pt-4">
+                        <TextField
+                            fullWidth
+                            id="newPlayerFirstName"
+                            label="First Name"
+                            variant="filled"
+                            name="firstName"
+                            onChange={handlePlayerInfoUpdate}
+                            value={cachedPlayers.get(selectedPlayer)?.firstName || ''}
+                        />
+                        <TextField
+                            fullWidth
+                            id="newPlayerLastName"
+                            label="Last Name"
+                            variant="filled"
+                            name="lastName"
+                            onChange={handlePlayerInfoUpdate}
+                            value={cachedPlayers.get(selectedPlayer)?.lastName || ''}
+                        />
+                        <TextField
+                            fullWidth
+                            id="newPlayerNumber"
+                            label="Number"
+                            variant="filled"
+                            name="number"
+                            value={cachedPlayers.get(selectedPlayer)?.number || ''}
+                            onChange={handlePlayerInfoUpdate}
+                        />
+                    </div>
+                    <div className="flex flex-row gap-4 pb-4 pt-4">
+                        {/* Team Select */}
+                        <div className="w-2/3 flex-grow">
+                            <FormControl fullWidth>
+                                <InputLabel
+                                    id="demo-simple-select-label"
+                                >
+                                    Team
+                                </InputLabel>
+                                <Select
+                                    labelId="demo-simple-select-label"
+                                    id="demo-simple-select"
+                                    label="Team"
+                                    value={cachedPlayers.get(selectedPlayer)?.teamId ?? ''}
+                                    name="teamId"
+                                    onChange={handlePlayerSelectInput}
+                                >
+                                    {Array.from(cachedTeams.values()).map((team) => (
+                                        <MenuItem key={team.id} value={team.id}>
+                                            {team.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </div>
+    
+                        {/* Age Group */}
+                        <div className="flex-shrink w-1/3">
+                            <FormControl fullWidth>
+                                <InputLabel
+                                    id="demo-simple-select-label"
+                                >
+                                    Age Group
+                                </InputLabel>
+                                <Select
+                                    labelId="demo-simple-select-label"
+                                    id="demo-simple-select"
+                                    label="Age Group"
+                                    name="ageGroupId"
+                                    value={cachedPlayers.get(selectedPlayer)?.ageGroupId ?? ''}
+                                    onChange={handlePlayerSelectInput}
+                                >
+                                    {ageGroups.map((ageGroup) => (
+                                        <MenuItem
+                                            key={ageGroup.id}
+                                            value={ageGroup.id}
+                                        >
+                                            {toTitleCase(ageGroup.displayName)}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </div>
                     </div>
                 </div>
             </div>
