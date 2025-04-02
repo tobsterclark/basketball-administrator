@@ -85,6 +85,10 @@ const Teams = () => {
         AgeGroupDataResponse | undefined
     >(selectedAgeGroup);
 
+    const rowClick: React.Dispatch<React.SetStateAction<string>> = (value) => {
+        setSelectedPlayer(typeof value === 'string' ? value : value(''));
+    };
+
     const deleteTeam = () => {
         const deleteTeamPush: PrismaCall = {
             model: ModelName.team,
@@ -251,7 +255,7 @@ const Teams = () => {
                     (player, index) => ({
                         id: index,
                         playerId: player.id,
-                        name: player.firstName + player.lastName,
+                        name: `${player.firstName} ${player.lastName}`,
                         number: player.number ?? 0,
                         toBeRemoved: false,
                     }),
@@ -559,6 +563,7 @@ const Teams = () => {
                             editedPlayersToRemove={editedPlayersToRemove}
                             setEditedPlayersToRemove={setEditedPlayersToRemove}
                             deleteTeam={deleteTeam}
+                            rowClick={(value) => rowClick(value)}
                         />
                     </div>
                 </div>
@@ -571,6 +576,7 @@ const Teams = () => {
                                 setSelectedPlayer={setSelectedPlayer}
                                 handleAddPlayerButtonPress={handleAddPlayerButtonPress}
                                 cachedPlayers={cachedPlayers}
+                                selectedPlayer={selectedPlayer}
                             />
                         </div>
                         {/* <Button

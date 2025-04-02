@@ -36,6 +36,7 @@ export interface TeamMembersProps {
     onCancelClick?: () => void;
     onSaveClick?: () => void;
     deleteTeam?: () => void;
+    rowClick: Dispatch<SetStateAction<string>>;
 }
 
 export interface TeamSearchProps {
@@ -48,4 +49,5 @@ export interface PlayerSearchProps {
     setSelectedPlayer: Dispatch<SetStateAction<string>>; // dispatch needed for hooks
     handleAddPlayerButtonPress: () => void;
     cachedPlayers: Map<string, PlayerCache>;
+    selectedPlayer: string;
 }

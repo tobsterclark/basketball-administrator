@@ -68,14 +68,14 @@ const Navbar = () => {
                 icon: <hr className="w-full border-t border-gray-300" />,
             },
             {
-                name: 'Players',
-                link: '/players',
-                icon: <GlobeAsiaAustraliaIcon className={iconStyle} />,
-            },
-            {
-                name: 'Teams',
+                name: 'Teams & Players',
                 link: '/teams',
                 icon: <ArrowTrendingUpIcon className={iconStyle} />,
+            },
+            {
+                name: 'Players (old)',
+                link: '/players',
+                icon: <GlobeAsiaAustraliaIcon className={iconStyle} />,
             },
             {
                 name: 'Age Groups',

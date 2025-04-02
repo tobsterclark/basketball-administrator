@@ -15,20 +15,27 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
 
     const transformPlayers = (players: Map<string, PlayerCache>): AutocompleteOption[] => {
         return Array.from(players.values()).map(player => ({
-            id: player.id,
-            label: `${player.firstName} ${player.lastName} (${player.id.slice(-4)})` // Append part of ID
+            id: player.id, // Use ID for uniqueness
+            label: `${player.firstName} ${player.lastName}` // Only display first and last name
         }));
+    };
+    
+    const getOptionLabel = (option: AutocompleteOption): string => {
+        return option.label; // Display only the label in the dropdown
+    };
+    
+    const isOptionEqualToValue = (option: AutocompleteOption, value: AutocompleteOption): boolean => {
+        return option.id === value.id; // Compare by player ID to ensure uniqueness
     };
 
     useEffect(() => {
-        if (selectedOption) {
+        if (props.selectedPlayer) {
             const updatedOption = transformPlayers(cachedPlayers).find(
-                (option) => option.id === selectedOption.id,
+                (option) => option.id === props.selectedPlayer
             );
             setSelectedOption(updatedOption || null);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cachedPlayers]);
+    }, [props.selectedPlayer, cachedPlayers]);
 
     return (
         <div className="flex flex-row pt-12 pb-6 gap-6">
@@ -41,10 +48,14 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
                         setSelectedPlayer(value?.id || '');
                     }}
                     blurOnSelect
+                    getOptionLabel={getOptionLabel}
                     options={transformPlayers(cachedPlayers)}
-                    isOptionEqualToValue={(option, value) => {
-                        return option.id === value.id
-                    }}
+                    isOptionEqualToValue={isOptionEqualToValue}
+                    renderOption={(props, option) => (
+                        <li {...props} key={option.id}>
+                            {option.label}
+                        </li>
+                    )}
                     renderInput={(params) => (
                         <TextField
                             // eslint-disable-next-line react/jsx-props-no-spreading
@@ -57,7 +68,7 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
                     )}
                 />
             </div>
-            <div>
+            {/* <div>
                 <button
                     type="button"
                     onClick={() => {
@@ -69,7 +80,7 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
                     New Player
                     <PlusCircleIcon className="h-6 w-6 inline-block ml-2" />
                 </button>
-            </div>
+            </div> */}
         </div>
     );
 };

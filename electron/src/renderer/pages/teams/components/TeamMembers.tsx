@@ -27,6 +27,7 @@ const TeamMembers = (props: TeamMembersProps) => {
         onCancelClick,
         onSaveClick,
         deleteTeam,
+        rowClick,
     } = props;
 
     const teamEditorColumns: GridColDef[] = [
@@ -42,19 +43,6 @@ const TeamMembers = (props: TeamMembersProps) => {
             sortable: false,
             filterable: false,
         },
-        // {
-        //     field: 'actions',
-        //     sortable: false,
-        //     align: 'right',
-        //     filterable: false,
-        //     renderCell: () => (
-        //         <ArrowLeftStartOnRectangleIcon
-        //             className={`h-4 w-4 mr-4 inline-block ${
-        //                 editingDisabled ? 'text-red-300 ' : 'text-red-600 '
-        //             }`}
-        //         />
-        //     ),
-        // },
     ];
 
     const [rowSelectionMode, setRowSelectionModel] =
@@ -63,39 +51,6 @@ const TeamMembers = (props: TeamMembersProps) => {
     const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
         useState(false);
 
-    const removePlayer = (rowIndex: number) => {
-        const { playerId } = teamMemberRows[rowIndex];
-        if (!editedPlayersToRemove.includes(playerId)) {
-            // editedPlayersToRemove.push(playerId);
-            setEditedPlayersToRemove([...editedPlayersToRemove, playerId]);
-        }
-    };
-
-    const reAddPlayer = (rowIndex: number) => {
-        const { playerId } = teamMemberRows[rowIndex];
-        const index = editedPlayersToRemove.indexOf(playerId);
-        if (index > -1) {
-            const updatedPlayers = [...editedPlayersToRemove];
-            updatedPlayers.splice(index, 1);
-            setEditedPlayersToRemove(updatedPlayers);
-        }
-    };
-
-    const checkForSelection = (newSelection: GridRowSelectionModel) => {
-        if (newSelection.length === 0) {
-            return;
-        }
-
-        const rowIndex = newSelection[0] as number;
-        const { playerId } = teamMemberRows[rowIndex];
-        if (editedPlayersToRemove.includes(playerId)) {
-            reAddPlayer(rowIndex);
-        } else {
-            removePlayer(rowIndex);
-        }
-    };
-
-    console.log(teamMemberRows);
 
     return (
         <div>
@@ -105,11 +60,6 @@ const TeamMembers = (props: TeamMembersProps) => {
                     rows={teamMemberRows}
                     columns={teamEditorColumns}
                     slots={{ columnHeaders: () => null }}
-                    // onRowSelectionModelChange={(newSelection) => {
-                    //     setRowSelectionModel([]);
-                    //     checkForSelection(newSelection);
-                    // }}
-                    // rowSelectionModel={rowSelectionMode}
                     disableRowSelectionOnClick
                     autoHeight
                     disableColumnMenu
@@ -129,13 +79,11 @@ const TeamMembers = (props: TeamMembersProps) => {
                         }
                         return 'bg-white';
                     }}
+                    onRowClick={(params) => {
+                        console.log('Player ID:', params.row.playerId);
+                        rowClick(params.row.playerId);
+                    }}
                     sx={{
-                        // '& .MuiDataGrid-row': {
-                        //     '&:hover': {
-                        //         bgcolor: 'rgb(254 202 202)',
-                        //     },
-                        // },
-                        // '& .Mui-selected': { bgcolor: 'white' },
                         [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]:
                             {
                                 outline: 'none',
@@ -198,26 +146,7 @@ const TeamMembers = (props: TeamMembersProps) => {
                         <TrashIcon className="h-6 w-6 text-black" />
                     </button>
                 )}
-                {/* <div className="flex justify-center items-center py-4 px-2 gap-2 bg-blue-200 hover:cursor-pointer hover:bg-blue-300">
-                    <p className="font-bold">Add player</p>
-                    <UserPlusIcon className="h-6 w-6 text-black" />
-                </div> */}
                 <div>
-                    {/* <div className="flex flex-row pt-12 pb-6 gap-6">
-                        <div className="w-full">
-                            <TextField
-                                id="playerSearchInput"
-                                label="Search players"
-                                variant="filled"
-                                autoFocus
-                                value={newPlayerSearchBoxInput}
-                                onChange={(e) =>
-                                    newPlayerSetSearchBoxInput(e.target.value)
-                                }
-                                fullWidth
-                            />
-                        </div>
-                    </div> */}
                 </div>
             </div>
             <div className="pt-8 pb-4">
