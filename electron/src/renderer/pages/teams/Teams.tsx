@@ -4,10 +4,11 @@ import {
     InputLabel,
     MenuItem,
     Select,
+    SelectChangeEvent,
     TextField,
 } from '@mui/material';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
@@ -34,6 +35,7 @@ import {
 } from './components/Types';
 import { TeamSearch } from './components/TeamSearch';
 import { PlayerSearch } from './components/PlayerSearch';
+import { useRef } from 'react';
 
 const toTitleCase = (str: string) => {
     return str
@@ -359,6 +361,100 @@ const Teams = () => {
         // setEditingDisabled(false);
     };
 
+    const handlePlayerInfoUpdate = (e: ChangeEvent<HTMLInputElement>) => {
+        if (!selectedPlayer) return;
+
+        const { name, value: rawValue } = e.target;
+        const sanitizedValue =
+            name === 'number'
+                ? rawValue.replace(/\D/g, '').replace(/^0+(?!$)/, '').substring(0, 6)
+                : rawValue;
+
+        setCachedPlayers((currentCache) => {
+            const newCache = new Map(currentCache);
+            const player = newCache.get(selectedPlayer);
+
+            if (player) {
+                switch (name) {
+                    case 'number':
+                        player.number = parseInt(sanitizedValue, 10) || 0;
+                        break;
+                    case 'firstName':
+                        player.firstName = sanitizedValue;
+                        break;
+                    case 'lastName':
+                        player.lastName = sanitizedValue;
+                        break;
+                    default:
+                        break;
+                }
+                newCache.set(selectedPlayer, player);
+            }
+
+            return newCache;
+        });
+
+        // Debounce the update to the database
+        debounceUpdatePlayer(name, sanitizedValue);
+    };
+
+    const handlePlayerSelectInput = (e: SelectChangeEvent<string>) => {
+        if (!selectedPlayer) return;
+        const { name, value } = e.target;
+
+        setCachedPlayers((currentCache) => {
+            const newCache = new Map(currentCache);
+            const player = newCache.get(selectedPlayer);
+
+            if (player) {
+                switch (name) {
+                    case 'teamId':
+                        player.teamId = value;
+                        break;
+                    case 'ageGroupId':
+                        player.ageGroupId = value;
+                        break;
+                    default:
+                        break;
+                }
+                newCache.set(selectedPlayer, player);
+            }
+            return newCache;
+        });
+
+        // Use debounceUpdatePlayer to update the database
+        debounceUpdatePlayer(name, value);
+    };
+
+    const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const debounceUpdatePlayer = (name: string, value: string | number) => {
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+
+        debounceTimeout.current = setTimeout(async () => {
+            const updatePlayerPush: PrismaCall = {
+                model: ModelName.player,
+                operation: CrudOperations.update,
+                data: {
+                    where: { id: selectedPlayer },
+                    data: {
+                        [name]: name === 'number' ? parseInt(value as string, 10) || 0 : value,
+                    },
+                },
+            };
+
+            try {
+                await window.electron.ipcRenderer.invoke(IpcChannels.PrismaClient, updatePlayerPush);
+                toast.success('Player information updated successfully');
+            } catch (error) {
+                console.error('Failed to update player:', error);
+                toast.error('Failed to update player information');
+            }
+        }, 500); // Wait 500ms after the user stops typing
+    };
+
     // console.log(`selectedTeam: ${selectedTeam}`);
     // console.log(`selectedAgeGroup: ${selectedAgeGroup}`);
 
@@ -504,18 +600,27 @@ const Teams = () => {
                             id="newPlayerFirstName"
                             label="First Name"
                             variant="filled"
+                            name="firstName"
+                            onChange={handlePlayerInfoUpdate}
+                            value={cachedPlayers.get(selectedPlayer)?.firstName || ''}
                         />
                         <TextField
                             fullWidth
                             id="newPlayerLastName"
                             label="Last Name"
                             variant="filled"
+                            name="lastName"
+                            onChange={handlePlayerInfoUpdate}
+                            value={cachedPlayers.get(selectedPlayer)?.lastName || ''}
                         />
                         <TextField
                             fullWidth
                             id="newPlayerNumber"
                             label="Number"
                             variant="filled"
+                            name="number"
+                            value={cachedPlayers.get(selectedPlayer)?.number || ''}
+                            onChange={handlePlayerInfoUpdate}
                         />
                     </div>
                     <div className="flex flex-row gap-4 pb-4 pt-4">
@@ -531,8 +636,15 @@ const Teams = () => {
                                     labelId="demo-simple-select-label"
                                     id="demo-simple-select"
                                     label="Team"
+                                    value={cachedPlayers.get(selectedPlayer)?.teamId ?? ''}
                                     name="teamId"
+                                    onChange={handlePlayerSelectInput}
                                 >
+                                    {Array.from(cachedTeams.values()).map((team) => (
+                                        <MenuItem key={team.id} value={team.id}>
+                                            {team.name}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </div>
@@ -550,6 +662,8 @@ const Teams = () => {
                                     id="demo-simple-select"
                                     label="Age Group"
                                     name="ageGroupId"
+                                    value={cachedPlayers.get(selectedPlayer)?.ageGroupId ?? ''}
+                                    onChange={handlePlayerSelectInput}
                                 >
                                     {ageGroups.map((ageGroup) => (
                                         <MenuItem

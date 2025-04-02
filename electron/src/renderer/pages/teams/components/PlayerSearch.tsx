@@ -13,14 +13,11 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
     const [selectedOption, setSelectedOption] =
         useState<AutocompleteOption | null>(null);
 
-    const transformPlayers = (
-        players: Map<string, PlayerCache>,
-    ): AutocompleteOption[] => {
-        const options: AutocompleteOption[] = [];
-        players.forEach((player) => {
-            options.push({ id: player.id, label: `${player.firstName} ${player.lastName}` });
-        });
-        return options;
+    const transformPlayers = (players: Map<string, PlayerCache>): AutocompleteOption[] => {
+        return Array.from(players.values()).map(player => ({
+            id: player.id,
+            label: `${player.firstName} ${player.lastName} (${player.id.slice(-4)})` // Append part of ID
+        }));
     };
 
     useEffect(() => {
@@ -45,9 +42,9 @@ export const PlayerSearch = (props: PlayerSearchProps): React.ReactElement => {
                     }}
                     blurOnSelect
                     options={transformPlayers(cachedPlayers)}
-                    isOptionEqualToValue={(option, value) =>
-                        option.id === value.id
-                    }
+                    isOptionEqualToValue={(option, value) => {
+                        return option.id === value.id
+                    }}
                     renderInput={(params) => (
                         <TextField
                             // eslint-disable-next-line react/jsx-props-no-spreading
