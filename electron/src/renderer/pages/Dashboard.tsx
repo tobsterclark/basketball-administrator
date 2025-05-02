@@ -122,7 +122,7 @@ const Dashboard = () => {
                                     You are running on the cutting edge of
                                     technology!
                                 </p>
-                                {!updateAvailable ? updateDialog() : null}
+                                {updateAvailable ? updateDialog() : null}
                             </div>
                         </div>
                     </div>
