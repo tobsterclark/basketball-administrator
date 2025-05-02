@@ -34,6 +34,7 @@ import {
     GridColumnGroupingModel,
     GridRenderCellParams,
 } from '@mui/x-data-grid';
+import { getTermWeek } from '../termsetup/TermSetup';
 
 const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
 
@@ -50,7 +51,7 @@ export const GameSetup = (props: PlayerDataProps) => {
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
         'f022a91a-aadd-47b3-8687-b223f0ea0890', // years 3-4
     );
-    const [currentTerm, setCurrentTerm] = useState(0); // 0-3
+    const [currentTerm, setCurrentTerm] = useState(getTermWeek(new Date()).term); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
         useState<timeSlotParams[]>();
     const [ageGroupTeams, setAgeGroupTeams] = useState<TeamDataResponse[]>();
@@ -113,7 +114,7 @@ export const GameSetup = (props: PlayerDataProps) => {
     useEffect(() => {
         setCreatedGames([]);
         getDbGames();
-    }, [selectedAgeGroupId]);
+    }, [selectedAgeGroupId, currentTerm]);
 
     const getTimesFromSlots = (
         timeSlots: timeSlotParams[],
@@ -190,7 +191,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         getTimeSlots();
         getTeamsFromAgeGroup(selectedAgeGroupId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedAgeGroupId]);
+    }, [selectedAgeGroupId, currentTerm]);
 
     const getTimeSlotFromWeekTimeCourt = (
         week: number,

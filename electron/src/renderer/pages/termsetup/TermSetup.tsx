@@ -103,6 +103,30 @@ const getWeekDateFromTerm = (
     return newDate;
 };
 
+type TermInfo = {
+    term: number;
+    week: number;
+};
+
+export const getTermWeek = (date: Date): TermInfo => {
+    for (let i = 0; i < Terms2025.length; i++) {
+        const termStart = Terms2025[i].date;
+        const termEnd = new Date(termStart);
+        termEnd.setDate(termEnd.getDate() + Terms2025[i].weeks * 7 - 1);
+
+        if (date >= termStart && date <= termEnd) {
+            const diffDays = Math.floor((date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24));
+            const week = Math.floor(diffDays / 7) + 1;
+            return { term: i + 1, week };
+        }
+    }
+
+    return {
+        term: 1,
+        week: 0,
+    }; // date is outside all term ranges
+}
+
 const venueCourts = {
     'St Ives': 3,
     Belrose: 2,
@@ -975,8 +999,8 @@ const WeekTabPanel = (
 export const TermSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
 
-    const [currentWeekTab, setCurrentWeekTab] = useState(0); // 0-indexed
-    const [currentTerm, setCurrentTerm] = useState(0); // 0-3
+    const [currentWeekTab, setCurrentWeekTab] = useState(getTermWeek(new Date()).week); // 0-indexed
+    const [currentTerm, setCurrentTerm] = useState(getTermWeek(new Date())?.term); // 0-3
     const [isSundayComp, setIsSundayComp] = useState(true);
     const [loading, setLoading] = useState(true);
 
