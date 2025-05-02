@@ -119,7 +119,7 @@ const Dashboard = () => {
                                     Version {appVersion}
                                 </p>
                                 <p className="font-semibold text-md">
-                                    You are running on the bleeding edge of
+                                    You are running on the cutting edge of
                                     technology!
                                 </p>
                                 {!updateAvailable ? updateDialog() : null}
