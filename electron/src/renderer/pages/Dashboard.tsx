@@ -126,7 +126,7 @@ const Dashboard = () => {
                                     Version {appVersion}
                                 </p>
                                 <p className="font-semibold text-md pb-8">
-                                    You are running on the cutting edge of
+                                    You are running on the amazing edge of
                                     technology!
                                 </p>
                                 <Button variant='contained' onClick={() => setDialogOpen(true)}>
