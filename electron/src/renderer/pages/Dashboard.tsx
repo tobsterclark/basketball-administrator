@@ -10,6 +10,7 @@ const Dashboard = () => {
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
     const [releaseNotes, setReleaseNotes] = useState('');
+    const [downloadProgress, setDownloadProgress] = useState(0);
 
     window.electron.ipcRenderer.send('app_version');
     window.electron.ipcRenderer.on('app_version', (event, arg) => {
@@ -33,6 +34,76 @@ const Dashboard = () => {
         console.info('Update downloaded');
     });
 
+    window.electron.ipcRenderer.on('download_progress', (event, progressObj) => {
+        setDownloadProgress(progressObj.percent.toFixed(0));
+        console.log(progressObj.percent.toFixed(0));
+    })
+
+    const updateDialog = () => {
+        return (
+            <div className="pt-4">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Update available!
+                        </h2>
+                        <p className="text-gray-600">
+                            Current version {`-->`}{' '}
+                            {appVersion}
+                        </p>
+                        <p className="text-gray-600 pt-1">
+                            New version {`-->`}{' '}
+                            {newUpdateVersion === '0'
+                                ? '?'
+                                : newUpdateVersion}
+                        </p>
+                        <p>
+                            <span className="font-semibold">
+                                Release notes:{' '}
+                            </span>
+                            {releaseNotes === ''
+                                ? 'No release notes available'
+                                : releaseNotes}
+                        </p>
+
+                        {!updateDownloaded ? (
+                            <div className="font-bold flex justify-center pt-4 gap-2">
+                                <p>
+                                    Update
+                                    downloading...
+                                </p>
+                                <ArrowPathIcon className="animate-spin h-6 w-6" />
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-gray-600 pt-4 mb-4">
+                                    Update downloaded.
+                                    Would you like to
+                                    update now?
+                                </p>
+                                <div className="flex gap-4 justify-center">
+                                    <button className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                        onClick={() => {
+                                            window.electron.ipcRenderer.send(
+                                                'restart_app',
+                                            );
+                                        }}
+                                    >
+                                        Update
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <PageContainer>
             <div>
@@ -51,68 +122,7 @@ const Dashboard = () => {
                                     You are running on the bleeding edge of
                                     technology!
                                 </p>
-                                {updateAvailable ? (
-                                    <div className="pt-4">
-                                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                            <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
-                                                <h2 className="text-xl font-semibold mb-4">
-                                                    Update available!
-                                                </h2>
-                                                <p className="text-gray-600">
-                                                    Current version {`-->`}{' '}
-                                                    {appVersion}
-                                                </p>
-                                                <p className="text-gray-600 pt-1">
-                                                    New version {`-->`}{' '}
-                                                    {newUpdateVersion === '0'
-                                                        ? '?'
-                                                        : newUpdateVersion}
-                                                </p>
-                                                <p>
-                                                    <span className="font-semibold">
-                                                        Release notes:{' '}
-                                                    </span>
-                                                    {releaseNotes === ''
-                                                        ? 'No release notes available'
-                                                        : releaseNotes}
-                                                </p>
-
-                                                {!updateDownloaded ? (
-                                                    <div className="font-bold flex justify-center pt-4 gap-2">
-                                                        <p>
-                                                            Update
-                                                            downloading...
-                                                        </p>
-                                                        <ArrowPathIcon className="animate-spin h-6 w-6" />
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <p className="text-gray-600 pt-4 mb-4">
-                                                            Update downloaded.
-                                                            Would you like to
-                                                            update now?
-                                                        </p>
-                                                        <div className="flex gap-4 justify-center">
-                                                            <button className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                                                                Cancel
-                                                            </button>
-                                                            <button
-                                                                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                                                                onClick={() => {
-                                                                    window.electron.ipcRenderer.send(
-                                                                        'restart_app',
-                                                                    );
-                                                                }}
-                                                            >
-                                                                Update
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : null}
+                                {!updateAvailable ? updateDialog() : null}
                             </div>
                         </div>
                     </div>

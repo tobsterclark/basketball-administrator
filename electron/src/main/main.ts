@@ -151,6 +151,10 @@ autoUpdater.on('update-downloaded', () => {
     mainWindow?.webContents.send('update_downloaded');
 });
 
+autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('download_progress', progress);
+});
+
 ipcMain.on('app_version', (event) => {
     event.sender.send('app_version', { version: app.getVersion() });
 });
