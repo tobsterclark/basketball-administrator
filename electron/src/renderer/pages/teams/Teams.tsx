@@ -77,6 +77,9 @@ const Teams = () => {
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
     const [editedTeamName, setEditedTeamName] =
         useState<string>(selectedTeamName);
+    
+    const selectedTeamDiv = cachedTeams.get(selectedTeam)?.division || -1;
+    const [editedTeamDiv, setEditedTeamDiv] = useState<number>(selectedTeamDiv);
 
     const selectedAgeGroup: AgeGroupDataResponse | undefined = ageGroups.find(
         (ageGroup) => ageGroup.id === cachedTeams.get(selectedTeam)?.ageGroupId,
@@ -127,7 +130,8 @@ const Teams = () => {
         if (
             editedTeamName !== selectedTeamName ||
             editedAgeGroup !== selectedAgeGroup ||
-            editedPlayersToRemove.length !== 0
+            editedPlayersToRemove.length !== 0 || 
+            editedTeamDiv !== selectedTeamDiv
         ) {
             setUnsavedEdits(true);
         } else {
@@ -139,6 +143,8 @@ const Teams = () => {
         selectedTeamName,
         selectedAgeGroup,
         editedPlayersToRemove.length,
+        editedTeamDiv,
+        selectedTeamDiv
     ]);
 
     const handleSave = () => {
@@ -160,6 +166,7 @@ const Teams = () => {
                     data: {
                         name: editedTeamName,
                         ageGroupId: editedAgeGroup.id,
+                        division: editedTeamDiv,
                     },
                 },
             };
@@ -193,6 +200,7 @@ const Teams = () => {
                     name: editedTeamName,
                     // ageGroup: editedAgeGroup,
                     ageGroupId: editedAgeGroup?.id,
+                    division: editedTeamDiv
                 },
             },
         };
@@ -209,6 +217,7 @@ const Teams = () => {
         const updatedTeam = cachedTeams.get(selectedTeam);
         updatedTeam!.name = editedTeamName;
         updatedTeam!.ageGroupId = editedAgeGroup?.id;
+        updatedTeam!.division = editedTeamDiv;
         setCachedTeams((currentCache) => {
             const newCache = new Map(currentCache);
             newCache.set(selectedTeam, updatedTeam!);
@@ -223,6 +232,7 @@ const Teams = () => {
         setEditedTeamName(selectedTeamName);
         setEditedAgeGroup(selectedAgeGroup);
         setEditedPlayersToRemove([]);
+        setEditedTeamDiv(selectedTeamDiv);
         setUnsavedEdits(false);
     };
 
@@ -249,7 +259,7 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, teamMembersRequest)
             .then((data) => {
-                console.warn('teamMembersRequest invoked');
+                // console.warn('teamMembersRequest invoked');
                 const fetchedPlayers = data as PlayerDataResponse[];
                 const teamMembers: TeamMemberRow[] = fetchedPlayers.map(
                     (player, index) => ({
@@ -260,7 +270,7 @@ const Teams = () => {
                         toBeRemoved: false,
                     }),
                 );
-                console.log(teamMembers);
+                // console.log(teamMembers);
                 setSelectedTeamPlayers(teamMembers);
                 setEditingDisabled(false);
                 setEditedTeamName(selectedTeamName);
@@ -285,7 +295,7 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allAgeGroupsRequest)
             .then((data) => {
-                console.warn('allAgeGroupsRequest invoked');
+                // console.warn('allAgeGroupsRequest invoked');
                 const fetchedAgeGroups = data as AgeGroupDataResponse[];
                 setAgeGroups(fetchedAgeGroups);
             });
@@ -305,9 +315,9 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allTeamsRequest)
             .then((data) => {
-                console.warn('allTeamsRequest invoked');
+                // console.warn('allTeamsRequest invoked');
                 const fetchedTeams = data as TeamCache[];
-                console.log(fetchedTeams);
+                // console.log(fetchedTeams);
                 setCachedTeams((currentCache) => {
                     const newCache = new Map(currentCache);
                     fetchedTeams.forEach((team) => {
@@ -332,9 +342,9 @@ const Teams = () => {
         window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, allPlayersRequest)
             .then((data) => {
-                console.warn('allPlayersRequest invoked');
+                // console.warn('allPlayersRequest invoked');
                 const fetchedPlayers = data as PlayerCache[];
-                console.log(fetchedPlayers);
+                // console.log(fetchedPlayers);
                 setCachedPlayers((currentCache) => {
                     const newCache = new Map(currentCache);
                     fetchedPlayers.forEach((player) => {
@@ -350,6 +360,7 @@ const Teams = () => {
         console.log('Add team button pressed');
         setSelectedTeam('');
         setEditedTeamName('');
+        setEditedTeamDiv(-1);
         setEditedAgeGroup(undefined);
         setSelectedTeamPlayers(teamMemberRowsTEMP);
         setEditingDisabled(false);
@@ -531,22 +542,28 @@ const Teams = () => {
                             </FormControl>
                         </div>
                         {/* Removing for now; unneeded */}
-                        {/* <div className="w-1/2">
+                        <div className="w-1/2">
                             <FormControl fullWidth>
-                                <InputLabel id="demo-simple-select-label">
+                                <InputLabel id="div-select-label">
                                     Division
                                 </InputLabel>
                                 <Select
-                                    labelId="demo-simple-select-label"
-                                    id="demo-simple-select"
-                                    value="N/A"
+                                    labelId="div-select-label"
+                                    id="div-select"
                                     label="Division"
+                                    disabled={editingDisabled}
+                                    value={editedTeamDiv}
+                                    onChange={(e) => {
+                                        console.log(`changing from ${editedTeamDiv} to ${e.target.value}.`);
+                                        setEditedTeamDiv(Number(e.target.value));
+                                    }}
                                 >
-                                    <MenuItem value="1">1</MenuItem>
-                                    <MenuItem value="N/A">N/A</MenuItem>
+                                    <MenuItem value={1}>Div 1</MenuItem>
+                                    <MenuItem value={2}>Div 2</MenuItem>
+                                    <MenuItem value={-1}>N/A</MenuItem>
                                 </Select>
                             </FormControl>
-                        </div> */}
+                        </div>
                     </div>
 
                     {/* Table for members */}

@@ -7,7 +7,7 @@ export type TeamDataResponse = Prisma.TeamGetPayload<{
 }>;
 
 export type AgeGroupDataResponse = Prisma.AgeGroupGetPayload<{
-    select: { id: true; displayName: true };
+    select: { id: true; displayName: true, division: true };
 }>;
 
 export type PlayerDataResponse = Prisma.PlayerGetPayload<{
