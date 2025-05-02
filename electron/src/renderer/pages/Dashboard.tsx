@@ -3,6 +3,8 @@ import PageContainer from '../ui_components/PageContainer';
 import PageTitle from '../ui_components/PageTitle';
 import { Button } from '@mui/material';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { Progress } from '@material-tailwind/react';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 const Dashboard = () => {
     const [appVersion, setAppVersion] = useState('0');
@@ -11,6 +13,7 @@ const Dashboard = () => {
     const [updateDownloaded, setUpdateDownloaded] = useState(false);
     const [releaseNotes, setReleaseNotes] = useState('');
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     window.electron.ipcRenderer.send('app_version');
     window.electron.ipcRenderer.on('app_version', (event, arg) => {
@@ -22,6 +25,7 @@ const Dashboard = () => {
     window.electron.ipcRenderer.on('update_available', (event, updateInfo) => {
         window.electron.ipcRenderer.removeAllListeners('update_available');
         setUpdateAvailable(true);
+        setDialogOpen(true);
         setNewUpdateVersion(updateInfo.version);
         setReleaseNotes(updateInfo.releaseNotes);
         console.info('New update available:');
@@ -38,12 +42,18 @@ const Dashboard = () => {
         setDownloadProgress(progressObj.percent.toFixed(0));
         console.log(progressObj.percent.toFixed(0));
     })
+    const upda = () => {
+        setDialogOpen(false);
+    }
 
     const updateDialog = () => {
         return (
             <div className="pt-4">
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
+                        <div className='absolute bg-red-200 rounded-md hover:bg-red-400 hover:cursor-pointer'>
+                            <XMarkIcon onClick={upda} className='w-6 h-6'/>
+                        </div>
                         <h2 className="text-xl font-semibold mb-4">
                             Update available!
                         </h2>
@@ -57,22 +67,19 @@ const Dashboard = () => {
                                 ? '?'
                                 : newUpdateVersion}
                         </p>
-                        <p>
+                        {/* <p>
                             <span className="font-semibold">
                                 Release notes:{' '}
                             </span>
                             {releaseNotes === ''
                                 ? 'No release notes available'
                                 : releaseNotes}
-                        </p>
+                        </p> */}
 
                         {!updateDownloaded ? (
-                            <div className="font-bold flex justify-center pt-4 gap-2">
-                                <p>
-                                    Update
-                                    downloading...
-                                </p>
-                                <ArrowPathIcon className="animate-spin h-6 w-6" />
+                            <div className="font-bold flex-row justify-center pt-4 gap-2">
+                                <h3 className='text-sm pb-2'>Download progress</h3>
+                                <Progress value={downloadProgress} color="orange"/>
                             </div>
                         ) : (
                             <div>
@@ -118,11 +125,14 @@ const Dashboard = () => {
                                 <p className="font-bold text-xl">
                                     Version {appVersion}
                                 </p>
-                                <p className="font-semibold text-md">
+                                <p className="font-semibold text-md pb-8">
                                     You are running on the cutting edge of
                                     technology!
                                 </p>
-                                {updateAvailable ? updateDialog() : null}
+                                <Button variant='contained' onClick={() => setDialogOpen(true)}>
+                                    Check for Updates
+                                </Button>
+                                {dialogOpen ? updateDialog() : null}
                             </div>
                         </div>
                     </div>
