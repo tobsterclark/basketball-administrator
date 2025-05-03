@@ -45,7 +45,7 @@ export const downloadRunsheet = async (gameId: string) => {
 };
 
 export const downloadMultipleRunsheets = async (gameIds: string[], date: Date) => {
-    const defaultFileName = `Scoresheets-${date.toISOString().split('T')[0]}.zip`;
+    const defaultFileName = `Scoresheets-${date.toISOString().split('T')[0]}.pdf`;
     console.log(`downloading ${gameIds.length} scoresheets:`);
     console.log(gameIds);
 
