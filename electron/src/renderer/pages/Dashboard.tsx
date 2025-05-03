@@ -129,9 +129,9 @@ const Dashboard = () => {
                                     You are running on the amazing edge of
                                     technology!
                                 </p>
-                                <Button variant='contained' onClick={() => setDialogOpen(true)}>
+                                {/* <Button variant='contained' onClick={() => setDialogOpen(true)}>
                                     Check for Updates
-                                </Button>
+                                </Button> */}
                                 {dialogOpen ? updateDialog() : null}
                             </div>
                         </div>
