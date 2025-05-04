@@ -10,7 +10,7 @@ export function TabBar({ ageGroupId }: { ageGroupId: string }) {
   const activeLinkStyle = "inline-block p-4 text-orange-500 border-b-2 border-orange-500 rounded-t-lg active";
 
   return (
-    <div className="font-medium text-center border-b border-gray-200">
+    <div className="font-medium text-sm md:text-base text-center border-b border-gray-200">
       <div className="flex flex-row w-screen justify-center -mb-px">
         <Link href={`/${ageGroupId}/fixture`} className={pathname.endsWith("fixture") ? activeLinkStyle : inactiveLinkStyle}>
           Fixture

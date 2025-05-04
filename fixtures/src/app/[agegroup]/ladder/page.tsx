@@ -59,7 +59,7 @@ function LadderTable(teams: Team[]) {
           <th scope="col" className="px-6 py-3 hidden lg:table-cell">
             points against
           </th>
-          <th scope="col" className="px-6 py-3">
+          <th scope="col" className="px-6 py-3 hidden sm:table-cell">
             points %
           </th>
         </tr>
@@ -87,7 +87,7 @@ function LadderRow(team: Team, position: number) {
       <td className="px-6 py-3 hidden md:table-cell">{team.forfeits}</td>
       <td className="px-6 py-3 hidden lg:table-cell">{team.pointsFor}</td>
       <td className="px-6 py-3 hidden lg:table-cell">{team.pointsAgainst}</td>
-      <td className="px-6 py-3">{team.pointsPercentage() || 0}</td>
+      <td className="px-6 py-3 hidden sm:table-cell">{team.pointsPercentage() || 0}</td>
     </tr>
   );
 }
