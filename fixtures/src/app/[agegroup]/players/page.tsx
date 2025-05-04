@@ -35,7 +35,7 @@ function PlayersTable(teams: Team[]) {
 function PlayersRow(team: Team, maxPlayers: number) {
   return (
     <tr key={team.name} className="odd:bg-white text-gray-900 even:bg-gray-50 hover:bg-orange-500">
-      <td scope="row" className="px-4 py-4 text-center border-r text-sm">
+      <td scope="row" className="p-2 sm:p-4 text-center border-r text-xs sm:text-sm font-medium">
         {team.name}
       </td>
 
@@ -50,7 +50,7 @@ function PlayerItems(players: Player[], maxPlayers: number) {
     .map((_, index) => {
       const player = players.at(index);
       return (
-        <td key={index} className="px-4 py-4 text-xs whitespace-nowrap">
+        <td key={index} className="py-2 sm:py-4 px-1 sm:px-2 md:px-4 text-xs whitespace-nowrap">
           {player ? `${player.firstName} ${player.lastName}` : ""}
         </td>
       );
