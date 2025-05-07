@@ -22,10 +22,10 @@ export default async function Page({ params }: { params: Promise<{ agegroup: str
 
 function LadderTable(teams: Team[]) {
   // Teams are sorted by the number of points they have
-  // Teams with equal points are sorted by 'pointsFor'
+  // Teams with equal points are sorted by their 'pointsPercentage' (pointsFor / pointsAgainst) * 100
   const orderedTeams = teams.sort((a, b) => {
     const comparison = b.points() - a.points();
-    return comparison !== 0 ? comparison : b.pointsFor - a.pointsFor;
+    return comparison !== 0 ? comparison : b.pointsPercentage() - a.pointsPercentage();
   });
 
   return (

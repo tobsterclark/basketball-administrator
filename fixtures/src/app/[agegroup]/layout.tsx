@@ -1,5 +1,4 @@
 import { getAllAgeGroups } from "@/db/cached";
-import { getAgeGroup } from "@/domain/usecases/getAgeGroup";
 import { ReactNode } from "react";
 import { TabBar } from "./TabBar";
 
