@@ -8,7 +8,7 @@ export const revalidate = 86400;
 
 // Generate fixture/ladder/results pages for each age group
 export async function generateStaticParams() {
-  const ageGroups = await getAllAgeGroups();
+  const ageGroups = (await getAllAgeGroups()).filter(({ displayName }) => displayName.toLowerCase() !== "none");
 
   console.log(`Available pages: ${ageGroups.map(({ id }) => id)}`);
 
