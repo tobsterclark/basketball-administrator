@@ -6,13 +6,13 @@ export default async function Page({ params }: { params: Promise<{ agegroup: str
   const ageGroupId = (await params).agegroup;
 
   const teams = await getTeamsForAgeGroup(ageGroupId);
-  const divisions = groupBy(teams, (team) => team.division);
+  const divisions = groupBy(teams, (team) => team.division).sort(([divA], [divB]) => (divA || 10) - (divB || 10));
 
   return (
-    <div className="flex space-x-4 px-5 w-screen justify-center">
+    <div className="flex space-y-4 px-5 w-screen flex-col justify-center">
       {divisions.map(([division, teams]) => (
         <div key={division} className="flex flex-col space-y-2">
-          <p>{division ? `Div ${division}` : ``}</p>
+          <p className="text-sm md:text-base font-semibold">{division ? `Div ${division}` : ``}</p>
           {LadderTable(teams)}
         </div>
       ))}
