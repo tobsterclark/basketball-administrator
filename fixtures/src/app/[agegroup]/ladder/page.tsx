@@ -1,6 +1,7 @@
 import { Team } from "@/domain/types/Team";
 import { getTeamsForAgeGroup } from "@/domain/usecases/getTeamsForAgeGroup";
 import { groupBy } from "@/util";
+import { TeamName } from "../_common/TeamName";
 
 export default async function Page({ params }: { params: Promise<{ agegroup: string }> }) {
   const ageGroupId = (await params).agegroup;
@@ -79,7 +80,7 @@ function LadderRow(team: Team, position: number) {
       <th scope="row" className="px-6 py-3">
         {position}
       </th>
-      <td className="px-6 py-3">{team.name}</td>
+      <td className="px-6 py-3">{TeamName(team)}</td>
       <td className="px-6 py-3">{team.points()}</td>
       <td className="px-6 py-3 hidden md:table-cell">{team.wins}</td>
       <td className="px-6 py-3 hidden md:table-cell">{team.draws}</td>

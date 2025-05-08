@@ -10,7 +10,11 @@ export async function getGamesAndTeams(ageGroupId: string): Promise<[Team[], Gam
     getAllTeamsInAgeGroup(ageGroupId),
   ]);
 
-  const teams = dbTeams.map((team) => new Team(team.id, team.name, team.division, team.players));
+  // Use adult age group id to check if is adult team, this is used to decide whether or not to show coloured
+  // dots next to team names
+  const isAdultTeam = ageGroupId === "48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64"
+
+  const teams = dbTeams.map((team) => new Team(team.id, team.name, team.division, team.players, isAdultTeam));
   const games = timeslots.map((game) => new Game(game, teams));
 
   teams.forEach((team) => team.setGames(games));

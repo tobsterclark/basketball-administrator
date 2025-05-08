@@ -1,6 +1,7 @@
 import { Player } from "@/domain/types/Player";
 import { Team } from "@/domain/types/Team";
 import { getTeamsForAgeGroup } from "@/domain/usecases/getTeamsForAgeGroup";
+import { TeamName } from "../_common/TeamName";
 
 export default async function Page({ params }: { params: Promise<{ agegroup: string }> }) {
   const ageGroupId = (await params).agegroup;
@@ -36,7 +37,7 @@ function PlayersRow(team: Team, maxPlayers: number) {
   return (
     <tr key={team.name} className="odd:bg-white text-gray-900 even:bg-gray-50 hover:bg-orange-500">
       <td scope="row" className="p-2 sm:p-4 text-center border-r text-xs sm:text-sm font-medium">
-        {team.name}
+        {TeamName(team)}
       </td>
 
       {PlayerItems(team.players, maxPlayers)}

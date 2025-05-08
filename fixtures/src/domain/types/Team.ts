@@ -15,6 +15,7 @@ export class Team {
     public name: string,
     public division: number | null,
     public players: Player[],
+    public isAdultTeam: boolean
   ) { }
 
   setGames(allGames: Game[]) {
@@ -59,5 +60,22 @@ export class Team {
     const against = this.pointsAgainst <= 0 ? 1 : this.pointsAgainst
     const percentage = (this.pointsFor / against) * 100;
     return Math.round(percentage);
+  }
+
+  getColour() {
+    const availableColours = [
+      ["pink", "bg-pink-600"],
+      ["orange", "bg-orange-600"],
+      ["white", "bg-white border-2"],
+      ["purple", "bg-purple-600"],
+      ["yellow", "bg-yellow-300"],
+      ["blue", "bg-blue-600"],
+      ["red", "bg-red-600"],
+      ["black", "bg-black"]
+    ]
+    for (var [colour, tailwind] of availableColours) {
+      if (this.name.toLowerCase().includes(colour)) { return tailwind }
+    }
+    return "bg-black"
   }
 }

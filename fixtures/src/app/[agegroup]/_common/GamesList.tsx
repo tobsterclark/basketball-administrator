@@ -2,6 +2,7 @@ import { Location } from "@/../orm/client";
 import { Game } from "@/domain/types/Game";
 import { groupBy, locationToText } from "@/util";
 import { stripTime } from "@/util";
+import { TeamName } from "./TeamName";
 
 export function GamesList(timeslots: Game[], sortByDescending: boolean) {
   // Group games by day and sort based on time
@@ -19,7 +20,7 @@ export function GamesList(timeslots: Game[], sortByDescending: boolean) {
     });
 
     // Group games by location
-    const groupedGames = groupBy(sortedGames, (game) => game.location);
+    const groupedGames = groupBy(sortedGames, (game) => game.location).sort(([a], [b]) => (a > b ? -1 : 1));
 
     return (
       <div key={key} className="px-5 py-2 flex flex-col space-y-1 md:space-y-4">
@@ -46,16 +47,18 @@ function Tile(game: Game) {
       className="bg-gray-200 rounded-md py-2 px-4 text-xs md:text-sm font-bold flex justify-between items-center"
     >
       <div className="flex flex-col">
-        <p>
-          {game.lightTeam.name} {game.result ? `(${game.result.lightScore})` : undefined}
-        </p>
+        <div className="flex space-x-1">
+          <p>{TeamName(game.lightTeam)}</p>
+          <p>{game.result ? `(${game.result.lightScore})` : undefined}</p>
+        </div>
         <p className="text-md font-semibold text-orange-500">vs</p>
-        <p>
-          {game.darkTeam.name} {game.result ? `(${game.result.darkScore})` : undefined}
-        </p>
+        <div className="flex space-x-1">
+          <p>{TeamName(game.darkTeam)}</p>
+          <p>{game.result ? `(${game.result.darkScore})` : undefined}</p>
+        </div>
       </div>
 
-      <div className="text-orange-500 font-normal">{TimeAndWinner(game)}</div>
+      <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
     </div>
   );
 }
