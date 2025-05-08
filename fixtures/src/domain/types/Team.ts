@@ -65,6 +65,7 @@ export class Team {
   getColour() {
     const availableColours = [
       ["pink", "bg-pink-600"],
+      ["green", "bg-green-600"],
       ["orange", "bg-orange-600"],
       ["white", "bg-white border-2"],
       ["purple", "bg-purple-600"],

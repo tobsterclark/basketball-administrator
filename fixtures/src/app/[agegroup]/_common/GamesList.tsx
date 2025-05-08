@@ -3,6 +3,7 @@ import { Game } from "@/domain/types/Game";
 import { groupBy, locationToText } from "@/util";
 import { stripTime } from "@/util";
 import { TeamName } from "./TeamName";
+import { Team } from "@/domain/types/Team";
 
 export function GamesList(timeslots: Game[], sortByDescending: boolean) {
   // Group games by day and sort based on time
@@ -48,19 +49,27 @@ function Tile(game: Game) {
     >
       <div className="flex flex-col">
         <div className="flex space-x-1">
-          <p>{TeamName(game.lightTeam)}</p>
-          <p>{game.result ? `(${game.result.lightScore})` : undefined}</p>
+          {TeamName(game.lightTeam)}
+          <p>{game.result ? `(${game.result.lightScore})` : lightTeamIndicator(game.lightTeam, true)}</p>
         </div>
         <p className="text-md font-semibold text-orange-500">vs</p>
         <div className="flex space-x-1">
-          <p>{TeamName(game.darkTeam)}</p>
-          <p>{game.result ? `(${game.result.darkScore})` : undefined}</p>
+          {TeamName(game.darkTeam)}
+          <p>{game.result ? `(${game.result.darkScore})` : lightTeamIndicator(game.darkTeam, false)}</p>
         </div>
       </div>
 
       <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
     </div>
   );
+}
+
+function lightTeamIndicator(team: Team, isLight: boolean) {
+  if (team.isAdultTeam) {
+    return undefined;
+  } else {
+    return isLight ? "(W)" : "(B)";
+  }
 }
 
 function formatDate(date: string) {
