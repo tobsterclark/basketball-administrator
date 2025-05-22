@@ -1,5 +1,5 @@
-import { Location } from "@/../orm/client";
 import { Game } from "@/domain/types/Game";
+import { Location } from "@/domain/types/Location";
 import { groupBy, locationToText } from "@/util";
 import { stripTime } from "@/util";
 import { TeamName } from "./TeamName";
@@ -22,26 +22,31 @@ export function GamesList(timeslots: Game[], sortByDescending: boolean) {
 
     // Group games by location
     const groupedGames = groupBy(sortedGames, (game) => game.location).sort(([a], [b]) => (a > b ? -1 : 1));
+    const showLocation = groupedGames.length > 1;
 
     return (
       <div key={key} className="px-5 py-2 flex flex-col space-y-1 md:space-y-4">
         <h3 className="text-base md:text-lg font-bold">{new Date(key).toDateString()}</h3>
-        <div className="flex flex-col space-y-1 md:space-y-2">{groupedGames.map(([key, value]) => GameTiles(value, key))}</div>
+        <div className="flex flex-col space-y-1 md:space-y-2">{groupedGames.map(([key, value]) => GameTiles(value, key, showLocation))}</div>
       </div>
     );
   });
 }
 
-function GameTiles(games: Game[], location: Location) {
+function GameTiles(games: Game[], location: Location, showLocation: Boolean) {
   return (
     <div key={location} className="flex flex-col space-y-1">
-      <h4 className="text-base md:text-lg">{locationToText(location)}</h4>
+      {showLocation ? <h4 className="text-base md:text-lg">{locationToText(location)}</h4> : null}
       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">{games.map((game) => Tile(game))}</div>
     </div>
   );
 }
 
 function Tile(game: Game) {
+  if (game.lightTeam.id === game.darkTeam.id) {
+    return ByeGameTile(game);
+  }
+
   return (
     <div
       key={new Date(game.date).getTime() + game.court}
@@ -57,6 +62,22 @@ function Tile(game: Game) {
           {TeamName(game.darkTeam)}
           <p>{game.result ? `(${game.result.darkScore})` : lightTeamIndicator(game.darkTeam, false)}</p>
         </div>
+      </div>
+
+      <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
+    </div>
+  );
+}
+
+function ByeGameTile(game: Game) {
+  return (
+    <div
+      key={new Date(game.date).getTime() + game.court}
+      className="bg-gray-200 rounded-md py-2 px-4 text-xs md:text-sm font-bold flex justify-between items-center"
+    >
+      <div className="flex space-x-2">
+        <p>{game.lightTeam.name} has a friendly</p>
+        {game.lightTeam.isAdultTeam ? <div className={"size-5 rounded-full " + game.lightTeam.getColour()} /> : null}
       </div>
 
       <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
@@ -86,7 +107,9 @@ function TimeAndWinner(game: Game) {
   } else {
     return (
       <div className="flex flex-col space-y-1 text-end">
-        <p>Court {game.court}</p>
+        <p>
+          {locationToText(game.location)} Court {game.court}
+        </p>
         <p>{formatDate(new Date(game.date).toLocaleTimeString())}</p>
       </div>
     );

@@ -1,5 +1,5 @@
 import { Result } from "./Results";
-import { Location } from "@/../orm/client";
+import { Location } from "./Location"
 import { Team } from "./Team";
 
 export class Game {

@@ -1,4 +1,4 @@
-import { Location } from "@/../orm/client";
+import { Location } from "@/domain/types/Location";
 
 export function stripTime(date: Date): Date {
   const d = new Date(date);

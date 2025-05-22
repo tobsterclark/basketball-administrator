@@ -18,10 +18,15 @@ export const getTimeslotsForAgeGroup = unstable_cache(
       },
       include: { game: true },
     }),
+  [],
+  // TODO: Review cache expiration timing
+  { revalidate: 300 }
 );
 
 // Fetch and cache all teams with players
 export const getAllTeamsInAgeGroup = unstable_cache(
   async (ageGroupId: string) =>
     await prisma.team.findMany({ where: { ageGroupId: ageGroupId }, include: { players: true } }),
+  [],
+  { revalidate: 7200 }
 );

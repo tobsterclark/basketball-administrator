@@ -1,32 +1,32 @@
 {
-	"name": "@tobsterclark/prisma-orm",
-	"version": "1.2.0",
-	"description": "",
-	"main": "index.js",
-	"types": "index.d.ts",
-	"scripts": {
-		"generate": "npx prisma generate && shx cp -r prisma/generated ../functions/orm && shx cp -r prisma/generated ../electron/node_modules/.prisma && shx cp -r prisma/generated ../fixtures/orm",
-		"postinstall": "npx prisma generate"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"publishConfig": {
-		"@tobsterclark:registry": "https://npm.pkg.github.com"
-	},
-	"devDependencies": {
-		"@types/node": "^20.12.7",
-		"@types/uuid": "^9.0.8",
-		"dotenv-cli": "^7.4.2",
-		"prisma": "^6.3.1",
-		"shx": "^0.3.4",
-		"ts-node": "^10.9.2",
-		"typescript": "^5.7.3"
-	},
-	"prisma": {
-		"seed": "ts-node prisma/seed.ts"
-	},
-	"peerDependencies": {
-		"@prisma/client": "^6.3.1"
-	}
+  "name": "@tobsterclark/prisma-orm",
+  "version": "1.2.0",
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "generate": "npx prisma generate && shx cp -r prisma/generated ../functions/orm && shx cp -r prisma/generated ../electron/node_modules/.prisma",
+    "postinstall": "npx prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "publishConfig": {
+    "@tobsterclark:registry": "https://npm.pkg.github.com"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/uuid": "^9.0.8",
+    "dotenv-cli": "^7.4.2",
+    "prisma": "^6.3.1",
+    "shx": "^0.3.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^6.3.1"
+  }
 }
