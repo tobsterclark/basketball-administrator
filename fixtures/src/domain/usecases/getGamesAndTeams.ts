@@ -5,6 +5,8 @@ import { Team } from "../types/Team";
 // Singular function for both to allow all games to reference a complete Team class as well as allowing Teams to always
 // have calculated stats
 export async function getGamesAndTeams(ageGroupId: string): Promise<[Team[], Game[]]> {
+  console.log(`Database url environment variable: ${process.env.DATABASE_URL}`)
+  process.env.DATABASE_URL = "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres?host=/cloudsql/runsheetcontrol:australia-southeast1:player-management"
   process.env.TZ = "Australia/Sydney"
   const [timeslots, dbTeams] = await Promise.all([
     getTimeslotsForAgeGroup(ageGroupId),
