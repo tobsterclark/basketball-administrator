@@ -77,7 +77,7 @@ const Teams = () => {
     const selectedTeamName = cachedTeams.get(selectedTeam)?.name || '';
     const [editedTeamName, setEditedTeamName] =
         useState<string>(selectedTeamName);
-    
+
     const selectedTeamDiv = cachedTeams.get(selectedTeam)?.division || -1;
     const [editedTeamDiv, setEditedTeamDiv] = useState<number>(selectedTeamDiv);
 
@@ -130,7 +130,7 @@ const Teams = () => {
         if (
             editedTeamName !== selectedTeamName ||
             editedAgeGroup !== selectedAgeGroup ||
-            editedPlayersToRemove.length !== 0 || 
+            editedPlayersToRemove.length !== 0 ||
             editedTeamDiv !== selectedTeamDiv
         ) {
             setUnsavedEdits(true);
@@ -560,6 +560,8 @@ const Teams = () => {
                                 >
                                     <MenuItem value={1}>Div 1</MenuItem>
                                     <MenuItem value={2}>Div 2</MenuItem>
+                                    <MenuItem value={3}>Div 3</MenuItem>
+                                    <MenuItem value={4}>Div 4</MenuItem>
                                     <MenuItem value={-1}>N/A</MenuItem>
                                 </Select>
                             </FormControl>
@@ -671,7 +673,7 @@ const Teams = () => {
                                 </Select>
                             </FormControl>
                         </div>
-    
+
                         {/* Age Group */}
                         <div className="flex-shrink w-1/3">
                             <FormControl fullWidth>

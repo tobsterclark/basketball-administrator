@@ -8,9 +8,6 @@ export const revalidate = 86400;
 
 // Generate fixture/ladder/results pages for each age group
 export async function generateStaticParams() {
-  console.log(`Database url environment variable: ${process.env.DATABASE_URL}`);
-  process.env.DATABASE_URL =
-    "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres?host=/cloudsql/runsheetcontrol:australia-southeast1:player-management";
   const ageGroups = (await getAllAgeGroups()).filter(({ displayName }) => displayName.toLowerCase() !== "none");
 
   console.log(`Available pages: ${ageGroups.map(({ id }) => id)}`);

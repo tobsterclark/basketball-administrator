@@ -8,7 +8,7 @@ export const getAllAgeGroups = unstable_cache(async () => await prisma.ageGroup.
 // Fetch and cache all timeslots along with the associated game
 export const getTimeslotsForAgeGroup = unstable_cache(
   async (ageGroupId: string) =>
-    await prisma().timeslot.findMany({
+    await prisma.timeslot.findMany({
       where: {
         AND: [
           { ageGroupId: ageGroupId },
@@ -26,7 +26,7 @@ export const getTimeslotsForAgeGroup = unstable_cache(
 // Fetch and cache all teams with players
 export const getAllTeamsInAgeGroup = unstable_cache(
   async (ageGroupId: string) =>
-    await prisma().team.findMany({ where: { ageGroupId: ageGroupId }, include: { players: true } }),
+    await prisma.team.findMany({ where: { ageGroupId: ageGroupId }, include: { players: true } }),
   [],
   { revalidate: 7200 }
 );

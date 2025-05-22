@@ -111,13 +111,16 @@ type TermInfo = {
 export const getTermWeek = (date: Date): TermInfo => {
     for (let i = 0; i < Terms2025.length; i++) {
         const termStart = Terms2025[i].date;
-        const termEnd = new Date(termStart);
-        termEnd.setDate(termEnd.getDate() + Terms2025[i].weeks * 7 - 1);
+        const termEnd = new Date(
+            termStart.getDate() + Terms2025[i].weeks * 7 - 1,
+        );
 
         if (date >= termStart && date <= termEnd) {
-            const diffDays = Math.floor((date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.floor(
+                (date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24),
+            );
             const week = Math.floor(diffDays / 7) + 1;
-            return { term: i + 1, week };
+            return { term: i, week };
         }
     }
 
@@ -1148,45 +1151,6 @@ export const TermSetup = (props: PlayerDataProps) => {
                     )),
         );
 
-        const adultsToCreate = modifiedTimeSlots.filter(
-            (timeSlot) =>
-                timeSlot.ageGroupId === ADULTS_AGE_GROUP_ID && // Only include adults age group
-                !dbTimeSlots.find(
-                    (dbTimeSlot) => dbTimeSlot.id === timeSlot.id,
-                ),
-        );
-
-        // ### begin creating adult games ###
-        // const adultPromises = adultsToCreate.map((timeSlot) => {
-        //     const timeSlotRequest: PrismaCall = {
-        //         model: ModelName.timeslot,
-        //         operation: CrudOperations.create,
-        //         data: {
-        //             data: {
-        //                 location: timeSlot.location,
-        //                 date: timeSlot.date,
-        //                 court: timeSlot.court,
-        //                 ageGroupId: timeSlot.ageGroupId,
-        //             },
-        //         },
-        //     };
-
-        //     return window.electron.ipcRenderer
-        //         .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-        //         .then((data) => {
-        //             console.log(`Created time slot for ${timeSlot.location}`);
-        //             console.log(data);
-        //         })
-        //         .catch((error: Error) => {
-        //             console.error(
-        //                 `Error creating time slot for ${timeSlot.location}:`,
-        //                 error,
-        //             );
-        //         });
-        // });
-
-        // ### end creating adult games ###
-
         // ### begin handling sunday games ###
 
         const promises = sundayTimeSlotsToUpdate.map((timeSlot) => {
@@ -1389,32 +1353,6 @@ export const TermSetup = (props: PlayerDataProps) => {
                 </button>
             </div>
             <div className="pt-2">
-                {/* <div className="pt-4 flex items-center font-bold w-1/3">
-                    <p>Adults Competition</p>
-                    <Switch
-                        checked={isSundayComp}
-                        onChange={(e) =>
-                            setIsSundayComp(e.target.checked)
-                        }
-                        size="medium"
-                        sx={{
-                            '& .MuiSwitch-track': {
-                                backgroundColor: '#8cbae8',
-                            },
-                            '& .MuiSwitch-thumb': {
-                                color: '#1976d2',
-                            },
-                            '&.Mui-checked .MuiSwitch-track': {
-                                backgroundColor: '#8cbae8',
-                            },
-                            '&.Mui-checked .MuiSwitch-thumb': {
-                                color: '#1976d2',
-                            },
-                        }}
-                    />
-                    <p>Sunday Competition</p>
-                </div>
-                <hr className="h-[0.5px] w-full my-4 bg-gray-300 border-0" /> */}
                 <Box sx={{ width: '100%' }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs

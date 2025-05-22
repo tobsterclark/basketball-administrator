@@ -35,6 +35,7 @@ import {
     GridRenderCellParams,
 } from '@mui/x-data-grid';
 import { getTermWeek } from '../termsetup/TermSetup';
+import { formatHHMMtime } from './util';
 
 const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
 
@@ -51,7 +52,9 @@ export const GameSetup = (props: PlayerDataProps) => {
     const [selectedAgeGroupId, setSelectedAgeGroupId] = useState(
         'f022a91a-aadd-47b3-8687-b223f0ea0890', // years 3-4
     );
-    const [currentTerm, setCurrentTerm] = useState(getTermWeek(new Date()).term); // 0-3
+    const [currentTerm, setCurrentTerm] = useState(
+        getTermWeek(new Date()).term,
+    ); // 0-3
     const [ageGroupsTimeSlots, setAgeGroupsTimeSlots] =
         useState<timeSlotParams[]>();
     const [ageGroupTeams, setAgeGroupTeams] = useState<TeamDataResponse[]>();
@@ -105,35 +108,11 @@ export const GameSetup = (props: PlayerDataProps) => {
             });
     };
 
-    const printCreatedGames = () => {
-        console.log('Created games:');
-        console.log(createdGames);
-    };
-
     // Ensures that the createdGames are reset when the age group is changed
     useEffect(() => {
         setCreatedGames([]);
         getDbGames();
     }, [selectedAgeGroupId, currentTerm]);
-
-    const getTimesFromSlots = (
-        timeSlots: timeSlotParams[],
-        venue: string = 'ST_IVES',
-    ) => {
-        const timesCount: { [key: number]: number } = {};
-        for (let i = 0; i < timeSlots.length; i += 1) {
-            const timeSlot = timeSlots[i];
-            if (timeSlot.location === venue) {
-                const hour = timeSlot.date.getHours();
-                if (timesCount[hour]) {
-                    timesCount[hour] += 1;
-                } else {
-                    timesCount[hour] = 1;
-                }
-            }
-        }
-        return timesCount;
-    };
 
     const getTimeSlots = () => {
         setIsLoading(true);
@@ -234,7 +213,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         } else {
             dateToFind.setDate(dateToFind.getDate() + week * 7);
         }
-        
 
         let [hours, minutes] = time.split(':').map(Number);
 
@@ -272,92 +250,32 @@ export const GameSetup = (props: PlayerDataProps) => {
         return theTeam?.id || '';
     };
 
-    const getWeekNumberFromDate = (date: Date) => {
-        const termStart = new Date(Terms2025[currentTerm].date);
-        const diffTime = Math.abs(date.getTime() - termStart.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return Math.floor(diffDays / 7);
-    };
-
     // ############## BEGIN Data Grid Config ##############
 
     const GetTimesAndCourts = (isStIves: boolean = true) => {
-        /**
-         * Returns an array of times with an array of court numbers used at that time
-         *  [
-         *     {
-         *        time: new Date(), // Moment -> date, will contain date and time
-         *        courts: [1, 2]    // Array of court numbers used at that date and time
-         *     },
-         *  ]
-         *
-         */
+        const venue = isStIves ? 'ST_IVES' : 'BELROSE';
 
-        const timeSlots = ageGroupsTimeSlots;
-        const timesAndCourts: { time: Date; courts: number[] }[] = [];
+        const timesAndCourts = ageGroupsTimeSlots?.reduce(
+            (agg, timeslot) => {
+                if (timeslot.location !== venue) {
+                    return agg;
+                }
 
-        // Loop through all time slots, compare the time and date, and add to timesAndCourts if not already added
-        timeSlots?.forEach((timeSlot) => {
-            const time = timeSlot.date;
-            const court = timeSlot.court;
-            const venue = timeSlot.location;
-            const timeAndCourt = timesAndCourts.find(
-                (timeAndCourt) =>
-                    timeAndCourt.time.getTime() === time.getTime() &&
-                    venue === (isStIves ? 'ST_IVES' : 'BELROSE'),
-            );
-            if (timeAndCourt) {
-                timeAndCourt.courts.push(court);
-            } else {
-                timesAndCourts.push({ time, courts: [court] });
-            }
-        });
+                const time = formatHHMMtime(timeslot.date);
+                const entry = agg.find((it) => it.time === time);
 
-        // get a list of times in HH:MM format,
-        const times = [
-            ...new Set(
-                timesAndCourts.map((timeAndCourt) => {
-                    const hours = timeAndCourt.time.getHours();
-                    const minutes = timeAndCourt.time.getMinutes();
-                    return `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
-                }),
-            ),
-        ];
+                if (!entry) {
+                    agg.push({ time, courts: [timeslot.court] });
+                } else if (!(timeslot.court in entry.courts)) {
+                    entry.courts.push(timeslot.court);
+                }
 
-        /** now given a list ['9:00', '10:00'], we need to figure out which courts are possibly used at each time across all weeks,
-         *  in order to figure out how many columns we need in the data grid. Create a new array of objects in the following format:
-         *
-         * [
-         *   {
-         *     time: '9:00',
-         *     courts: [1, 2]
-         *   },
-         *   {
-         *     time: '10:00',
-         *     courts: [1, 3]
-         *   },
-         * ]
-         *
-         * Ensure that the array is sorted by time, and the courts are sorted in ascending order
-         */
-        const possibleTimesAndCourts: { time: string; courts: number[] }[] = [];
-        times.forEach((time) => {
-            const timeAndCourt = timesAndCourts.find((timeAndCourt) => {
-                const hours = timeAndCourt.time.getHours();
-                const minutes = timeAndCourt.time.getMinutes();
-                return (
-                    `${hours}:${minutes < 10 ? `0${minutes}` : minutes}` ===
-                    time
-                );
-            });
-            if (timeAndCourt) {
-                possibleTimesAndCourts.push({
-                    time,
-                    courts: timeAndCourt.courts.sort((a, b) => a - b),
-                });
-            }
-        });
-        return possibleTimesAndCourts;
+                return agg;
+            },
+            [] as { time: string; courts: number[] }[],
+        );
+
+        return timesAndCourts || [];
     };
 
     const generateDataGridCols = (
@@ -409,7 +327,6 @@ export const GameSetup = (props: PlayerDataProps) => {
                             }
                             return renderVersusDropdownsNew(
                                 params.row[courtTimeKey],
-                                'ST_IVES',
                             );
                         },
                     });
@@ -476,10 +393,6 @@ export const GameSetup = (props: PlayerDataProps) => {
                 const { time, courts } = timeAndCourt;
                 courts.forEach((court) => {
                     const field = `court${court}-${time}`;
-                    if (!row.hasOwnProperty(field)) {
-                        row[field] = null;
-                    }
-
                     const tsId = getTimeSlotFromWeekTimeCourtNew(
                         week - 1,
                         time,
@@ -487,7 +400,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         isStIves ? 'ST_IVES' : 'BELROSE',
                     )?.id;
 
-                    tsId ? (row[field] = tsId) : (row[field] = 'error :(');
+                    row[field] = tsId;
                 });
             });
 
@@ -665,7 +578,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         timeSlotId: string,
         teamId: string,
         isLightTeam: boolean,
-        venue: string = 'ST_IVES',
     ) => {
         console.log(`Updating game for timeslot ${timeSlotId}`);
         setCreatedGames((prevGames) => {
@@ -712,10 +624,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
     };
 
-    const renderVersusDropdownsNew = (
-        timeSlotId: string,
-        venue: string = 'ST_IVES',
-    ) => {
+    const renderVersusDropdownsNew = (timeSlotId: string) => {
         if (isLoading) {
             return <div>LOAD...</div>;
         }
@@ -745,12 +654,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         value={lightTeamId}
                         onChange={(event: { target: { value: string } }) => {
                             const selectedTeamId = event.target.value;
-                            updateGameNew(
-                                timeSlotId,
-                                selectedTeamId,
-                                true,
-                                venue,
-                            );
+                            updateGameNew(timeSlotId, selectedTeamId, true);
                         }}
                     >
                         {ageGroupTeams
@@ -769,12 +673,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                         value={darkTeamId}
                         onChange={(event: { target: { value: string } }) => {
                             const selectedTeamId = event.target.value;
-                            updateGameNew(
-                                timeSlotId,
-                                selectedTeamId,
-                                false,
-                                venue,
-                            );
+                            updateGameNew(timeSlotId, selectedTeamId, false);
                         }}
                     >
                         {ageGroupTeams
@@ -891,13 +790,15 @@ export const GameSetup = (props: PlayerDataProps) => {
                     />
                 </Box>
                 {belroseGames ? (
-                    <div className='py-16'>
+                    <div className="py-16">
                         <hr className="w-full mb-8"></hr>
                         <h3 className="text-xl font-bold pb-4">Belrose</h3>
                         <Box sx={{ width: '100%', overflowX: 'auto' }}>
                             <DataGrid
                                 rows={generateDataGridRows(false)}
-                                columns={generateDataGridCols(GetTimesAndCourts(false))}
+                                columns={generateDataGridCols(
+                                    GetTimesAndCourts(false),
+                                )}
                                 columnGroupingModel={generateDataGridGroupingModel(
                                     GetTimesAndCourts(false),
                                 )}
@@ -909,9 +810,10 @@ export const GameSetup = (props: PlayerDataProps) => {
                                         fontWeight: 'bold',
                                         textAlign: 'center',
                                     },
-                                    '& .MuiDataGrid-columnHeaderTitleContainer': {
-                                        justifyContent: 'center',
-                                    },
+                                    '& .MuiDataGrid-columnHeaderTitleContainer':
+                                        {
+                                            justifyContent: 'center',
+                                        },
                                 }}
                                 showCellVerticalBorder
                             />
