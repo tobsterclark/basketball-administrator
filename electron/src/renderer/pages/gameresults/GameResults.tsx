@@ -117,18 +117,18 @@ const GameResults = (props: PlayerDataProps) => {
     const rowRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
     React.useEffect(() => {
+        setSelectedGameForfeited(false);
+
         if (selectedGame === '') return;
-        if (currentGames.find((game) => game.id === selectedGame)?.lightScore === 0 && currentGames.find((game) => game.id === selectedGame)?.darkScore === 0) {
+        const game = currentGames.find(({ id }) => id === selectedGame);
+
+        if (game?.lightScore === 0 && game?.darkScore === 0) {
             console.log('exiting');
             return;
         }
+
         try {
-            uploadGameResults(
-                currentGames.find(
-                    (game) =>
-                        game.id === selectedGame,
-                ) as Game,
-            );
+            uploadGameResults(game as Game);
         } catch (e) {
             console.error(e);
         }
