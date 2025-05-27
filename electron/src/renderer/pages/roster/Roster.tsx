@@ -372,6 +372,10 @@ const Roster = (props: PlayerDataProps & RosterDataProps) => {
     const getGameIdsForDate = (date: Date): string[] => {
         return allGames
             .filter((game) => {
+                if (game.darkTeamId === game.lightTeamId) {
+                    return false;
+                }
+
                 const gameDate = new Date(game.timeslot.date);
                 return gameDate.toDateString() === date.toDateString();
             })
