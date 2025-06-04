@@ -13,9 +13,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url      = "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres"
+  url      = "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres"
   // url      = "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@localhost/postgres"
-  url      = env("DATABASE_CONNECTION")
+  // url      = env("DATABASE_CONNECTION")
   // url      = "postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres?host=/cloudsql/runsheetcontrol:australia-southeast1:player-management"
 }
 

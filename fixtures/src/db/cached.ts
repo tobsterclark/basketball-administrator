@@ -3,7 +3,7 @@ import { prisma } from "./client";
 import { getCurrentTerm, getNextTerm } from "./mocked";
 
 // Cache response from `ageGroup` db
-export const getAllAgeGroups = unstable_cache(async () => await prisma.ageGroup.findMany());
+export const getAllAgeGroups = unstable_cache(async () => await prisma.ageGroup.findMany(), [], { revalidate: 3600 });
 
 // Fetch and cache all timeslots along with the associated game
 export const getTimeslotsForAgeGroup = unstable_cache(
@@ -19,8 +19,7 @@ export const getTimeslotsForAgeGroup = unstable_cache(
       include: { game: true },
     }),
   [],
-  // TODO: Review cache expiration timing
-  { revalidate: 30 }
+  { revalidate: 600 }
 );
 
 // Fetch and cache all teams with players
@@ -28,5 +27,5 @@ export const getAllTeamsInAgeGroup = unstable_cache(
   async (ageGroupId: string) =>
     await prisma.team.findMany({ where: { ageGroupId: ageGroupId }, include: { players: true } }),
   [],
-  { revalidate: 7200 }
+  { revalidate: 600 }
 );
