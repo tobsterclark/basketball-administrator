@@ -16,7 +16,9 @@ export async function getGamesAndTeams(ageGroupId: string): Promise<[Team[], Gam
   const isAdultTeam = ageGroupId === "48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64"
 
   const teams = dbTeams.map((team) => new Team(team.id, team.name, team.division, team.players, isAdultTeam));
-  const games = timeslots.map((game) => new Game(game, teams));
+  const games = timeslots
+    .filter((timeslot) => timeslot.game || timeslot.placeholder)
+    .map((game) => new Game(game, teams))
 
   teams.forEach((team) => team.setGames(games));
   return [teams, games];

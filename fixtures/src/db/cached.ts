@@ -13,7 +13,6 @@ export const getTimeslotsForAgeGroup = unstable_cache(
         AND: [
           { ageGroupId: ageGroupId },
           { date: { gt: getCurrentTerm().date, lt: getNextTerm().date } },
-          { game: { isNot: null } },
         ],
       },
       include: { game: true },

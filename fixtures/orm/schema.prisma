@@ -6,7 +6,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  output        = "./orm/client"
+  output        = "./client"
   binaryTargets = ["native", "darwin", "windows", "debian-openssl-3.0.x"]
   engineType    = "library"
 }
@@ -54,13 +54,15 @@ model Player {
 }
 
 model Timeslot {
-  id         String    @id @default(uuid()) @map("_id")
-  location   Location
-  court      Int
-  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])
-  ageGroupId String?
-  date       DateTime
-  game       Game?
+  id                String    @id @default(uuid()) @map("_id")
+  location          Location
+  court             Int
+  ageGroup          AgeGroup? @relation(fields: [ageGroupId], references: [id])
+  ageGroupId        String?
+  date              DateTime
+  game              Game?
+  placeholder       Boolean   @default(false)
+  placeholderReason String?
 
   @@unique([location, date, court])
 }

@@ -9,6 +9,9 @@ export class Game {
 
   result?: Result;
 
+  placeholder: Boolean;
+  placeholderReason: String | null
+
   lightTeam: Team;
   darkTeam: Team;
 
@@ -17,7 +20,10 @@ export class Game {
     this.location = timeslot.location;
     this.date = timeslot.date;
 
-    // set teams[0] as default if team not found... should never happen but this avoids it being nullable
+    this.placeholder = timeslot.placeholder
+    this.placeholderReason = timeslot.placeholderReason
+
+    // set teams[0] as default if team not found, will only happen for placeholder matches without games assigned
     this.lightTeam = teams.find((team) => team.id === timeslot.game?.lightTeamId) || teams[0];
     this.darkTeam = teams.find((team) => team.id === timeslot.game?.darkTeamId) || teams[0];
 
@@ -61,4 +67,6 @@ type TimeslotDto = {
   court: number;
   location: Location;
   date: Date;
+  placeholder: Boolean;
+  placeholderReason: String | null;
 };

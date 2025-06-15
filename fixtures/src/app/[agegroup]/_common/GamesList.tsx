@@ -20,14 +20,20 @@ export function GamesList(timeslots: Game[], sortByDescending: boolean) {
       return timeA - timeB;
     });
 
+    const placeholder = sortedGames.find((game) => game.placeholder);
+
     // Group games by location
     const groupedGames = groupBy(sortedGames, (game) => game.location).sort(([a], [b]) => (a > b ? -1 : 1));
-    const showLocation = groupedGames.length > 1;
+    const showLocation = groupedGames.length > 1 && !placeholder;
 
     return (
       <div key={key} className="px-5 py-2 flex flex-col space-y-1 md:space-y-4">
         <h3 className="text-base md:text-lg font-bold">{new Date(key).toDateString()}</h3>
-        <div className="flex flex-col space-y-1 md:space-y-2">{groupedGames.map(([key, value]) => GameTiles(value, key, showLocation))}</div>
+        {placeholder ? (
+          PlaceholderWeek(placeholder)
+        ) : (
+          <div className="flex flex-col space-y-1 md:space-y-2">{groupedGames.map(([key, value]) => GameTiles(value, key, showLocation))}</div>
+        )}
       </div>
     );
   });
@@ -83,6 +89,11 @@ function ByeGameTile(game: Game) {
       <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
     </div>
   );
+}
+
+function PlaceholderWeek(game: Game) {
+  const text = game.placeholderReason || "Games for this week will be confirmed at a later date.";
+  return <p className="w-full text-center">{text}</p>;
 }
 
 function lightTeamIndicator(team: Team, isLight: boolean) {

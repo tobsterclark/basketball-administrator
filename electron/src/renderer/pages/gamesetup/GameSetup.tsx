@@ -34,7 +34,7 @@ import {
     GridColumnGroupingModel,
     GridRenderCellParams,
 } from '@mui/x-data-grid';
-import { getTermWeek } from '../termsetup/TermSetup';
+import { getTermWeek } from '../termsetup/util/util';
 import { formatHHMMtime } from './util';
 
 const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
