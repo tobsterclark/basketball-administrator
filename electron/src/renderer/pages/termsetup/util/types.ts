@@ -4,6 +4,8 @@ export type RowData = {
     court: number;
     venue: string;
     id: string;
+    placeholder: boolean;
+    placeholderReason?: string;
 };
 
 export type timeSlotParams = {

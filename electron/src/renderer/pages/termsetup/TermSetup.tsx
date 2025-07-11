@@ -55,19 +55,30 @@ const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
                     date: true,
                     court: true,
                     ageGroupId: true,
+                    placeholder: true,
+                    placeholderReason: true,
                 },
             },
         };
 
         return window.electron.ipcRenderer
             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-            .then((data: { id: string; ageGroupId?: string | null }) => {
-                timeSlotsWithIds.push({
-                    ...timeSlot,
-                    id: data.id,
-                    ageGroupId: data.ageGroupId ?? 'noEvent', // Include ageGroupId if present
-                });
-            })
+            .then(
+                (data: {
+                    id: string;
+                    ageGroupId?: string | null;
+                    placeholder: boolean;
+                    placeholderReason?: string;
+                }) => {
+                    timeSlotsWithIds.push({
+                        ...timeSlot,
+                        id: data.id,
+                        ageGroupId: data.ageGroupId ?? 'noEvent', // Include ageGroupId if present
+                        placeholder: data.placeholder,
+                        placeholderReason: data.placeholderReason,
+                    });
+                },
+            )
             .catch((error: Error) => {
                 console.error(
                     `Error upserting time slot for court ${timeSlot.court}:`,
@@ -106,6 +117,8 @@ export const TermSetup = (props: PlayerDataProps) => {
                 court: timeSlot.court,
                 venue: timeSlot.location === 'ST_IVES' ? 'St Ives' : 'Belrose',
                 id: timeSlot.id ?? '',
+                placeholder: timeSlot.placeholder,
+                placeholderReason: timeSlot.placeholderReason,
             })),
     );
 
@@ -296,7 +309,7 @@ export const TermSetup = (props: PlayerDataProps) => {
             }
 
             if (dbTimeSlots[i].placeholder !== modifiedTimeSlots[i].placeholder) {
-                console.log("placeholder values have been updated")
+                console.log('placeholder values have been updated');
                 return false;
             }
         }
@@ -342,6 +355,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                         date: finalMoment.toDate(),
                         location: dbLocation,
                         court: i,
+                        placeholder: false,
                     };
 
                     weekRequestData.push(finalTimeSlot);
@@ -388,6 +402,8 @@ export const TermSetup = (props: PlayerDataProps) => {
                                     ? 'St Ives'
                                     : 'Belrose',
                             id: timeSlot.id ? timeSlot.id : '',
+                            placeholder: timeSlot.placeholder,
+                            placeholderReason: timeSlot.placeholderReason,
                         })),
                     );
                 }

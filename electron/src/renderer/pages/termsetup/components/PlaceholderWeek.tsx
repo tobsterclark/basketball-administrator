@@ -1,6 +1,5 @@
 import { Checkbox, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { timeSlotParams } from '../util/types';
 import { useDebounce } from '../util/useDebounce';
 
 type TextInputProps = {
@@ -28,31 +27,45 @@ const TextInput = (props: TextInputProps) => {
 };
 
 type PlaceholderWeekProps = {
-    updateTimeslots: (timeslots: timeSlotParams[]) => void;
-    timeslots: timeSlotParams[];
+    onChange: (placeholder: boolean, placeholderReason?: string) => void;
+    timeslots: { placeholder: boolean; placeholderReason?: string }[];
 };
 
 export const PlaceholderWeek = (props: PlaceholderWeekProps) => {
-    const { timeslots, updateTimeslots } = props;
-    const [selected, setSelected] = useState(
-        timeslots.find((val) => val.placeholder) !== undefined,
+    const { timeslots, onChange } = props;
+    const [loaded, setLoaded] = useState(false)
+    const [selected, setSelected] = useState(false);
+    const [reason, setReason] = useState(
+        timeslots.find((slot) => slot.placeholder)?.placeholderReason,
     );
-    const [reason, setReason] = useState('');
 
     // Use debouncer to avoid constantly updating the database everytime the reason text is changed
     const debouncedReason = useDebounce(reason, 500);
 
     useEffect(() => {
-        const newTimeslots = timeslots.map((val) => {
-            return {
-                ...val,
-                placeholder: selected,
-                placeholderReason: debouncedReason,
-            };
-        });
+        const placeholder = timeslots.find((slot) => slot.placeholder);
+        if (placeholder) {
+            console.log('timeslot placeholder found');
+            setSelected(true);
 
-        updateTimeslots(newTimeslots);
-    }, [debouncedReason, selected])
+            if (!loaded) {
+                setReason(placeholder.placeholderReason);
+                setLoaded(true);
+            }
+        }
+    }, [timeslots]);
+
+    useEffect(() => {
+        if (!loaded) {
+            return;
+        }
+        onChange(selected, debouncedReason);
+    }, [debouncedReason]);
+
+    const updatePlaceholderSelected = (checked: boolean) => {
+        onChange(checked, reason);
+        setSelected(checked);
+    };
 
     return (
         <div className="flex flex-col pt-6 gap-4">
@@ -60,12 +73,14 @@ export const PlaceholderWeek = (props: PlaceholderWeekProps) => {
                 <p>Set week as placeholder</p>
                 <Checkbox
                     checked={selected}
-                    onChange={(_, checked) => setSelected(checked)}
+                    onChange={(_, checked) =>
+                        updatePlaceholderSelected(checked)
+                    }
                 />
             </div>
 
             <TextInput
-                value={reason}
+                value={reason || ''}
                 onChange={(value) => setReason(value)}
                 hidden={!selected}
             />

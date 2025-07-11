@@ -142,6 +142,8 @@ export const WeekTabPanel = (
             location: venueToAdd,
             court: courtToAdd,
             ageGroupId: ADULTS_AGE_GROUP_ID, // adults
+            placeholder: false,
+            placeholderReason: '',
         };
 
         // upload to prisma
@@ -203,45 +205,37 @@ export const WeekTabPanel = (
             });
     };
 
-    // TODO: finish this
-    // const updateAdultsGames = (timeslots: timeSlotParams[]) => {
-    //     const promises = timeslots.map((timeSlot) => {
-    //         const timeSlotRequest: PrismaCall = {
-    //             model: ModelName.timeslot,
-    //             operation: CrudOperations.update,
-    //             data: {
-    //                 where: {
-    //                     id: timeSlot.id,
-    //                 },
-    //                 data: {
-    //                     placeholder: timeSlot.placeholder,
-    //                     placeholderReason: timeSlot.placeholderReason
-    //                 },
-    //             },
-    //         };
+    const updateAdultsGames = (
+        placeholder: boolean,
+        placeholderReason?: string,
+    ) => {
+        const requests: PrismaCall[] = adultsRows.map((timeslot) => {
+            return {
+                model: ModelName.timeslot,
+                operation: CrudOperations.update,
+                data: {
+                    where: {
+                        id: timeslot.id,
+                    },
+                    data: {
+                        placeholder,
+                        placeholderReason,
+                    },
+                },
+            };
+        });
 
-    //         window.electron.ipcRenderer
-    //             .invoke(IpcChannels.PrismaClient, timeSlotRequest)
-    //             .then((data: timeSlotParams) => {
-    //                 console.log(`Created time slot for ${venueToAdd}`);
-    //                 console.log(data);
-    //                 toast.success(`Created time slot successfully!`);
-    //                 const newRow = {
-    //                     time: time.format('h:mm A'),
-    //                     court: courtToAdd,
-    //                     venue:
-    //                         venueToAdd === Location.ST_IVES ? 'St Ives' : 'Belrose',
-    //                     id: data.id,
-    //                 };
-
-    //                 setAdultsRows([...adultsRows, newRow as RowData]);
-    //             })
-    //             .catch((error: Error) => {
-    //                 console.error(`Error creating time slot for ${venueToAdd}:`);
-    //                 console.error(error);
-    //             });
-    //     }
-    // }
+        requests.forEach((request) => {
+            window.electron.ipcRenderer
+                .invoke(IpcChannels.PrismaClient, request)
+                .then(() => {
+                    console.log('successfully set placeholder request');
+                })
+                .catch((e) => {
+                    console.log(`Error setting placeholder request! ${e}`);
+                });
+        });
+    };
 
     const handleCopyToAllWeeks = () => {
         // create an array of this week's adult games fetching from prisma
@@ -282,6 +276,8 @@ export const WeekTabPanel = (
                                 location: game.location,
                                 court: game.court,
                                 ageGroupId: game.ageGroupId,
+                                placeholder: game.placeholder,
+                                placeholderReason: game.placeholderReason,
                             };
 
                             const timeSlotRequest: PrismaCall = {
@@ -350,12 +346,10 @@ export const WeekTabPanel = (
                             <h2 className="pb-4">
                                 {getWeekDate(term, index, false)}
                             </h2>
-                            {/* <PlaceholderWeek
-                                updateTimeslots={(change) =>
-                                    setModifiedTimeSlots(change)
-                                }
-                                timeslots={modifiedTimeSlots}
-                            /> */}
+                            <PlaceholderWeek
+                                onChange={updateAdultsGames}
+                                timeslots={adultsRows}
+                            />
                             <h2 className="font-bold text-lg pb-4">
                                 Add a game
                             </h2>
@@ -585,7 +579,8 @@ export const WeekTabPanel = (
                                     <ArrowLongRightIcon className="h-4 w-4 inline-block mt-1.5" />
                                     <p className="text-sm text-gray-600 pt-1">
                                         Sunday games must be saved manually with
-                                        the button below.
+                                        the button below. This <i>includes </i>
+                                        setting/updating placeholders
                                     </p>
                                 </div>
                             </div>
@@ -599,10 +594,20 @@ export const WeekTabPanel = (
                             </h1>
                             <h2>{getWeekDate(term, index)}</h2>
                             <PlaceholderWeek
-                                updateTimeslots={(change) =>
-                                    setModifiedTimeSlots(change)
-                                }
                                 timeslots={modifiedTimeSlots}
+                                onChange={(placeholder, placeholderReason) => {
+                                    const newTimeslots = modifiedTimeSlots.map(
+                                        (val) => {
+                                            return {
+                                                ...val,
+                                                placeholder,
+                                                placeholderReason,
+                                            };
+                                        },
+                                    );
+
+                                    setModifiedTimeSlots(newTimeslots);
+                                }}
                             />
                             <div className="pt-4">
                                 <h3 className="text-xl font-bold">St Ives</h3>
@@ -636,35 +641,6 @@ export const WeekTabPanel = (
                     ) : (
                         <div />
                     )}
-                    {/* <div>
-                        <h2>{getWeekDate(term, index, isSundayComp)}</h2>
-                        <div className="pt-4">
-                            <h3 className="text-xl font-bold">St Ives</h3>
-                            {renderWeekTable(
-                                term,
-                                index,
-                                'St Ives',
-                                ageGroups,
-                                stIvesTimeSlots,
-                                setModifiedTimeSlots,
-                                modifiedTimeSlots,
-                                isSundayComp,
-                            )}
-                        </div>
-                        <div className="pt-8">
-                            <h3 className="text-xl font-bold">Belrose</h3>
-                            {renderWeekTable(
-                                term,
-                                index,
-                                'Belrose',
-                                ageGroups,
-                                belroseTimeSlots,
-                                setModifiedTimeSlots,
-                                modifiedTimeSlots,
-                                isSundayComp,
-                            )}
-                        </div>
-                    </div> */}
                 </div>
             )}
         </div>

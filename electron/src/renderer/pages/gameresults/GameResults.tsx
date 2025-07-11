@@ -118,20 +118,6 @@ const GameResults = (props: PlayerDataProps) => {
 
     React.useEffect(() => {
         setSelectedGameForfeited(false);
-
-        if (selectedGame === '') return;
-        const game = currentGames.find(({ id }) => id === selectedGame);
-
-        if (game?.lightScore === 0 && game?.darkScore === 0) {
-            console.log('exiting');
-            return;
-        }
-
-        try {
-            uploadGameResults(game as Game);
-        } catch (e) {
-            console.error(e);
-        }
     }, [selectedGame]);
 
     const getAgeGroupOrder = (ageGroups: { id: string; displayName: string }[]) => {
@@ -231,6 +217,7 @@ const GameResults = (props: PlayerDataProps) => {
                 setCurrentGames(data as Game[]);
             })
             .catch((err) => {
+                toast.error('Unable to get current games!')
                 console.error(err);
             });
         return [];
@@ -280,10 +267,6 @@ const GameResults = (props: PlayerDataProps) => {
             );
     };
 
-    const getNumCourts = (games: Game[]): number => {
-        return Math.max(...games.map((game) => game.timeslot.court));
-    };
-
     const getAgeGroups = (games: Game[]): string[] => {
         const x = Array.from(new Set(games.map((game) => game.timeslot.ageGroupId))).sort(
             (a, b) => ageGroupOrder.indexOf(a) - ageGroupOrder.indexOf(b)
@@ -319,6 +302,7 @@ const GameResults = (props: PlayerDataProps) => {
                 toast.success('Game results updated successfully');
             })
             .catch((err) => {
+                toast.error('Error updating game results')
                 console.error(err);
             });
     };

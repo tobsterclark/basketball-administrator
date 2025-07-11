@@ -266,7 +266,10 @@ export const GameSetup = (props: PlayerDataProps) => {
 
                 if (!entry) {
                     agg.push({ time, courts: [timeslot.court] });
-                } else if (!(timeslot.court in entry.courts)) {
+                    // Silly me for thinking `item<T> in List<T>` wouldn't cause issues
+                } else if (
+                    !entry.courts.find((court) => court === timeslot.court)
+                ) {
                     entry.courts.push(timeslot.court);
                 }
 
@@ -443,6 +446,8 @@ export const GameSetup = (props: PlayerDataProps) => {
                 children,
             });
         });
+
+        addedCourtTimes.forEach((val) => { console.log(val) })
 
         // Sort the entries by time
         DataGrid_colGroupingModel.sort((a, b) => {
