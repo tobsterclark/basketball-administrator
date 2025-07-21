@@ -1,3 +1,4 @@
+// Am gonna cry... why do months have a zero index in the Date?!?>!!>
 const Terms2025 = [
     {
         date: new Date(2025, 1, 9), // Sunday Week 1, Term 1, 2025

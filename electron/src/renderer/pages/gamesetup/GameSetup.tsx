@@ -77,6 +77,11 @@ export const GameSetup = (props: PlayerDataProps) => {
 
     const getDbGames = () => {
         setIsLoading(true);
+        let nextTerm: { date: Date; weeks: number } | undefined;
+        if (currentTerm <= Terms2025.length) {
+            nextTerm = Terms2025[currentTerm + 1];
+        }
+
         const req: PrismaCall = {
             model: ModelName.game,
             operation: CrudOperations.findMany,
@@ -84,7 +89,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 where: {
                     timeslot: {
                         date: {
-                            lte: Terms2025[currentTerm + 1].date,
+                            lte: nextTerm?.date,
                             gte: Terms2025[currentTerm].date,
                         },
                         ageGroupId: selectedAgeGroupId,
@@ -116,6 +121,11 @@ export const GameSetup = (props: PlayerDataProps) => {
 
     const getTimeSlots = () => {
         setIsLoading(true);
+        let nextTerm: { date: Date; weeks: number } | undefined;
+        if (currentTerm <= Terms2025.length) {
+            nextTerm = Terms2025[currentTerm + 1];
+        }
+
         const req: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.findMany,
@@ -123,7 +133,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 where: {
                     ageGroupId: selectedAgeGroupId,
                     date: {
-                        lte: Terms2025[currentTerm + 1].date,
+                        lte: nextTerm?.date,
                         gte: new Date(
                             Terms2025[currentTerm].date.getTime() -
                                 4 * 24 * 60 * 60 * 1000, // minus 4 days to account for wednesdays...

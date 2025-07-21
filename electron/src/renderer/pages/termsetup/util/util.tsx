@@ -45,6 +45,8 @@ export const toTitleCase = (str: string) => {
 };
 
 export const getTermWeek = (date: Date): TermInfo => {
+    let currentTerm = 1;
+
     for (let i = 0; i < Terms2025.length; i++) {
         const termStart = Terms2025[i].date;
         const termEnd = new Date(
@@ -58,10 +60,15 @@ export const getTermWeek = (date: Date): TermInfo => {
             const week = Math.floor(diffDays / 7) + 1;
             return { term: i, week };
         }
+
+        // When outside of any term range default to the next closest term
+        if (date >= termStart && date <= Terms2025[i + 1].date) {
+            currentTerm = i + 1;
+        }
     }
 
     return {
-        term: 1,
+        term: currentTerm,
         week: 0,
     }; // date is outside all term ranges
 };
