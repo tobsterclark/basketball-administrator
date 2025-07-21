@@ -34,3 +34,4 @@ npm-debug.log.*
 renderer.env
 electron-builder.yml
 runsheetcontrol-e5e8685ae733.json
+.npmrc
