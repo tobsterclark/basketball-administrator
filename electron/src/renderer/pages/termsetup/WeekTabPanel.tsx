@@ -205,6 +205,7 @@ export const WeekTabPanel = (
             });
     };
 
+    // Updating adults games with placeholder week
     const updateAdultsGames = (
         placeholder: boolean,
         placeholderReason?: string,
@@ -229,7 +230,9 @@ export const WeekTabPanel = (
             window.electron.ipcRenderer
                 .invoke(IpcChannels.PrismaClient, request)
                 .then(() => {
-                    console.log('successfully set placeholder request');
+                    console.log(
+                        `successfully set placeholder request with placeholder reason ${request.data?.data?.placeholderReason}`,
+                    );
                 })
                 .catch((e) => {
                     console.log(`Error setting placeholder request! ${e}`);
@@ -609,7 +612,7 @@ export const WeekTabPanel = (
                                     setModifiedTimeSlots(newTimeslots);
                                 }}
                             />
-                            <div className="pt-4">
+                            <div>
                                 <h3 className="text-xl font-bold">St Ives</h3>
                                 {renderWeekTable(
                                     term,

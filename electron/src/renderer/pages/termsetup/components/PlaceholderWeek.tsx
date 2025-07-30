@@ -33,33 +33,30 @@ type PlaceholderWeekProps = {
 
 export const PlaceholderWeek = (props: PlaceholderWeekProps) => {
     const { timeslots, onChange } = props;
-    const [loaded, setLoaded] = useState(false)
     const [selected, setSelected] = useState(false);
-    const [reason, setReason] = useState(
-        timeslots.find((slot) => slot.placeholder)?.placeholderReason,
-    );
+    const [reason, setReason] = useState<string | undefined>(undefined);
 
     // Use debouncer to avoid constantly updating the database everytime the reason text is changed
-    const debouncedReason = useDebounce(reason, 500);
+    const [reasonInput, setReasonInput] = useState<string | undefined>(
+        undefined,
+    );
+    const debouncedReason = useDebounce(reasonInput, 500);
 
     useEffect(() => {
         const placeholder = timeslots.find((slot) => slot.placeholder);
         if (placeholder) {
-            console.log('timeslot placeholder found');
             setSelected(true);
-
-            if (!loaded) {
-                setReason(placeholder.placeholderReason);
-                setLoaded(true);
-            }
+            setReason(placeholder.placeholderReason);
+        } else {
+            setSelected(false);
+            setReason(undefined);
         }
     }, [timeslots]);
 
     useEffect(() => {
-        if (!loaded) {
-            return;
+        if (debouncedReason !== undefined) {
+            onChange(selected, debouncedReason);
         }
-        onChange(selected, debouncedReason);
     }, [debouncedReason]);
 
     const updatePlaceholderSelected = (checked: boolean) => {
@@ -67,8 +64,13 @@ export const PlaceholderWeek = (props: PlaceholderWeekProps) => {
         setSelected(checked);
     };
 
+    const updatePlaceholderReason = (input: string) => {
+        setReason(input);
+        setReasonInput(input);
+    };
+
     return (
-        <div className="flex flex-col pt-6 gap-4">
+        <div className="flex flex-col py-6 gap-4">
             <div className="flex gap-4 items-center">
                 <p>Set week as placeholder</p>
                 <Checkbox
@@ -81,7 +83,7 @@ export const PlaceholderWeek = (props: PlaceholderWeekProps) => {
 
             <TextInput
                 value={reason || ''}
-                onChange={(value) => setReason(value)}
+                onChange={(value) => updatePlaceholderReason(value)}
                 hidden={!selected}
             />
         </div>
