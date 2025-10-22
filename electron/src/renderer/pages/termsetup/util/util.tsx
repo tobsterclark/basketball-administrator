@@ -62,7 +62,9 @@ export const getTermWeek = (date: Date): TermInfo => {
         }
 
         // When outside of any term range default to the next closest term
-        if (date >= termStart && date <= Terms2025[i + 1].date) {
+        if (i + 1 === Terms2025.length) {
+            currentTerm = i;
+        } else if (date >= termStart && date <= Terms2025[i + 1].date) {
             currentTerm = i + 1;
         }
     }
