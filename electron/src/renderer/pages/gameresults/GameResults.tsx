@@ -12,7 +12,7 @@ import {
 import PageContainer from '../../ui_components/PageContainer';
 import PageTitle from '../../ui_components/PageTitle';
 import { PlayerDataProps } from '../players/components/Types';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
     Button,
@@ -146,9 +146,9 @@ const GameResults = (props: PlayerDataProps) => {
     const getCurrentTermAndWeek = (
         currentDate: Date,
     ): { term: number; week: number } => {
-        for (let i = 0; i < Terms2025.length; i++) {
-            const term = Terms2025[i];
-            const nextTerm = Terms2025[i + 1];
+        for (let i = 0; i < Terms2026.length; i++) {
+            const term = Terms2026[i];
+            const nextTerm = Terms2026[i + 1];
 
             if (
                 currentDate >= term.date &&

@@ -23,7 +23,7 @@ import { enAU } from 'date-fns/locale';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { Location } from '../roster/Resources';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 import { IpcChannels } from '../../../general/IpcChannels';
 import {
     CrudOperations,
@@ -267,7 +267,7 @@ export const WeekTabPanel = (
 
                     for (
                         let weekOffset = 1;
-                        weekOffset < Terms2025[term].weeks - index;
+                        weekOffset < Terms2026[term].weeks - index;
                         weekOffset++
                     ) {
                         adultsTimeSlots.forEach((game) => {

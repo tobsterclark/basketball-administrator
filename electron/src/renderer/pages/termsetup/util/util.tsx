@@ -1,5 +1,5 @@
 import Moment from 'react-moment';
-import Terms2025 from '../../data/Terms';
+import { Terms2026 } from '../../data/Terms';
 import { TermInfo } from './types';
 
 export const hourSlots = [
@@ -27,7 +27,7 @@ export const getWeekDateFromTerm = (
     week: number,
     isSundayComp: boolean = true,
 ) => {
-    const termDate = Terms2025[term].date;
+    const termDate = Terms2026[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),
@@ -45,12 +45,16 @@ export const toTitleCase = (str: string) => {
 };
 
 export const getTermWeek = (date: Date): TermInfo => {
+    if (date < Terms2026[0].date) {
+        return { term: 0, week: 0 };
+    }
+
     let currentTerm = 1;
 
-    for (let i = 0; i < Terms2025.length; i++) {
-        const termStart = Terms2025[i].date;
+    for (let i = 0; i < Terms2026.length; i += 1) {
+        const termStart = Terms2026[i].date;
         const termEnd = new Date(
-            termStart.getDate() + Terms2025[i].weeks * 7 - 1,
+            termStart.getDate() + Terms2026[i].weeks * 7 - 1,
         );
 
         if (date >= termStart && date <= termEnd) {
@@ -62,9 +66,9 @@ export const getTermWeek = (date: Date): TermInfo => {
         }
 
         // When outside of any term range default to the next closest term
-        if (i + 1 === Terms2025.length) {
+        if (i + 1 === Terms2026.length) {
             currentTerm = i;
-        } else if (date >= termStart && date <= Terms2025[i + 1].date) {
+        } else if (date >= termStart && date <= Terms2026[i + 1].date) {
             currentTerm = i + 1;
         }
     }
@@ -80,7 +84,7 @@ export const getWeekDate = (
     week: number,
     isSundayComp: boolean = true,
 ) => {
-    const termDate = Terms2025[term].date;
+    const termDate = Terms2026[term].date;
     const newDate = new Date(
         termDate.getFullYear(),
         termDate.getMonth(),

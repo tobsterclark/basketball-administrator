@@ -16,7 +16,7 @@ import {
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
 import FormCancelSave from '../../ui_components/FormCancelSave';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 import { WeekTabPanel } from './WeekTabPanel';
 import { RowData, timeSlotParams } from './util/types';
 import {
@@ -94,8 +94,12 @@ const uploadTimeSlots = async (timeSlotParams: timeSlotParams[]) => {
 export const TermSetup = (props: PlayerDataProps) => {
     const { ageGroups } = props;
 
-    const [currentWeekTab, setCurrentWeekTab] = useState(getTermWeek(new Date()).week); // 0-indexed
-    const [currentTerm, setCurrentTerm] = useState(getTermWeek(new Date())?.term); // 0-3
+    const [currentWeekTab, setCurrentWeekTab] = useState(
+        getTermWeek(new Date()).week,
+    ); // 0-indexed
+    const [currentTerm, setCurrentTerm] = useState(
+        getTermWeek(new Date())?.term,
+    ); // 0-3
     const [isSundayComp, setIsSundayComp] = useState(true);
     const [loading, setLoading] = useState(true);
 
@@ -132,7 +136,7 @@ export const TermSetup = (props: PlayerDataProps) => {
         );
         console.log(`Attempting to copy games from week ${currentWeekDate}`);
 
-        for (let i = 1; i < Terms2025[currentTerm].weeks; i += 1) {
+        for (let i = 1; i < Terms2026[currentTerm].weeks; i += 1) {
             upsert(currentTerm, i);
         }
 
@@ -418,7 +422,7 @@ export const TermSetup = (props: PlayerDataProps) => {
     //     return <div>Loading...</div>;
     // }
 
-    const { weeks } = Terms2025[currentTerm];
+    const { weeks } = Terms2026[currentTerm];
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -444,7 +448,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                 >
                     <ArrowLeftCircleIcon className="h-8 w-8 hover:text-red-400" />
                 </button>
-                <p>Term {currentTerm + 1} 2025</p>
+                <p>Term {currentTerm + 1} 2026</p>
                 <button
                     type="button"
                     onClick={() => {

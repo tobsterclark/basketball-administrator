@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import { rrGame, rrSchedule, timeSlotParams } from './types';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 
 /**
  * Generates a round-robin tournament schedule.
@@ -31,7 +31,7 @@ export const generateRoundRobinSchedule = (
         throw new Error('Time slots must be provided for scheduling.');
     }
 
-    const terms = Terms2025;
+    const terms = Terms2026;
 
     const termStartDate = terms[currentTerm].date;
     const termWeeks = terms[currentTerm].weeks;

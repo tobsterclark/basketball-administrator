@@ -18,4 +18,23 @@ const Terms2025 = [
     },
 ];
 
-export default Terms2025;
+const Terms2026 = [
+    {
+        date: new Date(2026, 1, 8), // Sunday Week 1, Term 1, 2026
+        weeks: 10,
+    },
+    {
+        date: new Date(2026, 3, 26), // Sunday Week 1, Term 2, 2026
+        weeks: 10,
+    },
+    {
+        date: new Date(2026, 6, 26), // Sunday Week 1, Term 3, 2026
+        weeks: 10,
+    },
+    {
+        date: new Date(2026, 9, 18), // Sunday Week 1, Term 4, 2026
+        weeks: 10,
+    },
+];
+
+export { Terms2025, Terms2026 };

@@ -44,7 +44,7 @@ import {
     CrudOperations,
 } from '../../../general/prismaTypes';
 import { IpcChannels } from '../../../general/IpcChannels';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 import {
     AppointmentEvent,
     PlayerDataProps,
@@ -98,9 +98,9 @@ const CustomAppointment = ({
 );
 
 const getCurrentTermAndWeek = (currentDate: Date) => {
-    for (let i = 0; i < Terms2025.length; i++) {
-        const term = Terms2025[i];
-        const nextTerm = Terms2025[i + 1];
+    for (let i = 0; i < Terms2026.length; i++) {
+        const term = Terms2026[i];
+        const nextTerm = Terms2026[i + 1];
 
         if (
             currentDate >= term.date &&

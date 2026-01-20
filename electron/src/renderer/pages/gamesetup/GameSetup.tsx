@@ -23,7 +23,7 @@ import {
     ModelName,
     PrismaCall,
 } from '../../../general/prismaTypes';
-import Terms2025 from '../data/Terms';
+import { Terms2026 } from '../data/Terms';
 import { IpcChannels } from '../../../general/IpcChannels';
 import { Game, timeSlotParams } from './types';
 import { generateRoundRobinSchedule } from './RoundRobinGen';
@@ -78,8 +78,8 @@ export const GameSetup = (props: PlayerDataProps) => {
     const getDbGames = () => {
         setIsLoading(true);
         let nextTerm: { date: Date; weeks: number } | undefined;
-        if (currentTerm <= Terms2025.length) {
-            nextTerm = Terms2025[currentTerm + 1];
+        if (currentTerm <= Terms2026.length) {
+            nextTerm = Terms2026[currentTerm + 1];
         }
 
         const req: PrismaCall = {
@@ -90,7 +90,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     timeslot: {
                         date: {
                             lte: nextTerm?.date,
-                            gte: Terms2025[currentTerm].date,
+                            gte: Terms2026[currentTerm].date,
                         },
                         ageGroupId: selectedAgeGroupId,
                     },
@@ -122,8 +122,8 @@ export const GameSetup = (props: PlayerDataProps) => {
     const getTimeSlots = () => {
         setIsLoading(true);
         let nextTerm: { date: Date; weeks: number } | undefined;
-        if (currentTerm <= Terms2025.length) {
-            nextTerm = Terms2025[currentTerm + 1];
+        if (currentTerm <= Terms2026.length) {
+            nextTerm = Terms2026[currentTerm + 1];
         }
 
         const req: PrismaCall = {
@@ -135,7 +135,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                     date: {
                         lte: nextTerm?.date,
                         gte: new Date(
-                            Terms2025[currentTerm].date.getTime() -
+                            Terms2026[currentTerm].date.getTime() -
                                 4 * 24 * 60 * 60 * 1000, // minus 4 days to account for wednesdays...
                         ),
                     },
@@ -189,7 +189,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         venue: string = 'ST_IVES',
     ) => {
         if (!ageGroupsTimeSlots) return null;
-        const dateToFind = new Date(Terms2025[currentTerm].date);
+        const dateToFind = new Date(Terms2026[currentTerm].date);
         dateToFind.setUTCDate(dateToFind.getUTCDate() + week * 7);
         dateToFind.setUTCHours(time, 0, 0, 0); // Set the time component in UTC
 
@@ -217,7 +217,7 @@ export const GameSetup = (props: PlayerDataProps) => {
         // time will be passed in as "HH:MM"
         if (!ageGroupsTimeSlots) return null;
 
-        const dateToFind = new Date(Terms2025[currentTerm].date);
+        const dateToFind = new Date(Terms2026[currentTerm].date);
         if (selectedAgeGroupId === ADULTS_AGE_GROUP_ID) {
             dateToFind.setDate(dateToFind.getDate() + week * 7 - 4);
         } else {
