@@ -16,7 +16,7 @@ export const hourSlots = [
 ];
 
 export const venueCourts = {
-    'St Ives': 3,
+    'St Ives': 4,
     Belrose: 2,
 };
 

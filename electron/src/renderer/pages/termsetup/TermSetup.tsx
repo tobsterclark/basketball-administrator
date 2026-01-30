@@ -427,12 +427,16 @@ export const TermSetup = (props: PlayerDataProps) => {
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
             setCurrentTerm(3);
+            setCurrentWeekTab(0);
         } else if (currentTerm === 3 && fowards) {
             setCurrentTerm(0);
+            setCurrentWeekTab(0);
         } else if (fowards) {
             setCurrentTerm(currentTerm + 1);
+            setCurrentWeekTab(0);
         } else {
             setCurrentTerm(currentTerm - 1);
+            setCurrentWeekTab(0);
         }
     };
 

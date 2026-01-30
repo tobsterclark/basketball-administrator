@@ -21,10 +21,10 @@ const Terms2025 = [
 const Terms2026 = [
     {
         date: new Date(2026, 1, 8), // Sunday Week 1, Term 1, 2026
-        weeks: 10,
+        weeks: 12,
     },
     {
-        date: new Date(2026, 3, 26), // Sunday Week 1, Term 2, 2026
+        date: new Date(2026, 3, 19), // Sunday Week 1, Term 2, 2026
         weeks: 10,
     },
     {
