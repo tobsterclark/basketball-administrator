@@ -124,6 +124,26 @@ const configuration: webpack.Configuration = {
       defaults: false, // Adds support for dotenv-defaults. If set to true, uses ./.env.defaults. If a string, uses that location for a defaults file
     }),
 
+    // new webpack.EnvironmentPlugin({
+    //   NODE_ENV: 'production',
+    //   DATABASE_USERNAME: "nsbl_admin"
+    // }),
+    // new webpack.EnvironmentPlugin({
+    //   NODE_ENV: 'production',
+    //   DATABASE_PASSWORD: "password123"
+    // }),
+    // new webpack.EnvironmentPlugin({
+    //   NODE_ENV: 'production',
+    //   DATABASE_IP: "a.mc.tobyclark.dev"
+    // }),
+    // new webpack.EnvironmentPlugin({
+    //   NODE_ENV: 'production',
+    //   DATABASE_NAME: "postgres"
+    // }),
+    // new webpack.EnvironmentPlugin({
+    //   NODE_ENV: 'production',
+    //   DATABASE_URL: "postgresql://nsbl_admin:password123@a.mc.tobyclark.dev:5432/postgres"
+    // }),
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
       DATABASE_USERNAME: "developer"

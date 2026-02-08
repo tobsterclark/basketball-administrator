@@ -111,6 +111,10 @@ export const TermSetup = (props: PlayerDataProps) => {
     const [copyToAllWeeksConfirmation, setCopyToAllWeeksConfirmation] =
         useState(false);
 
+    const getCurrentYear = () => {
+        return new Date().getFullYear().toString();
+    };
+
     const [adultsRows, setAdultsRows] = useState<RowData[]>(
         dbTimeSlots
             .filter(
@@ -452,7 +456,7 @@ export const TermSetup = (props: PlayerDataProps) => {
                 >
                     <ArrowLeftCircleIcon className="h-8 w-8 hover:text-red-400" />
                 </button>
-                <p>Term {currentTerm + 1} 2026</p>
+                <p>Term {currentTerm + 1} {getCurrentYear()}</p>
                 <button
                     type="button"
                     onClick={() => {

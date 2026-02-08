@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 import Moment from 'react-moment';
 import { Terms2026 } from '../../data/Terms';
 import { TermInfo } from './types';
@@ -44,39 +45,46 @@ export const toTitleCase = (str: string) => {
         .join(' ');
 };
 
-export const getTermWeek = (date: Date): TermInfo => {
-    if (date < Terms2026[0].date) {
-        return { term: 0, week: 0 };
-    }
+const atLocalMidnight = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-    let currentTerm = 1;
+export const getTermWeek = (inputDate: Date): TermInfo => {
+    const date = atLocalMidnight(inputDate);
 
-    for (let i = 0; i < Terms2026.length; i += 1) {
-        const termStart = Terms2026[i].date;
-        const termEnd = new Date(
-            termStart.getDate() + Terms2026[i].weeks * 7 - 1,
-        );
+    console.log(`Trying to find nearest term and week for date ${inputDate}`);
 
+    let nearestTerm = 0;
+    let nearestDiff = Infinity;
+
+    for (let i = 0; i < Terms2026.length; i++) {
+        const termStart = atLocalMidnight(Terms2026[i].date);
+
+        const termEnd = new Date(termStart);
+        termEnd.setDate(termEnd.getDate() + Terms2026[i].weeks * 7 - 1);
+
+        // Inside term
         if (date >= termStart && date <= termEnd) {
-            const diffDays = Math.floor(
-                (date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24),
-            );
-            const week = Math.floor(diffDays / 7) + 1;
-            return { term: i, week };
+            const diffDays =
+                (date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24);
+
+            return {
+                term: i,
+                week: Math.floor(diffDays / 7),
+            };
         }
 
-        // When outside of any term range default to the next closest term
-        if (i + 1 === Terms2026.length) {
-            currentTerm = i;
-        } else if (date >= termStart && date <= Terms2026[i + 1].date) {
-            currentTerm = i + 1;
+        // Track nearest term by start date
+        const diff = Math.abs(date.getTime() - termStart.getTime());
+        if (diff < nearestDiff) {
+            nearestDiff = diff;
+            nearestTerm = i;
         }
     }
 
     return {
-        term: currentTerm,
+        term: nearestTerm,
         week: 0,
-    }; // date is outside all term ranges
+    };
 };
 
 export const getWeekDate = (

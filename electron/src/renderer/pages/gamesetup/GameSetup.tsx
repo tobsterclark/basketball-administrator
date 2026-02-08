@@ -75,6 +75,10 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
     };
 
+    const getCurrentYear = () => {
+        return new Date().getFullYear().toString();
+    };
+
     const getDbGames = () => {
         setIsLoading(true);
         let nextTerm: { date: Date; weeks: number } | undefined;
@@ -716,7 +720,9 @@ export const GameSetup = (props: PlayerDataProps) => {
                 >
                     <ArrowLeftCircleIcon className="h-8 w-8 hover:text-red-400" />
                 </button>
-                <p>Term {currentTerm + 1} 2025</p>
+                <p>
+                    Term {currentTerm + 1} {getCurrentYear()}
+                </p>
                 <button
                     type="button"
                     onClick={() => {
