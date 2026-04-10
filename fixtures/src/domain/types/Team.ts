@@ -15,11 +15,13 @@ export class Team {
     public name: string,
     public division: number | null,
     public players: Player[],
-    public isAdultTeam: boolean
-  ) { }
+    public isAdultTeam: boolean,
+  ) {}
 
   setGames(allGames: Game[]) {
-    const games = allGames.filter((game) => game.darkTeam === this || game.lightTeam === this);
+    const games = allGames.filter(
+      (game) => game.darkTeam === this || game.lightTeam === this,
+    );
     this.calculateStats(games);
   }
 
@@ -28,8 +30,10 @@ export class Team {
       if (game.result === undefined) continue;
       const result = game.result;
 
-      this.pointsFor += game.darkTeam === this ? result.darkScore : result.lightScore;
-      this.pointsAgainst += game.darkTeam === this ? result.lightScore : result.darkScore;
+      this.pointsFor +=
+        game.darkTeam === this ? result.darkScore : result.lightScore;
+      this.pointsAgainst +=
+        game.darkTeam === this ? result.lightScore : result.darkScore;
 
       if (result.winner) {
         if (this === result.winner) this.wins += 1;
@@ -57,7 +61,7 @@ export class Team {
   }
 
   pointsPercentage() {
-    const against = this.pointsAgainst <= 0 ? 1 : this.pointsAgainst
+    const against = this.pointsAgainst <= 0 ? 1 : this.pointsAgainst;
     const percentage = (this.pointsFor / against) * 100;
     return Math.round(percentage);
   }
@@ -67,16 +71,19 @@ export class Team {
       ["pink", "bg-pink-600"],
       ["green", "bg-green-600"],
       ["orange", "bg-orange-600"],
-      ["white", "bg-white border-2"],
+      ["white", "bg-white"],
       ["purple", "bg-purple-600"],
       ["yellow", "bg-yellow-300"],
       ["blue", "bg-blue-600"],
       ["red", "bg-red-600"],
-      ["black", "bg-black"]
-    ]
+      ["black", "bg-black"],
+      ["grey", "bg-gray-600"],
+    ];
     for (var [colour, tailwind] of availableColours) {
-      if (this.name.toLowerCase().includes(colour)) { return tailwind }
+      if (this.name.toLowerCase().includes(colour)) {
+        return tailwind;
+      }
     }
-    return "bg-black"
+    return "bg-black";
   }
 }

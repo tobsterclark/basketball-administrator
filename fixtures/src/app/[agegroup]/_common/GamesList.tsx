@@ -7,7 +7,9 @@ import { Team } from "@/domain/types/Team";
 
 export function GamesList(timeslots: Game[], sortByDescending: boolean) {
   // Group games by day and sort based on time
-  const games = groupBy(timeslots, (item) => stripTime(item.date).getTime()).sort((a, b) => (sortByDescending ? b[0] - a[0] : a[0] - b[0]));
+  const games = groupBy(timeslots, (item) =>
+    stripTime(item.date).getTime(),
+  ).sort((a, b) => (sortByDescending ? b[0] - a[0] : a[0] - b[0]));
 
   return games.map(([key, value]) => {
     // Sort subentries by time and then court
@@ -23,16 +25,24 @@ export function GamesList(timeslots: Game[], sortByDescending: boolean) {
     const placeholder = sortedGames.find((game) => game.placeholder);
 
     // Group games by location
-    const groupedGames = groupBy(sortedGames, (game) => game.location).sort(([a], [b]) => (a > b ? -1 : 1));
+    const groupedGames = groupBy(sortedGames, (game) => game.location).sort(
+      ([a], [b]) => (a > b ? -1 : 1),
+    );
     const showLocation = groupedGames.length > 1 && !placeholder;
 
     return (
       <div key={key} className="px-5 py-2 flex flex-col space-y-1 md:space-y-4">
-        <h3 className="text-base md:text-lg font-bold">{new Date(key).toDateString()}</h3>
+        <h3 className="text-base md:text-lg font-bold">
+          {new Date(key).toDateString()}
+        </h3>
         {placeholder ? (
           PlaceholderWeek(placeholder)
         ) : (
-          <div className="flex flex-col space-y-1 md:space-y-2">{groupedGames.map(([key, value]) => GameTiles(value, key, showLocation))}</div>
+          <div className="flex flex-col space-y-1 md:space-y-2">
+            {groupedGames.map(([key, value]) =>
+              GameTiles(value, key, showLocation),
+            )}
+          </div>
         )}
       </div>
     );
@@ -42,8 +52,12 @@ export function GamesList(timeslots: Game[], sortByDescending: boolean) {
 function GameTiles(games: Game[], location: Location, showLocation: Boolean) {
   return (
     <div key={location} className="flex flex-col space-y-1">
-      {showLocation ? <h4 className="text-base md:text-lg">{locationToText(location)}</h4> : null}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">{games.map((game) => Tile(game))}</div>
+      {showLocation ? (
+        <h4 className="text-base md:text-lg">{locationToText(location)}</h4>
+      ) : null}
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+        {games.map((game) => Tile(game))}
+      </div>
     </div>
   );
 }
@@ -61,16 +75,26 @@ function Tile(game: Game) {
       <div className="flex flex-col">
         <div className="flex space-x-1">
           {TeamName(game.lightTeam)}
-          <p>{game.result ? `(${game.result.lightScore})` : lightTeamIndicator(game.lightTeam, true)}</p>
+          <p>
+            {game.result
+              ? `(${game.result.lightScore})`
+              : lightTeamIndicator(game.lightTeam, true)}
+          </p>
         </div>
         <p className="text-md font-semibold text-orange-500">vs</p>
         <div className="flex space-x-1">
           {TeamName(game.darkTeam)}
-          <p>{game.result ? `(${game.result.darkScore})` : lightTeamIndicator(game.darkTeam, false)}</p>
+          <p>
+            {game.result
+              ? `(${game.result.darkScore})`
+              : lightTeamIndicator(game.darkTeam, false)}
+          </p>
         </div>
       </div>
 
-      <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
+      <div className="text-orange-500 font-normal flex-1 text-right">
+        {TimeAndWinner(game)}
+      </div>
     </div>
   );
 }
@@ -83,16 +107,24 @@ function ByeGameTile(game: Game) {
     >
       <div className="flex space-x-2">
         <p>{game.lightTeam.name} has a friendly</p>
-        {game.lightTeam.isAdultTeam ? <div className={"size-5 rounded-full " + game.lightTeam.getColour()} /> : null}
+        {game.lightTeam.isAdultTeam ? (
+          <div
+            className={"size-5 rounded-full " + game.lightTeam.getColour()}
+          />
+        ) : null}
       </div>
 
-      <div className="text-orange-500 font-normal flex-1 text-right">{TimeAndWinner(game)}</div>
+      <div className="text-orange-500 font-normal flex-1 text-right">
+        {TimeAndWinner(game)}
+      </div>
     </div>
   );
 }
 
 function PlaceholderWeek(game: Game) {
-  const text = game.placeholderReason || "Games for this week will be confirmed at a later date.";
+  const text =
+    game.placeholderReason ||
+    "Games for this week will be confirmed at a later date.";
   return <p className="w-full text-center">{text}</p>;
 }
 

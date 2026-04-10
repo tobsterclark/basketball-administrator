@@ -7,12 +7,12 @@ export const getAllAgeGroups = unstable_cache(async () => await prisma.ageGroup.
 
 // Fetch and cache all timeslots along with the associated game
 export const getTimeslotsForAgeGroup = unstable_cache(
-  async (ageGroupId: string) =>
+  async (ageGroupId: string, isAdultComp: boolean) =>
     await prisma.timeslot.findMany({
       where: {
         AND: [
           { ageGroupId: ageGroupId },
-          { date: { gt: getCurrentTerm().date, lt: getNextTerm().date } },
+          { date: { gt: getCurrentTerm(isAdultComp).date, lt: getNextTerm(isAdultComp).date } },
         ],
       },
       include: { game: true },
