@@ -24,9 +24,9 @@ You need to have a .env file in each directory with with the following lines:
 ```
 DATABASE_USERNAME="developer"
 DATABASE_PASSWORD="<password>"
-DATABASE_IP="35.201.1.63"
+DATABASE_IP="<ip>"
 DATABASE_NAME="postgres"
-DATABASE_URL="postgresql://developer:%2Ch6VKM7gX.m%5BL%24B%2C@35.201.1.63:5432/postgres"
+DATABASE_URL="postgresql://<username>:<hashed password>@<ip>:5432/postgres"
 GCLOUD_AUTH_BEARER=<auth bearer>
 ```
 
