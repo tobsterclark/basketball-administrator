@@ -56,16 +56,19 @@ export const getTermWeek = (inputDate: Date): TermInfo => {
     let nearestTerm = 0;
     let nearestDiff = Infinity;
 
-    for (let i = 0; i < Terms2026.length; i++) {
+    for (let i = Terms2026.length - 1; i >= 0; i--) {
         const termStart = atLocalMidnight(Terms2026[i].date);
+        const termLookupStart = new Date(termStart);
+        termLookupStart.setDate(termLookupStart.getDate() - 4);
 
-        const termEnd = new Date(termStart);
+        const termEnd = new Date(termLookupStart);
         termEnd.setDate(termEnd.getDate() + Terms2026[i].weeks * 7 - 1);
 
         // Inside term
-        if (date >= termStart && date <= termEnd) {
+        if (date >= termLookupStart && date <= termEnd) {
             const diffDays =
-                (date.getTime() - termStart.getTime()) / (1000 * 60 * 60 * 24);
+                (date.getTime() - termLookupStart.getTime()) /
+                (1000 * 60 * 60 * 24);
 
             return {
                 term: i,
