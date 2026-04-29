@@ -35,6 +35,7 @@ import {
     GridRenderCellParams,
 } from '@mui/x-data-grid';
 import { getTermWeek } from '../termsetup/util/util';
+import { getWeekDateFromTerm } from '../termsetup/util/util';
 import { formatHHMMtime } from './util';
 
 const ADULTS_AGE_GROUP_ID = '48b2bdf3-3acb-4f5a-b7e7-19ffca0f3c64';
@@ -130,6 +131,13 @@ export const GameSetup = (props: PlayerDataProps) => {
             nextTerm = Terms2026[currentTerm + 1];
         }
 
+        console.log('[GameSetup] Loading time slots', {
+            selectedAgeGroupId,
+            currentTerm,
+            currentTermStart: Terms2026[currentTerm]?.date,
+            nextTermStart: nextTerm?.date,
+        });
+
         const req: PrismaCall = {
             model: ModelName.timeslot,
             operation: CrudOperations.findMany,
@@ -155,6 +163,21 @@ export const GameSetup = (props: PlayerDataProps) => {
                     (slot: { location: string }) => slot.location === 'BELROSE',
                 );
                 setBelroseGames(!!belrose);
+                console.log('[incorrect] [GameSetup] Time slots loaded', {
+                    count: data.length,
+                    stIvesCount: data.filter(
+                        (slot: { location: string }) =>
+                            slot.location === 'ST_IVES',
+                    ).length,
+                    belroseCount: data.filter(
+                        (slot: { location: string }) =>
+                            slot.location === 'BELROSE',
+                    ).length,
+                    courts: [...new Set(data.map((slot: { court: number }) => slot.court))],
+                    earliest: data[0]?.date,
+                    latest: data[data.length - 1]?.date,
+                });
+                console.log(data);
                 setIsLoading(false);
             });
     };
@@ -181,6 +204,14 @@ export const GameSetup = (props: PlayerDataProps) => {
     };
 
     useEffect(() => {
+        console.log('[GameSetup] Initial load / refresh', {
+            selectedAgeGroupId,
+            selectedAgeGroupName:
+                ageGroups.find((ageGroup) => ageGroup.id === selectedAgeGroupId)
+                    ?.displayName,
+            currentTerm,
+            currentTermStart: Terms2026[currentTerm]?.date,
+        });
         getTimeSlots();
         getTeamsFromAgeGroup(selectedAgeGroupId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,14 +260,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         }
 
         let [hours, minutes] = time.split(':').map(Number);
-
-        // Adjust for AM/PM if necessary
-        // if (hours > 12 && !time.includes('AM') && !time.includes('PM')) {
-        //     console.log(
-        //         `Converting ${hours}:${minutes} -> ${hours + 12}:${minutes}`,
-        //     );
-        //     hours += 12; // Convert to 24-hour format if it's PM
-        // }
 
         dateToFind.setHours(hours, minutes, 0, 0); // Set the time component in local time
 
@@ -317,8 +340,17 @@ export const GameSetup = (props: PlayerDataProps) => {
                 headerName: 'Week',
                 width: 70,
                 renderCell: (params: GridRenderCellParams<any, any>) => (
-                    <div className="flex items-center justify-center h-full font-bold">
-                        {params.value}
+                    <div
+                        className="flex h-full flex-col items-center justify-center text-center"
+                        style={{ whiteSpace: 'normal' }}
+                    >
+                        <div style={{ fontWeight: 700, lineHeight: 1.7 }}>
+                            {String(params.value).split('\n')[0]}
+                        </div>
+                        <div style={{ height: '0.35rem' }} />
+                        <div style={{ fontWeight: 400, lineHeight: 1.7 }}>
+                            {String(params.value).split('\n')[1]}
+                        </div>
                     </div>
                 ),
             },
@@ -398,10 +430,17 @@ export const GameSetup = (props: PlayerDataProps) => {
         const rows: { [key: string]: any }[] = [];
         let id = 1;
 
-        for (let week = 1; week <= 10; week += 1) {
+        for (let week = 1; week <= Terms2026[currentTerm].weeks; week += 1) {
+            const isAdults = selectedAgeGroupId === ADULTS_AGE_GROUP_ID
+            const weekDate = getWeekDateFromTerm(currentTerm, week - 1, !isAdults);
+
+            const displayMonth = weekDate.toLocaleDateString('en-AU', { month: 'short' }).slice(0, 3);
+            const displayDay = weekDate.getDate();
+
+            const weekName = `${week}\n ${displayDay} ${displayMonth}`;
             const row: { [key: string]: any } = {
                 id,
-                week,
+                week: weekName,
                 time: 0,
                 test: 'z',
             };
@@ -424,7 +463,8 @@ export const GameSetup = (props: PlayerDataProps) => {
             rows.push(row);
             id += 1;
         }
-
+        console.log("ROWS:")
+        console.log(rows);
         return rows;
     };
 
@@ -461,7 +501,6 @@ export const GameSetup = (props: PlayerDataProps) => {
             });
         });
 
-        addedCourtTimes.forEach((val) => { console.log(val) })
 
         // Sort the entries by time
         DataGrid_colGroupingModel.sort((a, b) => {
@@ -598,7 +637,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         teamId: string,
         isLightTeam: boolean,
     ) => {
-        console.log(`Updating game for timeslot ${timeSlotId}`);
         setCreatedGames((prevGames) => {
             if (!timeSlotId) return prevGames;
 
@@ -624,25 +662,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         });
     };
 
-    const doTourney = () => {
-        // create a list of strings from the teams
-        const teamNames = ageGroupTeams?.map((team) => team.name) || [];
-        console.log(
-            `Generating tournament for 10 weeks, with 10 games per team. Team names: ${teamNames}`,
-        );
-        if (ageGroupsTimeSlots) {
-            const torney = generateRoundRobinSchedule(
-                teamNames,
-                ageGroupsTimeSlots,
-                updateGame,
-                getTeamIdFromName,
-                currentTerm,
-            );
-
-            console.log(torney);
-        }
-    };
-
     const renderVersusDropdownsNew = (timeSlotId: string) => {
         if (isLoading) {
             return <div>LOAD...</div>;
@@ -650,7 +669,6 @@ export const GameSetup = (props: PlayerDataProps) => {
         if (!timeSlotId) {
             return <div />;
         }
-        // console.log("attempting to find a game in dbGames");
         let game = dbGames.find((gamee) => gamee.timeSlotId === timeSlotId);
 
         const createdGame = createdGames.find(
