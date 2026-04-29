@@ -475,6 +475,28 @@ export const TermSetup = (props: PlayerDataProps) => {
                                 setCurrentWeekTab(newValue)
                             }
                             aria-label="Week Tabs"
+                            variant="scrollable"
+                            visibleScrollbar
+                            scrollButtons="auto"
+                            allowScrollButtonsMobile
+                            sx={{
+                                '& .MuiTabs-scroller': {
+                                    scrollbarWidth: 'thin',
+                                    scrollbarColor:
+                                        'rgba(0, 0, 0, 0.35) transparent',
+                                },
+                                '& .MuiTabs-scroller::-webkit-scrollbar': {
+                                    height: 8,
+                                },
+                                '& .MuiTabs-scroller::-webkit-scrollbar-track': {
+                                    backgroundColor: 'transparent',
+                                },
+                                '& .MuiTabs-scroller::-webkit-scrollbar-thumb': {
+                                    backgroundColor:
+                                        'rgba(0, 0, 0, 0.35)',
+                                    borderRadius: 999,
+                                },
+                            }}
                         >
                             {Array.from({ length: weeks }, (_, i) => (
                                 <Tab key={i} label={`Week ${i + 1}`} />
