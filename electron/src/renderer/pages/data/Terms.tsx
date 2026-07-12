@@ -28,8 +28,8 @@ const Terms2026 = [
         weeks: 12,
     },
     {
-        date: new Date(2026, 6, 26), // Sunday Week 1, Term 3, 2026
-        weeks: 10,
+        date: new Date(2026, 6, 12), // Sunday Week 1, Term 3, 2026 NOTE: Updated from (2026, 6, 26) to (2026, 6, 12) as of 12/07/2026
+        weeks: 12,
     },
     {
         date: new Date(2026, 9, 18), // Sunday Week 1, Term 4, 2026
