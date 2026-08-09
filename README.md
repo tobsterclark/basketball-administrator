@@ -1,5 +1,13 @@
 # NSBL Manager
 
+## Remembering how this rubbish works + helpful commands
+1. `cd electron` 
+2. delete `node_modules/.prisma` and `node_modules/@prisma` 
+3. `npm i --legacy-peer-deps`
+4. copy `orm/prisma/schema.prisma` to `electron/node_modules/.prisma/client/schema.prisma`
+5. in electron folder `npx prisma generate --schema=./node_modules/.prisma/client/schema.prisma` but delete the `output` line in the generated client definition
+6. happy days babooshka!
+
 ## Getting Started
 
 You will need to authenticate your npm with Github to download the standard ORM package, to do this perform the following steps:
