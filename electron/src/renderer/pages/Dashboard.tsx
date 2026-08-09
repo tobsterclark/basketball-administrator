@@ -5,6 +5,7 @@ import { Button } from '@mui/material';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Progress } from '@material-tailwind/react';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import Countdown from '../ui_components/Countdown';
 
 const Dashboard = () => {
     const [appVersion, setAppVersion] = useState('0');
@@ -129,6 +130,7 @@ const Dashboard = () => {
                                     You are running on the amazing edge of
                                     technology!
                                 </p>
+                                <Countdown />
                                 {/* <Button variant='contained' onClick={() => setDialogOpen(true)}>
                                     Check for Updates
                                 </Button> */}
