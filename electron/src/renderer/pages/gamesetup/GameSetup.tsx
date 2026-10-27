@@ -2,6 +2,7 @@ import {
     ArrowLeftCircleIcon,
     ArrowRightCircleIcon,
 } from '@heroicons/react/24/solid';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import {
     Box,
@@ -63,6 +64,10 @@ export const GameSetup = (props: PlayerDataProps) => {
     const [dbGames, setDbGames] = useState<Game[]>([]);
     const [belroseGames, setBelroseGames] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteTimeSlotId, setDeleteTimeSlotId] = useState<string | null>(
+        null,
+    );
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const navigateTerm = (fowards: boolean) => {
         if (currentTerm === 0 && !fowards) {
@@ -662,6 +667,51 @@ export const GameSetup = (props: PlayerDataProps) => {
         });
     };
 
+    const deleteGame = async (timeSlotId: string) => {
+        const hasSavedGame = dbGames.some(
+            (game) => game.timeSlotId === timeSlotId,
+        );
+
+        try {
+            setIsDeleting(true);
+
+            if (hasSavedGame) {
+                const req: PrismaCall = {
+                    model: ModelName.game,
+                    operation: CrudOperations.delete,
+                    data: {
+                        where: {
+                            timeslotId: timeSlotId,
+                        },
+                    },
+                };
+
+                await window.electron.ipcRenderer.invoke(
+                    IpcChannels.PrismaClient,
+                    req,
+                );
+            }
+
+            setCreatedGames((games) =>
+                games.filter((game) => game.timeSlotId !== timeSlotId),
+            );
+            setDbGames((games) =>
+                games.filter((game) => game.timeSlotId !== timeSlotId),
+            );
+            toast.success(
+                hasSavedGame
+                    ? 'Game deleted successfully'
+                    : 'Unsaved game cleared',
+            );
+            setDeleteTimeSlotId(null);
+        } catch (error) {
+            toast.error('Unable to delete game');
+            console.error('Error deleting game', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const renderVersusDropdownsNew = (timeSlotId: string) => {
         if (isLoading) {
             return <div>LOAD...</div>;
@@ -679,6 +729,7 @@ export const GameSetup = (props: PlayerDataProps) => {
             game = createdGame;
         }
 
+        const hasGame = Boolean(game);
         const lightTeamId = game?.lightTeamId || '';
         const darkTeamId = game?.darkTeamId || '';
 
@@ -722,6 +773,53 @@ export const GameSetup = (props: PlayerDataProps) => {
                             ))}
                     </Select>
                 </FormControl>
+                {hasGame ? (
+                    <button
+                        type="button"
+                        aria-label="Delete game"
+                        className="self-end text-red-500 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={isDeleting}
+                        onClick={() => setDeleteTimeSlotId(timeSlotId)}
+                    >
+                        <TrashIcon className="h-6 w-6" />
+                    </button>
+                ) : null}
+            </div>
+        );
+    };
+
+    const deletePopup = () => {
+        if (!deleteTimeSlotId) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 shadow-lg w-96 text-center">
+                    <h2 className="text-xl font-semibold mb-4">
+                        Delete Game?
+                    </h2>
+                    <p className="text-gray-600 pt-1 mb-6">
+                        Are you sure you want to delete this game? This will
+                        also permanently remove any recorded scores.
+                    </p>
+                    <div className="flex gap-4 justify-center font-semibold">
+                        <button
+                            type="button"
+                            className="px-6 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 disabled:opacity-50"
+                            disabled={isDeleting}
+                            onClick={() => setDeleteTimeSlotId(null)}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                            disabled={isDeleting}
+                            onClick={() => deleteGame(deleteTimeSlotId)}
+                        >
+                            {isDeleting ? 'Deleting...' : 'Delete'}
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     };
@@ -861,6 +959,7 @@ export const GameSetup = (props: PlayerDataProps) => {
                 ) : null}
             </div>
             <div className="flex gap-8"></div>
+            {deletePopup()}
         </PageContainer>
     );
 };
