@@ -4,16 +4,17 @@ import { Terms2026 } from '../../data/Terms';
 import { TermInfo } from './types';
 
 export const hourSlots = [
-    { slot: 0, time: '9am' },
-    { slot: 1, time: '10am' },
-    { slot: 2, time: '11am' },
-    { slot: 3, time: '12pm' },
-    { slot: 4, time: '1pm' },
-    { slot: 5, time: '2pm' },
-    { slot: 6, time: '3pm' },
-    { slot: 7, time: '4pm' },
-    { slot: 8, time: '5pm' },
-    { slot: 9, time: '6pm' },
+    { slot: 0, time: '8am' },
+    { slot: 1, time: '9am' },
+    { slot: 2, time: '10am' },
+    { slot: 3, time: '11am' },
+    { slot: 4, time: '12pm' },
+    { slot: 5, time: '1pm' },
+    { slot: 6, time: '2pm' },
+    { slot: 7, time: '3pm' },
+    { slot: 8, time: '4pm' },
+    { slot: 9, time: '5pm' },
+    { slot: 10, time: '6pm' },
 ];
 
 export const venueCourts = {
